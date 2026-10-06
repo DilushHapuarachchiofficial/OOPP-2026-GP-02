@@ -9,5 +9,6 @@ import javax.imageio.ImageIO;
 import java.io.InputStream;
 
 public class WelcomeScreen extends JFrame {
+    
 
 }
