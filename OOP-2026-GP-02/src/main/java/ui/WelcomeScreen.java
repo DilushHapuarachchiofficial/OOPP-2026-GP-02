@@ -48,7 +48,7 @@ public class WelcomeScreen extends JFrame {
         mainPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 1));
 
         // Texts
-        JLabel titleLabel = new JLabel("Tech-FAMS");
+        JLabel titleLabel = new JLabel("TecFAMS");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 42));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
