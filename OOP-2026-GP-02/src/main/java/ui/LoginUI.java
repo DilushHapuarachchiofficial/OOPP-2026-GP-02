@@ -451,4 +451,148 @@ public class LoginUI extends JFrame {
                 loginButton.setBackground(COLOR_BRIGHT_BLUE);
             }
         });
+        // Login Action Listener
+        loginButton.addActionListener(e -> performLogin());
+
+        // Keyboard ENTER Key Listener (Triggers login on pressing Enter in input fields)
+        ActionListener enterKeyListener = e -> performLogin();
+        usernameField.addActionListener(enterKeyListener);
+        passwordField.addActionListener(enterKeyListener);
+
+        // Footer Text
+        footerLabel = new JLabel("Secure Access • Faculty of Technology, University of Ruhuna", SwingConstants.CENTER);
+        footerLabel.setFont(FONT_FOOTER);
+        footerLabel.setForeground(COLOR_SECONDARY_TEXT);
+
+        // Assemble Form Container
+        formContainer.add(welcomeLabel);
+        formContainer.add(Box.createRigidArea(new Dimension(0, 4)));
+        formContainer.add(subtitleLabel);
+        formContainer.add(Box.createRigidArea(new Dimension(0, 20)));
+        formContainer.add(errorPanel);
+        formContainer.add(Box.createRigidArea(new Dimension(0, 15)));
+
+        formContainer.add(usernameLabel);
+        formContainer.add(Box.createRigidArea(new Dimension(0, 6)));
+        formContainer.add(usernameField);
+        formContainer.add(Box.createRigidArea(new Dimension(0, 18)));
+
+        formContainer.add(passwordLabel);
+        formContainer.add(Box.createRigidArea(new Dimension(0, 6)));
+        formContainer.add(passwordContainerPanel);
+        formContainer.add(Box.createRigidArea(new Dimension(0, 28)));
+
+        formContainer.add(loginButton);
+
+        panel.add(formContainer, BorderLayout.CENTER);
+        panel.add(footerLabel, BorderLayout.SOUTH);
+
+        return panel;
+    }
+    /**
+     * Applies rounded padding borders and focus highlight to input text fields.
+     */
+    private void applyCustomInputStyling(JTextField field) {
+        Border defaultBorder = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_BORDER, 1, true),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)
+        );
+
+        Border focusBorder = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_TECH_BLUE, 2, true),
+                BorderFactory.createEmptyBorder(7, 11, 7, 11)
+        );
+
+        field.setBorder(defaultBorder);
+        field.setBackground(COLOR_WHITE);
+
+        // Focus Highlight Listener
+        field.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                field.setBorder(focusBorder);
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                field.setBorder(defaultBorder);
+            }
+        });
+    }
+
+    /**
+     * Toggles password field echo character between visible and hidden.
+     */
+    private void togglePasswordVisibility() {
+        if (isPasswordVisible) {
+            passwordField.setEchoChar('•');
+            togglePasswordButton.setIcon(new EyeIcon(false, 22, 22));
+            togglePasswordButton.setToolTipText("Show Password");
+            isPasswordVisible = false;
+        } else {
+            passwordField.setEchoChar((char) 0);
+            togglePasswordButton.setIcon(new EyeIcon(true, 22, 22));
+            togglePasswordButton.setToolTipText("Hide Password");
+            isPasswordVisible = true;
+        }
+    }
+
+    /**
+     * Gathers inputs from GUI and invokes LoginLogic.authenticate(...)
+     */
+    private void performLogin() {
+        // Clear previous error
+        hideError();
+
+        String username = usernameField.getText();
+        String password = new String(passwordField.getPassword());
+
+        // Call Business Logic Class
+        LoginLogic.AuthResult result = LoginLogic.authenticate(username, password);
+
+        if (result.isSuccess()) {
+            // Authentication Success: Delegate dashboard navigation to LoginLogic
+            LoginLogic.navigateToDashboard(result.getRole(), frame);
+        } else {
+            // Authentication Failure: Display error on UI
+            showError(result.getMessage());
+        }
+    }
+
+    /**
+     * Displays error message inside the form error panel.
+     */
+    private void showError(String message) {
+        errorLabel.setText("⚠️ " + message);
+        errorPanel.setVisible(true);
+        errorPanel.revalidate();
+        errorPanel.repaint();
+    }
+
+    /**
+     * Hides the error panel.
+     */
+    private void hideError() {
+        errorLabel.setText("");
+        errorPanel.setVisible(false);
+        errorPanel.revalidate();
+        errorPanel.repaint();
+    }
+
+    // =========================================================================
+    // MAIN ENTRY POINT
+    // =========================================================================
+    public static void main(String[] args) {
+        // Use system look and feel for crisp native rendering
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ignored) {
+        }
+
+        // Run UI on Event Dispatch Thread
+        SwingUtilities.invokeLater(() -> {
+            LoginUI loginUI = new LoginUI();
+            loginUI.setVisible(true);
+        });
+    }
 }
