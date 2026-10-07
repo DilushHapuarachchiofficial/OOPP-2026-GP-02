@@ -336,4 +336,119 @@ public class LoginUI extends JFrame {
         }
         return null;
     }
+    // =========================================================================
+    // RIGHT LOGIN FORM PANEL CREATION
+    // =========================================================================
+    private JPanel createRightFormPanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(COLOR_LIGHT_BG);
+        panel.setLayout(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(40, 50, 30, 50));
+
+        // Center Form Box Container
+        JPanel formContainer = new JPanel();
+        formContainer.setOpaque(false);
+        formContainer.setLayout(new BoxLayout(formContainer, BoxLayout.Y_AXIS));
+
+        // Header Section
+        welcomeLabel = new JLabel("Welcome");
+        welcomeLabel.setFont(FONT_WELCOME);
+        welcomeLabel.setForeground(COLOR_DARK_TEXT);
+        welcomeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        subtitleLabel = new JLabel("Sign in to access your academic portal.");
+        subtitleLabel.setFont(FONT_SUBTITLE);
+        subtitleLabel.setForeground(COLOR_SECONDARY_TEXT);
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Error Message Panel (Hidden by default)
+        errorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        errorPanel.setBackground(COLOR_ERROR_BG);
+        errorPanel.setBorder(BorderFactory.createLineBorder(new Color(252, 165, 165), 1, true));
+        errorPanel.setMaximumSize(new Dimension(400, 36));
+        errorPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        errorPanel.setVisible(false);
+
+        errorLabel = new JLabel();
+        errorLabel.setFont(FONT_ERROR);
+        errorLabel.setForeground(COLOR_ERROR);
+        errorPanel.add(errorLabel);
+
+        // 1. Username Field
+        usernameLabel = new JLabel("Username");
+        usernameLabel.setFont(FONT_LABEL);
+        usernameLabel.setForeground(COLOR_DARK_TEXT);
+        usernameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        usernameField = new JTextField();
+        usernameField.setFont(FONT_INPUT);
+        usernameField.setForeground(COLOR_DARK_TEXT);
+        usernameField.setMaximumSize(new Dimension(400, 40));
+        usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        applyCustomInputStyling(usernameField);
+
+        // 2. Password Field with Show/Hide Toggle
+        passwordLabel = new JLabel("Password");
+        passwordLabel.setFont(FONT_LABEL);
+        passwordLabel.setForeground(COLOR_DARK_TEXT);
+        passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        passwordField = new JPasswordField();
+        passwordField.setFont(FONT_INPUT);
+        passwordField.setForeground(COLOR_DARK_TEXT);
+        applyCustomInputStyling(passwordField);
+
+        // Password Container Panel (holds Password field + Vector Eye Toggle Button)
+        JPanel passwordContainerPanel = new JPanel(new BorderLayout());
+        passwordContainerPanel.setOpaque(false);
+        passwordContainerPanel.setMaximumSize(new Dimension(400, 40));
+        passwordContainerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        togglePasswordButton = new JButton(new EyeIcon(false, 22, 22));
+        togglePasswordButton.setFocusPainted(false);
+        togglePasswordButton.setBorderPainted(false);
+        togglePasswordButton.setContentAreaFilled(false);
+        togglePasswordButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        togglePasswordButton.setToolTipText("Show / Hide Password");
+        togglePasswordButton.setPreferredSize(new Dimension(45, 40));
+
+        // Password Show/Hide Event Listener
+        togglePasswordButton.addActionListener(e -> togglePasswordVisibility());
+
+        passwordContainerPanel.add(passwordField, BorderLayout.CENTER);
+        passwordContainerPanel.add(togglePasswordButton, BorderLayout.EAST);
+
+        // 3. Sign In Button
+        loginButton = new JButton("SIGN IN");
+        loginButton.setFont(FONT_BUTTON);
+        loginButton.setForeground(COLOR_WHITE);
+        loginButton.setBackground(COLOR_TECH_BLUE);
+        loginButton.setFocusPainted(false);
+        loginButton.setBorderPainted(false);
+        loginButton.setMaximumSize(new Dimension(400, 44));
+        loginButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        loginButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // Button Hover & Click Effects
+        loginButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                loginButton.setBackground(COLOR_BRIGHT_BLUE);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                loginButton.setBackground(COLOR_TECH_BLUE);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                loginButton.setBackground(COLOR_DEEP_NAVY);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                loginButton.setBackground(COLOR_BRIGHT_BLUE);
+            }
+        });
 }
