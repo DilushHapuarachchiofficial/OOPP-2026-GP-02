@@ -273,4 +273,67 @@ public class LoginUI extends JFrame {
 
         return panel;
     }
+    /**
+     * Custom Vector Icon for Feature Checkmarks to ensure reliable rendering on all OS platform fonts.
+     */
+    private static class CheckIcon implements Icon {
+        private final int width = 16;
+        private final int height = 16;
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(COLOR_TECH_BLUE);
+            g2.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            // Draw Checkmark vector polyline
+            int[] xPoints = {x + 2, x + 6, x + 13};
+            int[] yPoints = {y + 8, y + 12, y + 4};
+            g2.drawPolyline(xPoints, yPoints, 3);
+            g2.dispose();
+        }
+
+        @Override
+        public int getIconWidth() {
+            return width;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return height;
+        }
+    }
+
+    private JLabel createFeatureLabel(String text) {
+        String cleanText = (text != null && text.startsWith("✓ ")) ? text.substring(2) : text;
+        JLabel label = new JLabel(cleanText, SwingConstants.CENTER);
+        label.setIcon(new CheckIcon());
+        label.setIconTextGap(6);
+        label.setFont(new Font("Segoe UI Semibold", Font.BOLD, 12));
+        label.setForeground(COLOR_DARK_TEXT); // #0F172A
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return label;
+    }
+
+    private Image loadLeftBgImage() {
+        if (leftBgImage != null) return leftBgImage;
+        String[] candidatePaths = {
+                "bg.png", "bg.jpg", "left_bg.png",
+                "src/bg.png", "src/bg.jpg", "src/left_bg.png"
+        };
+        for (String path : candidatePaths) {
+            java.io.File f = new java.io.File(path);
+            if (f.exists()) {
+                leftBgImage = new ImageIcon(f.getAbsolutePath()).getImage();
+                return leftBgImage;
+            }
+        }
+        java.net.URL resource = getClass().getResource("/bg.png");
+        if (resource != null) {
+            leftBgImage = new ImageIcon(resource).getImage();
+            return leftBgImage;
+        }
+        return null;
+    }
 }
