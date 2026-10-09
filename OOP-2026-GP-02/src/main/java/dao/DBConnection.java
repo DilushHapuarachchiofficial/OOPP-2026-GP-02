@@ -1,6 +1,10 @@
+package main.java.dao;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -113,29 +117,55 @@ public class DBConnection {
         String[] possibleFileNames = {
             "tecfams_db.sql",
             "src/tecfams_db.sql",
+            "src/main/resources/database/tecfams_db.sql",
+            "src/main/resources/database/tecFams.sql",
+            "src/main/resources/database/tecFams",
+            "src/main/resources/database/tecfams_db",
+            "C:/Users/kavis/OneDrive/Desktop/TecFAMS/OOPP-2026-GP-02/OOP-2026-GP-02/src/main/resources/database/tecFams",
+            "C:/Users/kavis/OneDrive/Desktop/TecFAMS/OOPP-2026-GP-02/OOP-2026-GP-02/src/main/resources/database/tecfams_db.sql",
             "c:/Users/kavis/OneDrive/Desktop/TecFAMS/Local Project/src/tecfams_db.sql"
         };
 
-        File sqlFile = null;
+        BufferedReader reader = null;
+
         for (String fileName : possibleFileNames) {
             File f = new File(fileName);
             if (f.exists()) {
-                sqlFile = f;
-                break;
+                try {
+                    reader = new BufferedReader(new FileReader(f));
+                    break;
+                } catch (Exception ignored) {
+                }
             }
         }
 
-        if (sqlFile == null || !sqlFile.exists()) {
+        if (reader == null) {
+            String[] resourcePaths = {
+                "/database/tecfams_db.sql",
+                "/database/tecFams.sql",
+                "/database/tecFams",
+                "/tecfams_db.sql"
+            };
+            for (String rPath : resourcePaths) {
+                InputStream is = DBConnection.class.getResourceAsStream(rPath);
+                if (is != null) {
+                    reader = new BufferedReader(new InputStreamReader(is));
+                    break;
+                }
+            }
+        }
+
+        if (reader == null) {
             return;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(sqlFile))) {
+        try (BufferedReader br = reader) {
             String line;
             boolean inUsersTable = false;
             // Matches tuples: (1, 'username', 'password', 'Role', ...)
             Pattern pattern = Pattern.compile("\\(\\s*\\d+\\s*,\\s*'([^']+)'\\s*,\\s*'([^']+)'\\s*,\\s*'([^']+)'");
 
-            while ((line = reader.readLine()) != null) {
+            while ((line = br.readLine()) != null) {
                 if (line.contains("INSERT INTO `users`") || line.contains("INSERT INTO users")) {
                     inUsersTable = true;
                 }

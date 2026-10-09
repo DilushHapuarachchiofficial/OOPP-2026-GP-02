@@ -1,3 +1,6 @@
+package main.java.model;
+
+import main.java.dao.DBConnection;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import java.sql.Connection;
