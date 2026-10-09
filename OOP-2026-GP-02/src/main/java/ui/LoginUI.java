@@ -1,4 +1,6 @@
 package main.java.ui;
+
+import main.java.model.LoginLogic;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
@@ -320,7 +322,10 @@ public class LoginUI extends JFrame {
         if (leftBgImage != null) return leftBgImage;
         String[] candidatePaths = {
                 "bg.png", "bg.jpg", "left_bg.png",
-                "src/bg.png", "src/bg.jpg", "src/left_bg.png"
+                "src/bg.png", "src/bg.jpg", "src/left_bg.png",
+                "src/main/resources/images/bg.png",
+                "src/main/resources/images/bg.jpg",
+                "src/main/resources/images/left_bg.png"
         };
         for (String path : candidatePaths) {
             java.io.File f = new java.io.File(path);
@@ -329,7 +334,13 @@ public class LoginUI extends JFrame {
                 return leftBgImage;
             }
         }
-        java.net.URL resource = getClass().getResource("/bg.png");
+        java.net.URL resource = getClass().getResource("/images/bg.png");
+        if (resource == null) {
+            resource = getClass().getResource("/images/bg.jpg");
+        }
+        if (resource == null) {
+            resource = getClass().getResource("/bg.png");
+        }
         if (resource != null) {
             leftBgImage = new ImageIcon(resource).getImage();
             return leftBgImage;
