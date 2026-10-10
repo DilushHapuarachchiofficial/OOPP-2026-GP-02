@@ -1,4 +1,4 @@
-package main.java.ui;
+package main.java.ui.admin;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
