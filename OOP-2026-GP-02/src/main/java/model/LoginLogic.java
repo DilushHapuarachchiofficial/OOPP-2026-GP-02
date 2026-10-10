@@ -91,15 +91,49 @@ public class LoginLogic {
         // 3. Database Authentication (Attempt 1: Live MySQL Database via JDBC)
         try (Connection conn = DBConnection.getConnection()) {
             if (conn != null) {
-                String sql = "SELECT password_hash, role FROM users WHERE username = ?";
+                String sql = "SELECT user_id, password_hash, role FROM users WHERE username = ?";
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                     pstmt.setString(1, cleanUsername);
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
+                            int userId = rs.getInt("user_id");
                             String dbPassword = rs.getString("password_hash");
                             String dbRole = rs.getString("role");
                             if (cleanPassword.equals(dbPassword)) {
                                 String mappedRole = DBConnection.normalizeRole(dbRole);
+
+                                // Initialize authenticated UserSession
+                                if ("Lecturer".equalsIgnoreCase(mappedRole)) {
+                                    String lecSql = "SELECT l.lecturer_name, l.designation, l.email, d.department_name " +
+                                                    "FROM lecturers l " +
+                                                    "LEFT JOIN departments d ON l.department_id = d.department_id " +
+                                                    "WHERE l.lecturer_id = ?";
+                                    try (PreparedStatement lecStmt = conn.prepareStatement(lecSql)) {
+                                        lecStmt.setInt(1, userId);
+                                        try (ResultSet lecRs = lecStmt.executeQuery()) {
+                                            if (lecRs.next()) {
+                                                UserSession.setCurrentSession(new UserSession(
+                                                        userId, cleanUsername, mappedRole,
+                                                        lecRs.getString("lecturer_name"),
+                                                        lecRs.getString("designation"),
+                                                        lecRs.getString("department_name"),
+                                                        lecRs.getString("email")
+                                                ));
+                                            } else {
+                                                UserSession.setCurrentSession(new UserSession(
+                                                        userId, cleanUsername, mappedRole,
+                                                        cleanUsername, "", "Faculty of Technology", ""
+                                                ));
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    UserSession.setCurrentSession(new UserSession(
+                                            userId, cleanUsername, mappedRole,
+                                            cleanUsername, "", "Faculty of Technology", ""
+                                    ));
+                                }
+
                                 return new AuthResult(true, "Authentication successful!", mappedRole);
                             } else {
                                 return new AuthResult(false, "Invalid username or password.", null);
@@ -201,11 +235,36 @@ public class LoginLogic {
     }
 
     public static void openLecturerDashboard() {
-        // Placeholder until LecturerDashboard.java is created
-        JOptionPane.showMessageDialog(null,
-                "✓ Login Successful!\n\nRole: Lecturer\nWelcome to TecFAMS Academic Portal.\n\n[LecturerDashboard will be connected here]",
-                "TecFAMS - Lecturer Portal",
-                JOptionPane.INFORMATION_MESSAGE);
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("TecFAMS - Faculty of Technology Academic Management System");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(1100, 720);
+            frame.setLayout(new java.awt.BorderLayout());
+
+            UserSession session = UserSession.getCurrentSession();
+            String name = (session != null) ? session.getFullName() : "Dr. Chinthaka Premachandra";
+            String initials = getInitialsFromName(name);
+
+            main.java.ui.Lecturer.Navbar navbar = new main.java.ui.Lecturer.Navbar(name, initials, main.java.ui.Lecturer.Navbar.PAGE_DASHBOARD);
+            main.java.ui.Lecturer.LecturerDashboard dashboard = new main.java.ui.Lecturer.LecturerDashboard();
+
+            frame.add(navbar, java.awt.BorderLayout.NORTH);
+            frame.add(dashboard, java.awt.BorderLayout.CENTER);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
+    }
+
+    private static String getInitialsFromName(String name) {
+        if (name == null || name.trim().isEmpty()) return "CP";
+        String[] parts = name.trim().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String p : parts) {
+            if (!p.isEmpty() && !p.endsWith(".")) {
+                sb.append(Character.toUpperCase(p.charAt(0)));
+            }
+        }
+        return sb.length() >= 2 ? sb.substring(0, 2) : (sb.length() == 1 ? sb.toString() : "CP");
     }
 
     public static void openTechnicalOfficerDashboard() {

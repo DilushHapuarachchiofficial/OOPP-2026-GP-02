@@ -6,6 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OOP-2026-GP-02.iml" beforeDir="false" afterPath="$PROJECT_DIR$/OOP-2026-GP-02.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/OOP-2026-GP-02/Main.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/OOP-2026-GP-02/Main.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/LoginLogic.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/LoginLogic.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerDashboard.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
