@@ -9,8 +9,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
-import model.Course;
-import dao.CourseDAO;
+import main.java.model.admin.Course;
+import main.java.dao.admin.CourseDAO;
 
 public class CourseManagementPanel extends JPanel {
     private CardLayout cardLayout;

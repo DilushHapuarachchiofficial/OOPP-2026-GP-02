@@ -1,6 +1,8 @@
 package main.java.model.admin;
 
-public class Course {
+import main.java.model.User;
+
+public class Course{
     private int courseId;
     private int departmentId;
     private String courseCode;
