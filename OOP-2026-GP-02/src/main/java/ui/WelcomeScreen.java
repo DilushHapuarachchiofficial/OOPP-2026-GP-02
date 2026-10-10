@@ -90,7 +90,7 @@ public class WelcomeScreen extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 dispose(); // Close the welcome screen
-                new LoginUI().setVisible(true); // Open the login screen
+                //new LoginUI().setVisible(true); // Open the login screen
             }
         });
 
