@@ -1,6 +1,6 @@
-package dao;
+package main.java.dao.admin;
 
-import model.User;
+import main.java.model.User;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;

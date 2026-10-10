@@ -179,7 +179,7 @@ public class AdminDashboard extends JFrame {
 
         logoutItem.addActionListener(e -> {
             this.dispose();
-            SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
+            //SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
         });
 
         Font menuFont = new Font("Segoe UI", Font.PLAIN, 14);

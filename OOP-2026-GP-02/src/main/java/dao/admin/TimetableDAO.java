@@ -1,6 +1,6 @@
-package dao;
+package main.java.dao.admin;
 
-import model.Timetable;
+import main.java.model.admin.Timetable;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;

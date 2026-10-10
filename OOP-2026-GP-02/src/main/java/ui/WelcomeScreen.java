@@ -1,4 +1,6 @@
 package main.java.ui;
+import main.java.ui.admin.AdminDashboard;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -90,7 +92,7 @@ public class WelcomeScreen extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 dispose(); // Close the welcome screen
-                //new LoginUI().setVisible(true); // Open the login screen
+                new AdminDashboard().setVisible(true); // Open the login screen
             }
         });
 

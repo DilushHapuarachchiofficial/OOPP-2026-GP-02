@@ -1,4 +1,4 @@
-package ui;
+package main.java.ui.admin;
 
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
@@ -11,8 +11,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.text.StyledEditorKit;
 
-import model.Notice;
-import dao.NoticeDAO;
+import main.java.model.admin.Notice;
+import main.java.dao.admin.NoticeDAO;
 
 public class NoticeManagementPanel extends JPanel {
     private CardLayout cardLayout;

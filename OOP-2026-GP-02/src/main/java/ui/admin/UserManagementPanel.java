@@ -1,4 +1,4 @@
-package ui;
+package main.java.ui.admin;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -11,8 +11,8 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 import java.util.List;
-import model.User;
-import dao.UserDAO;
+import main.java.model.User;
+import main.java.dao.admin.UserDAO;
 
 public class UserManagementPanel extends JPanel {
     private CardLayout cardLayout;
@@ -722,7 +722,7 @@ public class UserManagementPanel extends JPanel {
                     
                     int confirm = JOptionPane.showConfirmDialog(panel, "Delete user " + displayId + "?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
                     if (confirm == JOptionPane.YES_OPTION) {
-                        if (dao.UserDAO.deleteUser(userId)) {
+                        if (UserDAO.deleteUser(userId)) {
                             tableModel.removeRow(modelRow);
                             JOptionPane.showMessageDialog(panel, "User deleted.");
                         } else {

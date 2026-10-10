@@ -1,4 +1,4 @@
-package ui;
+package main.java.ui.admin;
 
 import java.awt.*;
 import java.text.SimpleDateFormat;
@@ -9,8 +9,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
-import model.Timetable;
-import dao.TimetableDAO;
+import main.java.model.admin.Timetable;
+import main.java.dao.admin.TimetableDAO;
 
 public class TimetableManagementPanel extends JPanel {
     private JLabel showingLabel;

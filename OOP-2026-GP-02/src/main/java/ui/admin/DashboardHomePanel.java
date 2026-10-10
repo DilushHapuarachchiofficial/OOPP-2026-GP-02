@@ -1,4 +1,4 @@
-package ui;
+package main.java.ui.admin;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -7,7 +7,7 @@ import java.awt.geom.RoundRectangle2D;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
-import dao.DashboardDAO;
+import main.java.dao.admin.DashboardDAO;
 
 public class DashboardHomePanel extends JPanel {
 
