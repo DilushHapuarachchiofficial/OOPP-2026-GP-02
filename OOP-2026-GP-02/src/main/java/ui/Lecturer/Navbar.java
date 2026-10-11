@@ -39,12 +39,20 @@ import java.util.regex.Pattern;
 public class Navbar extends JPanel {
 
     // =========================================================================
-    // COLOR PALETTE (TecFAMS Academic Theme)
+    // COLOR PALETTE (TecFAMS Academic Theme - #0B4F9C Navbar & White Base Fonts)
     // =========================================================================
+    public static final Color COLOR_NAVBAR_BG        = new Color(11, 79, 156);  // #0B4F9C - Professional Blue Navbar Background
+    public static final Color COLOR_NAV_TEXT_ACTIVE  = new Color(255, 255, 255);// #FFFFFF - Pure crisp white active text
+    public static final Color COLOR_NAV_TEXT_BASE    = new Color(225, 238, 255);// #E1EEFF - White base secondary & inactive font
+    public static final Color COLOR_NAV_DIVIDER      = new Color(255, 255, 255, 55); // Subtle translucent white separator
+    public static final Color COLOR_NAV_HOVER_BG     = new Color(255, 255, 255, 30); // Soft translucent white hover pill
+    public static final Color COLOR_NAV_ACTIVE_BG    = new Color(255, 255, 255, 48); // Translucent white active pill
+    public static final Color COLOR_NAV_BOTTOM_BORDER= new Color(7, 53, 105);   // Crisp bottom edge border
+
     public static final Color COLOR_DEEP_NAVY      = new Color(8, 47, 90);    // #082F5A - Brand & primary headings
     public static final Color COLOR_PRO_BLUE       = new Color(11, 79, 156);  // #0B4F9C - Navigation active text & primary accents
     public static final Color COLOR_TECH_BLUE      = new Color(40, 120, 208); // #2878D0 - Active indicator underline & highlight
-    public static final Color COLOR_WHITE          = new Color(255, 255, 255);// #FFFFFF - Background
+    public static final Color COLOR_WHITE          = new Color(255, 255, 255);// #FFFFFF - Background / pure white
     public static final Color COLOR_LIGHT_BG       = new Color(244, 247, 251);// #F4F7FB - Page background
     public static final Color COLOR_SUBTLE_BORDER  = new Color(220, 228, 238);// #DCE4EE - Divider & bottom border
     public static final Color COLOR_NOTIF_ACCENT   = new Color(255, 107, 0);  // #FF6B00 - Notification badge
@@ -272,7 +280,8 @@ public class Navbar extends JPanel {
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1100, NAVBAR_HEIGHT));
         setMinimumSize(new Dimension(860, NAVBAR_HEIGHT));
-        setBackground(COLOR_WHITE);
+        setBackground(COLOR_NAVBAR_BG);
+        setOpaque(true);
 
         // Section A: Left Brand (Pure clean typography branding)
         brandSection = createBrandSection();
@@ -303,11 +312,11 @@ public class Navbar extends JPanel {
         int h = getHeight();
 
         // 1px bottom border
-        g2.setColor(COLOR_SUBTLE_BORDER);
+        g2.setColor(COLOR_NAV_BOTTOM_BORDER);
         g2.drawLine(0, h - 1, w, h - 1);
 
-        // Soft 2px bottom shadow line
-        g2.setColor(new Color(230, 235, 245, 120));
+        // Soft bottom shadow line
+        g2.setColor(new Color(6, 40, 80, 100));
         g2.drawLine(0, h - 2, w, h - 2);
 
         g2.dispose();
@@ -328,12 +337,12 @@ public class Navbar extends JPanel {
 
         JLabel titleLabel = new JLabel("TecFAMS");
         titleLabel.setFont(FONT_BRAND_TITLE);
-        titleLabel.setForeground(COLOR_DEEP_NAVY);
+        titleLabel.setForeground(COLOR_NAV_TEXT_ACTIVE);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel subtitleLabel = new JLabel("FACULTY OF TECHNOLOGY");
         subtitleLabel.setFont(FONT_BRAND_SUBTITLE);
-        subtitleLabel.setForeground(COLOR_PRO_BLUE);
+        subtitleLabel.setForeground(COLOR_NAV_TEXT_BASE);
         subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         textPanel.add(Box.createVerticalGlue());
@@ -345,7 +354,7 @@ public class Navbar extends JPanel {
         // Vertical divider separating branding from navigation
         JSeparator divider = new JSeparator(SwingConstants.VERTICAL);
         divider.setPreferredSize(new Dimension(1, 32));
-        divider.setForeground(COLOR_SUBTLE_BORDER);
+        divider.setForeground(COLOR_NAV_DIVIDER);
 
         panel.add(textPanel);
         panel.add(Box.createHorizontalStrut(8));
@@ -398,31 +407,44 @@ public class Navbar extends JPanel {
         JLayeredPane notifContainer = new JLayeredPane();
         notifContainer.setPreferredSize(new Dimension(42, 42));
 
-        bellButton = new JButton();
+        bellButton = new JButton() {
+            private boolean hovered = false;
+            {
+                addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        hovered = true;
+                        repaint();
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        hovered = false;
+                        repaint();
+                    }
+                });
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (hovered) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(COLOR_NAV_HOVER_BG);
+                    g2.fillOval(2, 2, getWidth() - 4, getHeight() - 4);
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+        };
         bellButton.setIcon(NavVectorIcon.create(NavVectorIcon.Type.BELL));
         bellButton.setToolTipText("Notifications");
         bellButton.setFocusPainted(false);
         bellButton.setBorderPainted(false);
         bellButton.setContentAreaFilled(false);
+        bellButton.setOpaque(false);
         bellButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         bellButton.setBounds(1, 1, 40, 40);
-
-        // Bell hover circle styling
-        bellButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                bellButton.setOpaque(true);
-                bellButton.setBackground(COLOR_HOVER_BG);
-                bellButton.repaint();
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                bellButton.setOpaque(false);
-                bellButton.setBackground(COLOR_WHITE);
-                bellButton.repaint();
-            }
-        });
 
         // Click bell to show dropdown popup directly beneath it
         bellButton.addActionListener(e -> toggleNotificationPopup());
@@ -437,7 +459,7 @@ public class Navbar extends JPanel {
         // 2. Subtle Divider
         JSeparator divider = new JSeparator(SwingConstants.VERTICAL);
         divider.setPreferredSize(new Dimension(1, 28));
-        divider.setForeground(COLOR_SUBTLE_BORDER);
+        divider.setForeground(COLOR_NAV_DIVIDER);
 
         // 3. Lecturer Profile Pill (Click to scroll down / popup menu with My Profile & Logout)
         profilePill = createProfilePill();
@@ -482,7 +504,7 @@ public class Navbar extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 if (hovered) {
-                    g2.setColor(COLOR_HOVER_BG);
+                    g2.setColor(COLOR_NAV_HOVER_BG);
                     g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 36, 36));
                 }
                 g2.dispose();
@@ -501,8 +523,11 @@ public class Navbar extends JPanel {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(COLOR_DEEP_NAVY);
+                g2.setColor(new Color(255, 255, 255, 40));
                 g2.fill(new Ellipse2D.Float(0, 0, getWidth(), getHeight()));
+                g2.setColor(COLOR_WHITE);
+                g2.setStroke(new BasicStroke(1.2f));
+                g2.draw(new Ellipse2D.Float(1, 1, getWidth() - 2, getHeight() - 2));
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -518,11 +543,11 @@ public class Navbar extends JPanel {
 
         profileNameLabel = new JLabel(lecturerName);
         profileNameLabel.setFont(FONT_USER_NAME);
-        profileNameLabel.setForeground(COLOR_DEEP_NAVY);
+        profileNameLabel.setForeground(COLOR_NAV_TEXT_ACTIVE);
 
         JLabel roleLabel = new JLabel("Lecturer");
         roleLabel.setFont(FONT_USER_ROLE);
-        roleLabel.setForeground(COLOR_TEXT_INACTIVE);
+        roleLabel.setForeground(COLOR_NAV_TEXT_BASE);
 
         textCol.add(Box.createVerticalGlue());
         textCol.add(profileNameLabel);
@@ -1042,17 +1067,24 @@ public class Navbar extends JPanel {
             setIcon(vectorIcon);
             setIconTextGap(6);
             setBorder(new EmptyBorder(6, 12, 7, 12));
+            setForeground(COLOR_NAV_TEXT_BASE);
 
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseEntered(MouseEvent e) {
                     isHovered = true;
+                    if (!isActive) {
+                        setForeground(COLOR_NAV_TEXT_ACTIVE);
+                    }
                     repaint();
                 }
 
                 @Override
                 public void mouseExited(MouseEvent e) {
                     isHovered = false;
+                    if (!isActive) {
+                        setForeground(COLOR_NAV_TEXT_BASE);
+                    }
                     repaint();
                 }
             });
@@ -1060,7 +1092,7 @@ public class Navbar extends JPanel {
 
         public void setActive(boolean active) {
             this.isActive = active;
-            setForeground(active ? COLOR_PRO_BLUE : COLOR_TEXT_INACTIVE);
+            setForeground(active ? COLOR_NAV_TEXT_ACTIVE : COLOR_NAV_TEXT_BASE);
             if (vectorIcon != null) {
                 vectorIcon.setActive(active);
             }
@@ -1076,13 +1108,16 @@ public class Navbar extends JPanel {
             int h = getHeight();
 
             if (isActive) {
-                g2.setColor(COLOR_ACTIVE_BG);
+                // Translucent white pill for active state
+                g2.setColor(COLOR_NAV_ACTIVE_BG);
                 g2.fill(new RoundRectangle2D.Float(2, 4, w - 4, h - 8, 16, 16));
 
-                g2.setColor(COLOR_TECH_BLUE);
+                // Pure white bottom indicator
+                g2.setColor(COLOR_WHITE);
                 g2.fill(new RoundRectangle2D.Float(w / 4f, h - 3, w / 2f, 3, 3, 3));
             } else if (isHovered) {
-                g2.setColor(COLOR_HOVER_BG);
+                // Subtle translucent white pill on hover
+                g2.setColor(COLOR_NAV_HOVER_BG);
                 g2.fill(new RoundRectangle2D.Float(2, 4, w - 4, h - 8, 16, 16));
             }
 
@@ -1169,7 +1204,12 @@ public class Navbar extends JPanel {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-            Color strokeColor = active ? COLOR_PRO_BLUE : COLOR_TEXT_INACTIVE;
+            Color strokeColor;
+            if (c instanceof JMenuItem) {
+                strokeColor = COLOR_DEEP_NAVY;
+            } else {
+                strokeColor = active ? COLOR_NAV_TEXT_ACTIVE : COLOR_NAV_TEXT_BASE;
+            }
             g2.setColor(strokeColor);
 
             switch (type) {
@@ -1245,7 +1285,7 @@ public class Navbar extends JPanel {
         public void paintIcon(Component c, Graphics g, int x, int y) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(COLOR_TEXT_INACTIVE);
+            g2.setColor(COLOR_NAV_TEXT_BASE);
             g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
             Path2D path = new Path2D.Float();
