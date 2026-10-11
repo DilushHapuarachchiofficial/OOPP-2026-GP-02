@@ -12,8 +12,13 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.InputStream;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 /**
  * LecturerDashboard.java
@@ -102,6 +107,81 @@ public class LecturerDashboard extends JPanel {
     // Lecturer Identity Target
     private int targetLecturerId = -1;
     private String targetUsername = null;
+
+    // =========================================================================
+    // TECHNOLOGY BACKGROUND IMAGE MANAGEMENT
+    // =========================================================================
+    private static BufferedImage bgImage = null;
+    private static boolean bgImageChecked = false;
+
+    private static synchronized BufferedImage getDashboardBackgroundImage() {
+        if (!bgImageChecked) {
+            bgImageChecked = true;
+            String[] candidatePaths = {
+                "src/main/resources/images/dashboard_tech_bg.jpg",
+                "resources/images/dashboard_tech_bg.jpg",
+                "images/dashboard_tech_bg.jpg",
+                "OOP-2026-GP-02/src/main/resources/images/dashboard_tech_bg.jpg"
+            };
+            for (String p : candidatePaths) {
+                File f = new File(p);
+                if (f.exists()) {
+                    try {
+                        bgImage = ImageIO.read(f);
+                        if (bgImage != null) break;
+                    } catch (Exception ignored) {}
+                }
+            }
+            if (bgImage == null) {
+                try {
+                    InputStream is = LecturerDashboard.class.getResourceAsStream("/images/dashboard_tech_bg.jpg");
+                    if (is == null) {
+                        is = LecturerDashboard.class.getResourceAsStream("/dashboard_tech_bg.jpg");
+                    }
+                    if (is != null) {
+                        bgImage = ImageIO.read(is);
+                        is.close();
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        return bgImage;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+        int w = getWidth();
+        int h = getHeight();
+
+        BufferedImage bg = getDashboardBackgroundImage();
+        if (bg != null) {
+            // Draw technology background image scaled to cover panel
+            g2.drawImage(bg, 0, 0, w, h, null);
+
+            // Refined translucent gradient overlay keeping all cards and typography crystal clear
+            GradientPaint overlay = new GradientPaint(
+                0, 0, new Color(11, 31, 58, 140),
+                0, h, new Color(244, 247, 251, 220)
+            );
+            g2.setPaint(overlay);
+            g2.fillRect(0, 0, w, h);
+        } else {
+            // Fallback tech gradient if image is not present
+            GradientPaint fallback = new GradientPaint(
+                0, 0, new Color(236, 242, 250),
+                w, h, COLOR_PAGE_BG
+            );
+            g2.setPaint(fallback);
+            g2.fillRect(0, 0, w, h);
+        }
+
+        g2.dispose();
+    }
 
     // =========================================================================
     // CONSTRUCTORS
@@ -310,11 +390,27 @@ public class LecturerDashboard extends JPanel {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(COLOR_WHITE);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 14, 14));
-                g2.setColor(COLOR_BORDER);
+
+                int w = getWidth();
+                int h = getHeight();
+
+                // Frosted card background
+                g2.setColor(new Color(255, 255, 255, 245));
+                g2.fill(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 16, 16));
+
+                // Left 4px technology gradient stripe (Deep Navy to Cyber Cyan)
+                GradientPaint leftStripe = new GradientPaint(
+                        0, 0, new Color(11, 79, 156),
+                        0, h, new Color(6, 182, 212)
+                );
+                g2.setPaint(leftStripe);
+                g2.fill(new RoundRectangle2D.Float(0, 0, 4, h - 1, 4, 4));
+
+                // Border
+                g2.setColor(new Color(218, 228, 242));
                 g2.setStroke(new BasicStroke(1.0f));
-                g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 14, 14));
+                g2.draw(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 16, 16));
+
                 g2.dispose();
             }
 
@@ -326,7 +422,7 @@ public class LecturerDashboard extends JPanel {
 
         welcomeCard.setLayout(new BorderLayout(16, 0));
         welcomeCard.setOpaque(false);
-        welcomeCard.setBorder(new EmptyBorder(20, 24, 20, 24));
+        welcomeCard.setBorder(new EmptyBorder(18, 24, 18, 24));
         welcomeCard.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Text Content
@@ -334,18 +430,25 @@ public class LecturerDashboard extends JPanel {
         textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
         textPanel.setOpaque(false);
 
+        JLabel statusTag = new JLabel("● SYSTEM ACTIVE • FACULTY OF TECHNOLOGY ACADEMIC PORTAL");
+        statusTag.setFont(new Font("Segoe UI Semibold", Font.BOLD, 10));
+        statusTag.setForeground(new Color(2, 132, 199)); // #0284C7
+        statusTag.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         welcomeTitleLabel = new JLabel("Welcome back, —");
         welcomeTitleLabel.setFont(FONT_WELCOME_TITLE);
         welcomeTitleLabel.setForeground(COLOR_DEEP_NAVY);
         welcomeTitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel welcomeSubtitleLabel = new JLabel("Here's an overview of your teaching activities.");
+        JLabel welcomeSubtitleLabel = new JLabel("Overview of your active semester modules, student submissions, and resources.");
         welcomeSubtitleLabel.setFont(FONT_WELCOME_SUBTITLE);
         welcomeSubtitleLabel.setForeground(COLOR_TEXT_SECONDARY);
         welcomeSubtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        textPanel.add(welcomeTitleLabel);
+        textPanel.add(statusTag);
         textPanel.add(Box.createRigidArea(new Dimension(0, 4)));
+        textPanel.add(welcomeTitleLabel);
+        textPanel.add(Box.createRigidArea(new Dimension(0, 3)));
         textPanel.add(welcomeSubtitleLabel);
 
         // Right Department / Designation Badge
@@ -357,9 +460,9 @@ public class LecturerDashboard extends JPanel {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(235, 243, 254));
+                g2.setColor(new Color(238, 245, 255));
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 12, 12));
-                g2.setColor(new Color(200, 218, 242));
+                g2.setColor(new Color(186, 216, 255));
                 g2.setStroke(new BasicStroke(1.0f));
                 g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 12, 12));
                 g2.dispose();
@@ -367,8 +470,8 @@ public class LecturerDashboard extends JPanel {
             }
         };
         departmentBadgeLabel.setFont(FONT_DEPARTMENT_BADGE);
-        departmentBadgeLabel.setForeground(COLOR_PRO_BLUE);
-        departmentBadgeLabel.setBorder(new EmptyBorder(6, 14, 6, 14));
+        departmentBadgeLabel.setForeground(new Color(11, 79, 156));
+        departmentBadgeLabel.setBorder(new EmptyBorder(7, 16, 7, 16));
 
         badgePanel.add(departmentBadgeLabel);
 
@@ -379,32 +482,34 @@ public class LecturerDashboard extends JPanel {
     }
 
     // =========================================================================
-    // SECTION B: SUMMARY CARDS SECTION
+    // SECTION B: SUMMARY CARDS SECTION (Technology-Themed Visuals)
     // =========================================================================
     private JPanel createSummaryCardsSection() {
-        JPanel container = new JPanel(new GridLayout(1, 2, 20, 0));
+        JPanel container = new JPanel(new GridLayout(1, 2, 22, 0));
         container.setOpaque(false);
-        container.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
+        container.setMaximumSize(new Dimension(Integer.MAX_VALUE, 145));
         container.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Card 1: Assigned Courses
+        // Card 1: Assigned Courses (Tech Blue & Cyber Cyan theme)
         coursesCountLabel = new JLabel("—");
         JPanel card1 = createSummaryCard(
                 "Assigned Courses",
                 coursesCountLabel,
-                "Active semester courses",
-                DashboardVectorIcon.IconType.GRADUATION_CAP,
-                COLOR_PRO_BLUE
+                "Active semester teaching modules",
+                DashboardVectorIcon.IconType.TECH_COURSE_CIRCUIT,
+                new Color(11, 79, 156),  // #0B4F9C - Pro Blue
+                new Color(6, 182, 212)    // #06B6D4 - Cyber Cyan
         );
 
-        // Card 2: Uploaded Materials
+        // Card 2: Uploaded Materials (Electric Indigo & Tech Emerald theme)
         materialsCountLabel = new JLabel("—");
         JPanel card2 = createSummaryCard(
                 "Uploaded Materials",
                 materialsCountLabel,
-                "Published course resources",
-                DashboardVectorIcon.IconType.DOCUMENT_STACK,
-                COLOR_ACCENT_BLUE
+                "Cloud learning resources & guides",
+                DashboardVectorIcon.IconType.TECH_CLOUD_STORAGE,
+                new Color(79, 70, 229),  // #4F46E5 - Electric Indigo
+                new Color(16, 185, 129)   // #10B981 - Tech Emerald
         );
 
         container.add(card1);
@@ -414,7 +519,8 @@ public class LecturerDashboard extends JPanel {
     }
 
     private JPanel createSummaryCard(String labelText, JLabel countLabel, String subtitleText,
-                                     DashboardVectorIcon.IconType iconType, Color themeColor) {
+                                     DashboardVectorIcon.IconType iconType,
+                                     Color primaryColor, Color secondaryColor) {
         final boolean[] isHovered = {false};
 
         JPanel card = new JPanel() {
@@ -424,12 +530,25 @@ public class LecturerDashboard extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                g2.setColor(isHovered[0] ? COLOR_CARD_HOVER : COLOR_WHITE);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 14, 14));
+                int w = getWidth();
+                int h = getHeight();
 
-                g2.setColor(isHovered[0] ? themeColor : COLOR_BORDER);
-                g2.setStroke(new BasicStroke(isHovered[0] ? 1.5f : 1.0f));
-                g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 14, 14));
+                // Frosted card background
+                g2.setColor(isHovered[0] ? new Color(255, 255, 255, 255) : new Color(255, 255, 255, 245));
+                g2.fill(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 16, 16));
+
+                // Top 3px technology gradient accent line
+                GradientPaint topStripe = new GradientPaint(
+                        0, 0, primaryColor,
+                        w, 0, secondaryColor
+                );
+                g2.setPaint(topStripe);
+                g2.fill(new RoundRectangle2D.Float(0, 0, w - 1, 3, 16, 16));
+
+                // Border: subtle standard or illuminated on hover
+                g2.setColor(isHovered[0] ? primaryColor : new Color(220, 228, 238, 200));
+                g2.setStroke(new BasicStroke(isHovered[0] ? 1.8f : 1.0f));
+                g2.draw(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 16, 16));
 
                 g2.dispose();
             }
@@ -455,14 +574,35 @@ public class LecturerDashboard extends JPanel {
             }
         });
 
-        // Left Icon Badge
+        // Left Technology Icon Squircle Container
         JPanel iconContainer = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), 26));
-                g2.fill(new Ellipse2D.Float(0, 0, getWidth(), getHeight()));
+
+                int w = getWidth();
+                int h = getHeight();
+
+                // Technology dual-color gradient squircle fill
+                GradientPaint gp = new GradientPaint(
+                        0, 0, primaryColor,
+                        w, h, secondaryColor
+                );
+                g2.setPaint(gp);
+                g2.fill(new RoundRectangle2D.Float(2, 2, w - 4, h - 4, 18, 18));
+
+                // Outer glowing halo ring
+                g2.setColor(new Color(primaryColor.getRed(), primaryColor.getGreen(), primaryColor.getBlue(), isHovered[0] ? 150 : 70));
+                g2.setStroke(new BasicStroke(isHovered[0] ? 2.0f : 1.2f));
+                g2.draw(new RoundRectangle2D.Float(1, 1, w - 2, h - 2, 18, 18));
+
+                // Subtle circuit corner notch
+                g2.setColor(new Color(255, 255, 255, 80));
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawLine(7, 7, 13, 7);
+                g2.drawLine(7, 7, 7, 13);
+
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -473,10 +613,11 @@ public class LecturerDashboard extends JPanel {
         iconContainer.setMaximumSize(new Dimension(54, 54));
         iconContainer.setOpaque(false);
 
-        JLabel iconLabel = new JLabel(new DashboardVectorIcon(iconType, 26, 26, themeColor));
+        // Vector icon in crisp white
+        JLabel iconLabel = new JLabel(new DashboardVectorIcon(iconType, 26, 26, COLOR_WHITE));
         iconContainer.add(iconLabel);
 
-        // Center Text Panel
+        // Center Content Panel
         JPanel textPanel = new JPanel();
         textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
         textPanel.setOpaque(false);
@@ -496,7 +637,7 @@ public class LecturerDashboard extends JPanel {
         subLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         textPanel.add(titleLabel);
-        textPanel.add(Box.createRigidArea(new Dimension(0, 2)));
+        textPanel.add(Box.createRigidArea(new Dimension(0, 4)));
         textPanel.add(countLabel);
         textPanel.add(Box.createRigidArea(new Dimension(0, 2)));
         textPanel.add(subLabel);
@@ -624,17 +765,29 @@ public class LecturerDashboard extends JPanel {
     }
 
     private JPanel createNoticeCard(LecturerDashboardModel.NoticeItem item) {
+        final boolean[] isHovered = {false};
         JPanel card = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(COLOR_WHITE);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 12, 12));
-                g2.setColor(COLOR_BORDER);
-                g2.setStroke(new BasicStroke(1.0f));
-                g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 12, 12));
+
+                int w = getWidth();
+                int h = getHeight();
+
+                g2.setColor(isHovered[0] ? new Color(255, 255, 255, 255) : new Color(255, 255, 255, 245));
+                g2.fill(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 14, 14));
+
+                // Left 4px accent stripe: Deep navy for Lecturers, Cyber Cyan for All
+                String aud = (item != null && item.getTargetAudience() != null) ? item.getTargetAudience() : "All";
+                Color accent = "Lecturers".equalsIgnoreCase(aud) ? new Color(11, 79, 156) : new Color(2, 132, 199);
+                g2.setColor(accent);
+                g2.fill(new RoundRectangle2D.Float(0, 0, 4, h - 1, 4, 4));
+
+                g2.setColor(isHovered[0] ? accent : new Color(220, 228, 238, 200));
+                g2.setStroke(new BasicStroke(isHovered[0] ? 1.5f : 1.0f));
+                g2.draw(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 14, 14));
                 g2.dispose();
             }
 
@@ -649,6 +802,21 @@ public class LecturerDashboard extends JPanel {
         card.setOpaque(false);
         card.setBorder(new EmptyBorder(16, 20, 16, 20));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                isHovered[0] = true;
+                card.repaint();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                isHovered[0] = false;
+                card.repaint();
+            }
+        });
 
         // Left Pin Indicator
         JPanel pinPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
@@ -958,6 +1126,8 @@ public class LecturerDashboard extends JPanel {
         public enum IconType {
             GRADUATION_CAP,
             DOCUMENT_STACK,
+            TECH_COURSE_CIRCUIT,
+            TECH_CLOUD_STORAGE,
             PIN,
             ERROR_ALERT,
             LOCK
@@ -994,6 +1164,12 @@ public class LecturerDashboard extends JPanel {
                 case DOCUMENT_STACK:
                     drawDocumentStack(g2);
                     break;
+                case TECH_COURSE_CIRCUIT:
+                    drawTechCourseCircuit(g2);
+                    break;
+                case TECH_CLOUD_STORAGE:
+                    drawTechCloudStorage(g2);
+                    break;
                 case PIN:
                     drawPin(g2);
                     break;
@@ -1006,6 +1182,76 @@ public class LecturerDashboard extends JPanel {
             }
 
             g2.dispose();
+        }
+
+        private void drawTechCourseCircuit(Graphics2D g2) {
+            g2.setStroke(new BasicStroke(1.7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            // Central microchip processor body
+            g2.drawRoundRect(6, 6, 12, 12, 3, 3);
+            g2.setColor(new Color(255, 255, 255, 60));
+            g2.fillRoundRect(7, 7, 10, 10, 2, 2);
+            g2.setColor(color);
+
+            // Inner code symbol < / >
+            g2.drawLine(9, 10, 8, 12);
+            g2.drawLine(8, 12, 9, 14); // <
+            g2.drawLine(15, 10, 16, 12);
+            g2.drawLine(16, 12, 15, 14); // >
+            g2.drawLine(11, 14, 13, 10); // /
+
+            // External circuit bus pins extending to nodes
+            // Top pins
+            g2.drawLine(9, 6, 9, 2);
+            g2.drawLine(15, 6, 15, 2);
+            g2.fillOval(8, 1, 3, 3);
+            g2.fillOval(14, 1, 3, 3);
+
+            // Bottom pins
+            g2.drawLine(9, 18, 9, 22);
+            g2.drawLine(15, 18, 15, 22);
+            g2.fillOval(8, 21, 3, 3);
+            g2.fillOval(14, 21, 3, 3);
+
+            // Left & Right pins
+            g2.drawLine(6, 9, 2, 9);
+            g2.drawLine(6, 15, 2, 15);
+            g2.fillOval(1, 8, 3, 3);
+            g2.fillOval(1, 14, 3, 3);
+
+            g2.drawLine(18, 9, 22, 9);
+            g2.drawLine(18, 15, 22, 15);
+            g2.fillOval(21, 8, 3, 3);
+            g2.fillOval(21, 14, 3, 3);
+        }
+
+        private void drawTechCloudStorage(Graphics2D g2) {
+            g2.setStroke(new BasicStroke(1.7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            // Cloud base structure
+            Path2D.Float cloud = new Path2D.Float();
+            cloud.moveTo(6, 15);
+            cloud.curveTo(3, 15, 2, 12, 5, 10);
+            cloud.curveTo(4, 6, 10, 5, 12, 7);
+            cloud.curveTo(14, 4, 20, 6, 19, 10);
+            cloud.curveTo(22, 11, 22, 15, 18, 15);
+            cloud.closePath();
+            g2.draw(cloud);
+
+            g2.setColor(new Color(255, 255, 255, 50));
+            g2.fill(cloud);
+            g2.setColor(color);
+
+            // Upload sync arrow
+            g2.drawLine(12, 17, 12, 10);
+            g2.drawLine(12, 10, 9, 13);
+            g2.drawLine(12, 10, 15, 13);
+
+            // Base server data bus track with circuit nodes
+            g2.drawLine(5, 20, 19, 20);
+            g2.fillOval(4, 19, 3, 3);
+            g2.fillOval(11, 19, 3, 3);
+            g2.fillOval(18, 19, 3, 3);
         }
 
         private void drawGraduationCap(Graphics2D g2) {
