@@ -1338,12 +1338,9 @@ public class LecturerDashboard extends JPanel {
             LecturerDashboard dashboard = new LecturerDashboard();
             contentPanel.add(dashboard, Navbar.PAGE_DASHBOARD);
 
-            // Placeholder modules for single-window navigation
-            contentPanel.add(createModulePlaceholder(
-                    "Course Materials",
-                    "Manage course syllabus, upload lecture notes, lab sheets, and student reference guides.",
-                    navbar, cardLayout, contentPanel
-            ), Navbar.PAGE_MATERIALS);
+            // 2. Live Course Materials Management Module
+            CourseMaterials materials = new CourseMaterials(navbar, cardLayout, contentPanel);
+            contentPanel.add(materials, Navbar.PAGE_MATERIALS);
 
             contentPanel.add(createModulePlaceholder(
                     "Student Eligibility",
@@ -1368,6 +1365,8 @@ public class LecturerDashboard extends JPanel {
                 cardLayout.show(contentPanel, pageName);
                 if (Navbar.PAGE_DASHBOARD.equals(pageName)) {
                     dashboard.refreshDashboard();
+                } else if (Navbar.PAGE_MATERIALS.equals(pageName)) {
+                    materials.refreshMaterials();
                 }
             });
 
