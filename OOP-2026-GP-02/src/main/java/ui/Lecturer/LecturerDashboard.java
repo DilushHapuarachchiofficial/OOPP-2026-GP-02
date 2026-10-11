@@ -215,8 +215,16 @@ public class LecturerDashboard extends JPanel {
             @Override
             protected void done() {
                 if (isCancelled()) return;
+                int currentId = resolveLecturerId();
+                if (currentId <= 0 && targetUsername == null) {
+                    cardLayout.show(stateContainer, VIEW_UNAUTHENTICATED);
+                    return;
+                }
                 try {
                     LecturerDashboardModel model = get();
+                    if (targetLecturerId > 0 && model.getLecturerId() != targetLecturerId) {
+                        return; // Discard stale background result for different lecturer
+                    }
                     applyModelToUI(model);
                     cardLayout.show(stateContainer, VIEW_SUCCESS);
                 } catch (Exception e) {
@@ -248,9 +256,14 @@ public class LecturerDashboard extends JPanel {
      * Switches to the Error View and displays the exact database diagnostic message.
      */
     private void showErrorState(String message) {
-        String displayMsg = (message != null && !message.trim().isEmpty())
-                ? message
-                : "Unable to establish connection to TecFAMS MySQL database. Please verify that MySQL is running on localhost:3306.";
+        String displayMsg;
+        if (message == null || message.trim().isEmpty()) {
+            displayMsg = "Unable to establish connection to TecFAMS MySQL database. Please verify that MySQL is running on localhost:3306.";
+        } else if (message.toLowerCase().contains("password") || message.toLowerCase().contains("access denied")) {
+            displayMsg = "Database access denied. Please verify MySQL configuration and user privileges.";
+        } else {
+            displayMsg = message;
+        }
         errorDetailsArea.setText(displayMsg);
         cardLayout.show(stateContainer, VIEW_ERROR);
     }
@@ -304,12 +317,16 @@ public class LecturerDashboard extends JPanel {
                 g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 14, 14));
                 g2.dispose();
             }
+
+            @Override
+            public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
         };
 
         welcomeCard.setLayout(new BorderLayout(16, 0));
         welcomeCard.setOpaque(false);
         welcomeCard.setBorder(new EmptyBorder(20, 24, 20, 24));
-        welcomeCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
         welcomeCard.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Text Content
@@ -620,12 +637,17 @@ public class LecturerDashboard extends JPanel {
                 g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 12, 12));
                 g2.dispose();
             }
+
+            @Override
+            public Dimension getMaximumSize() {
+                Dimension pref = getPreferredSize();
+                return new Dimension(Integer.MAX_VALUE, Math.max(pref.height, 100));
+            }
         };
 
         card.setLayout(new BorderLayout(14, 0));
         card.setOpaque(false);
         card.setBorder(new EmptyBorder(16, 20, 16, 20));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Left Pin Indicator
@@ -639,12 +661,14 @@ public class LecturerDashboard extends JPanel {
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         centerPanel.setOpaque(false);
 
-        JLabel titleLabel = new JLabel(item.getTitle());
+        String rawTitle = (item != null && item.getTitle() != null) ? item.getTitle() : "Notice";
+        JLabel titleLabel = new JLabel(rawTitle);
         titleLabel.setFont(FONT_NOTICE_TITLE);
         titleLabel.setForeground(COLOR_DEEP_NAVY);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel descLabel = new JLabel("<html><p style='width:650px;'>" + escapeHtml(item.getDescription()) + "</p></html>");
+        String rawDesc = (item != null && item.getDescription() != null) ? item.getDescription() : "";
+        JLabel descLabel = new JLabel("<html><body style='width:650px;'>" + escapeHtml(rawDesc) + "</body></html>");
         descLabel.setFont(FONT_NOTICE_DESC);
         descLabel.setForeground(COLOR_TEXT_SECONDARY);
         descLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -654,12 +678,13 @@ public class LecturerDashboard extends JPanel {
         metaPanel.setOpaque(false);
         metaPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        String dateStr = (item.getPublishedDate() != null) ? item.getPublishedDate() : "Recently";
+        String dateStr = (item != null) ? formatNoticeDate(item.getPublishedDate()) : "Recently";
         JLabel dateLabel = new JLabel("Published: " + dateStr);
         dateLabel.setFont(FONT_NOTICE_DATE);
         dateLabel.setForeground(COLOR_TEXT_MUTED);
 
-        JLabel audienceBadge = new JLabel(item.getTargetAudience()) {
+        String audienceText = (item != null && item.getTargetAudience() != null) ? item.getTargetAudience() : "All";
+        JLabel audienceBadge = new JLabel(audienceText) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -687,6 +712,30 @@ public class LecturerDashboard extends JPanel {
         card.add(centerPanel, BorderLayout.CENTER);
 
         return card;
+    }
+
+    /**
+     * Formats database datetime strings (yyyy-MM-dd HH:mm:ss) into human-readable format (MMM dd, yyyy).
+     */
+    private String formatNoticeDate(String rawDate) {
+        if (rawDate == null || rawDate.trim().isEmpty()) {
+            return "Recently";
+        }
+        try {
+            java.text.SimpleDateFormat inFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            java.util.Date parsed = inFormat.parse(rawDate.trim());
+            java.text.SimpleDateFormat outFormat = new java.text.SimpleDateFormat("MMM dd, yyyy");
+            return outFormat.format(parsed);
+        } catch (Exception e1) {
+            try {
+                java.text.SimpleDateFormat inFormat2 = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                java.util.Date parsed = inFormat2.parse(rawDate.trim());
+                java.text.SimpleDateFormat outFormat = new java.text.SimpleDateFormat("MMM dd, yyyy");
+                return outFormat.format(parsed);
+            } catch (Exception e2) {
+                return rawDate;
+            }
+        }
     }
 
     // =========================================================================
@@ -1028,7 +1077,7 @@ public class LecturerDashboard extends JPanel {
         ));
 
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("TecFAMS - Lecturer Portal (Part 2 Database Verification)");
+            JFrame frame = new JFrame("TecFAMS - Lecturer Portal (Part 3 Integration Verification)");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1100, 720);
             frame.setLayout(new BorderLayout());
@@ -1036,14 +1085,110 @@ public class LecturerDashboard extends JPanel {
             // 1. Existing Navbar
             Navbar navbar = new Navbar(Navbar.PAGE_DASHBOARD);
 
-            // 2. Database-backed Lecturer Dashboard
+            // 2. Shared Container with CardLayout
+            CardLayout cardLayout = new CardLayout();
+            JPanel contentPanel = new JPanel(cardLayout);
+
             LecturerDashboard dashboard = new LecturerDashboard();
+            contentPanel.add(dashboard, Navbar.PAGE_DASHBOARD);
+
+            // Placeholder modules for single-window navigation
+            contentPanel.add(createModulePlaceholder(
+                    "Course Materials",
+                    "Manage course syllabus, upload lecture notes, lab sheets, and student reference guides.",
+                    navbar, cardLayout, contentPanel
+            ), Navbar.PAGE_MATERIALS);
+
+            contentPanel.add(createModulePlaceholder(
+                    "Student Eligibility",
+                    "Review attendance thresholds (80% criteria), continuous assessment requirements, and exam admissions.",
+                    navbar, cardLayout, contentPanel
+            ), Navbar.PAGE_ELIGIBILITY);
+
+            contentPanel.add(createModulePlaceholder(
+                    "Marks Management",
+                    "Enter, calculate, and publish continuous assessment and end-of-semester exam marks.",
+                    navbar, cardLayout, contentPanel
+            ), Navbar.PAGE_MARKS);
+
+            contentPanel.add(createModulePlaceholder(
+                    "My Profile",
+                    "View and update your academic designations, department affiliations, and contact credentials.",
+                    navbar, cardLayout, contentPanel
+            ), Navbar.PAGE_PROFILE);
+
+            // Wire Navigation Listener to switch views in the same window
+            navbar.addNavigationListener(pageName -> {
+                cardLayout.show(contentPanel, pageName);
+                if (Navbar.PAGE_DASHBOARD.equals(pageName)) {
+                    dashboard.refreshDashboard();
+                }
+            });
+
+            // Wire Logout Listener
+            navbar.addLogoutListener(UserSession::clearSession);
 
             frame.add(navbar, BorderLayout.NORTH);
-            frame.add(dashboard, BorderLayout.CENTER);
+            frame.add(contentPanel, BorderLayout.CENTER);
 
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
+    }
+
+    private static JPanel createModulePlaceholder(
+            String title, String description,
+            Navbar navbar, CardLayout layout, JPanel container) {
+
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(COLOR_PAGE_BG);
+
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(COLOR_WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_BORDER, 1),
+                BorderFactory.createEmptyBorder(36, 44, 36, 44)
+        ));
+        card.setPreferredSize(new Dimension(580, 260));
+
+        JLabel titleLbl = new JLabel(title);
+        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titleLbl.setForeground(COLOR_DEEP_NAVY);
+        titleLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel descLbl = new JLabel("<html><center style='width:450px;'>" + description + "</center></html>");
+        descLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        descLbl.setForeground(COLOR_TEXT_SECONDARY);
+        descLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel statusBadge = new JLabel("Module Under Active Development");
+        statusBadge.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 11));
+        statusBadge.setForeground(COLOR_PRO_BLUE);
+        statusBadge.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JButton returnBtn = new JButton("← Return to Dashboard");
+        returnBtn.setFont(FONT_BUTTON);
+        returnBtn.setForeground(COLOR_WHITE);
+        returnBtn.setBackground(COLOR_PRO_BLUE);
+        returnBtn.setFocusPainted(false);
+        returnBtn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        returnBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        returnBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        returnBtn.addActionListener(e -> {
+            navbar.setActivePage(Navbar.PAGE_DASHBOARD);
+            layout.show(container, Navbar.PAGE_DASHBOARD);
+        });
+
+        card.add(titleLbl);
+        card.add(Box.createRigidArea(new Dimension(0, 10)));
+        card.add(descLbl);
+        card.add(Box.createRigidArea(new Dimension(0, 14)));
+        card.add(statusBadge);
+        card.add(Box.createRigidArea(new Dimension(0, 22)));
+        card.add(returnBtn);
+
+        panel.add(card);
+        return panel;
     }
 }

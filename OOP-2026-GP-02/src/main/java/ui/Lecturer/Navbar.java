@@ -663,6 +663,11 @@ public class Navbar extends JPanel {
         );
 
         if (choice == JOptionPane.YES_OPTION) {
+            // Invalidate active session
+            try {
+                main.java.model.UserSession.clearSession();
+            } catch (Exception ignored) {}
+
             // Alert registered logout listeners
             for (LogoutListener listener : logoutListeners) {
                 listener.onLogout();

@@ -246,13 +246,114 @@ public class LoginLogic {
             String initials = getInitialsFromName(name);
 
             main.java.ui.Lecturer.Navbar navbar = new main.java.ui.Lecturer.Navbar(name, initials, main.java.ui.Lecturer.Navbar.PAGE_DASHBOARD);
+
+            // Central CardLayout content panel
+            java.awt.CardLayout contentCards = new java.awt.CardLayout();
+            javax.swing.JPanel mainContent = new javax.swing.JPanel(contentCards);
+
+            // 1. Live Database Lecturer Dashboard
             main.java.ui.Lecturer.LecturerDashboard dashboard = new main.java.ui.Lecturer.LecturerDashboard();
+            mainContent.add(dashboard, main.java.ui.Lecturer.Navbar.PAGE_DASHBOARD);
+
+            // 2. Additional Navigation Modules (Placeholder panels ensuring single-window routing)
+            mainContent.add(createLecturerModulePlaceholder(
+                    "Course Materials",
+                    "Manage course syllabus, upload lecture notes, lab sheets, and student reference guides.",
+                    navbar, contentCards, mainContent
+            ), main.java.ui.Lecturer.Navbar.PAGE_MATERIALS);
+
+            mainContent.add(createLecturerModulePlaceholder(
+                    "Student Eligibility",
+                    "Review attendance thresholds (80% criteria), continuous assessment requirements, and exam admissions.",
+                    navbar, contentCards, mainContent
+            ), main.java.ui.Lecturer.Navbar.PAGE_ELIGIBILITY);
+
+            mainContent.add(createLecturerModulePlaceholder(
+                    "Marks Management",
+                    "Enter, calculate, and publish continuous assessment and end-of-semester exam marks.",
+                    navbar, contentCards, mainContent
+            ), main.java.ui.Lecturer.Navbar.PAGE_MARKS);
+
+            mainContent.add(createLecturerModulePlaceholder(
+                    "My Profile",
+                    "View and update your academic designations, department affiliations, and contact credentials.",
+                    navbar, contentCards, mainContent
+            ), main.java.ui.Lecturer.Navbar.PAGE_PROFILE);
+
+            // Wire Navigation Listener: Smooth switching in same window without duplicate frames
+            navbar.addNavigationListener(pageName -> {
+                contentCards.show(mainContent, pageName);
+                if (main.java.ui.Lecturer.Navbar.PAGE_DASHBOARD.equals(pageName)) {
+                    dashboard.refreshDashboard();
+                }
+            });
+
+            // Wire Logout Listener
+            navbar.addLogoutListener(UserSession::clearSession);
 
             frame.add(navbar, java.awt.BorderLayout.NORTH);
-            frame.add(dashboard, java.awt.BorderLayout.CENTER);
+            frame.add(mainContent, java.awt.BorderLayout.CENTER);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
+    }
+
+    private static javax.swing.JPanel createLecturerModulePlaceholder(
+            String title, String description,
+            main.java.ui.Lecturer.Navbar navbar,
+            java.awt.CardLayout cardLayout,
+            javax.swing.JPanel container) {
+
+        javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.GridBagLayout());
+        panel.setBackground(new java.awt.Color(244, 247, 251)); // #F4F7FB
+
+        javax.swing.JPanel card = new javax.swing.JPanel();
+        card.setLayout(new javax.swing.BoxLayout(card, javax.swing.BoxLayout.Y_AXIS));
+        card.setBackground(java.awt.Color.WHITE);
+        card.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(220, 228, 238), 1),
+                javax.swing.BorderFactory.createEmptyBorder(36, 44, 36, 44)
+        ));
+        card.setPreferredSize(new java.awt.Dimension(580, 260));
+
+        javax.swing.JLabel titleLbl = new javax.swing.JLabel(title);
+        titleLbl.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 20));
+        titleLbl.setForeground(new java.awt.Color(8, 47, 90));
+        titleLbl.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+
+        javax.swing.JLabel descLbl = new javax.swing.JLabel("<html><center style='width:450px;'>" + description + "</center></html>");
+        descLbl.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13));
+        descLbl.setForeground(new java.awt.Color(100, 116, 139));
+        descLbl.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+
+        javax.swing.JLabel statusBadge = new javax.swing.JLabel("Module Under Active Development");
+        statusBadge.setFont(new java.awt.Font("Segoe UI Semibold", java.awt.Font.PLAIN, 11));
+        statusBadge.setForeground(new java.awt.Color(11, 79, 156));
+        statusBadge.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+
+        javax.swing.JButton returnBtn = new javax.swing.JButton("← Return to Dashboard");
+        returnBtn.setFont(new java.awt.Font("Segoe UI Semibold", java.awt.Font.PLAIN, 13));
+        returnBtn.setForeground(java.awt.Color.WHITE);
+        returnBtn.setBackground(new java.awt.Color(11, 79, 156));
+        returnBtn.setFocusPainted(false);
+        returnBtn.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        returnBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        returnBtn.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        returnBtn.addActionListener(e -> {
+            navbar.setActivePage(main.java.ui.Lecturer.Navbar.PAGE_DASHBOARD);
+            cardLayout.show(container, main.java.ui.Lecturer.Navbar.PAGE_DASHBOARD);
+        });
+
+        card.add(titleLbl);
+        card.add(javax.swing.Box.createRigidArea(new java.awt.Dimension(0, 10)));
+        card.add(descLbl);
+        card.add(javax.swing.Box.createRigidArea(new java.awt.Dimension(0, 14)));
+        card.add(statusBadge);
+        card.add(javax.swing.Box.createRigidArea(new java.awt.Dimension(0, 22)));
+        card.add(returnBtn);
+
+        panel.add(card);
+        return panel;
     }
 
     private static String getInitialsFromName(String name) {
