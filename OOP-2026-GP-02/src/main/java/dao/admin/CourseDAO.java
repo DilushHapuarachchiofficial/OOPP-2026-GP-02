@@ -34,6 +34,54 @@ public class CourseDAO {
         return courses;
     }
 
+    public static List<Course> getCoursesByFilter(Integer departmentId, Integer academicYear, Integer semester) {
+        List<Course> courses = new ArrayList<>();
+        StringBuilder query = new StringBuilder("SELECT * FROM courses WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (academicYear != null && academicYear > 0) {
+            query.append(" AND academic_year = ?");
+            params.add(academicYear);
+        }
+        if (semester != null && semester > 0) {
+            query.append(" AND semester = ?");
+            params.add(semester);
+        }
+        if (departmentId != null && departmentId > 0) {
+            // Also allow department 4 (multidisciplinary) courses if applicable
+            query.append(" AND (department_id = ? OR department_id = 4)");
+            params.add(departmentId);
+        }
+        query.append(" ORDER BY course_code ASC");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query.toString())) {
+             
+            for (int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Course course = new Course(
+                        rs.getInt("course_id"),
+                        rs.getInt("department_id"),
+                        rs.getString("course_code"),
+                        rs.getString("course_name"),
+                        rs.getInt("credit"),
+                        rs.getString("course_type"),
+                        rs.getInt("semester"),
+                        rs.getInt("academic_year")
+                    );
+                    courses.add(course);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return courses;
+    }
+
     public static boolean addCourse(int departmentId, String courseCode, String courseName, int credit, String courseType, int semester, int academicYear, String materialPath) {
         String nextCourseIdQuery = "SELECT COALESCE(MAX(course_id), 0) + 1 FROM courses";
         String nextMatIdQuery = "SELECT COALESCE(MAX(material_id), 0) + 1 FROM course_materials";

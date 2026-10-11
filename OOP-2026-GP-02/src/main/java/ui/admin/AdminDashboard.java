@@ -18,6 +18,12 @@ public class AdminDashboard extends JFrame {
         initUI();
     }
 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new AdminDashboard().setVisible(true);
+        });
+    }
+
     private void initUI() {
         setLayout(new BorderLayout());
 
@@ -155,7 +161,7 @@ public class AdminDashboard extends JFrame {
         JPanel profileTexts = new JPanel();
         profileTexts.setLayout(new BoxLayout(profileTexts, BoxLayout.Y_AXIS));
         profileTexts.setOpaque(false);
-        JLabel pName = new JLabel("Admin User");
+        JLabel pName = new JLabel("Admin");
         pName.setFont(new Font("Segoe UI", Font.BOLD, 14));
         JLabel pRole = new JLabel("Administrator");
         pRole.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -176,6 +182,10 @@ public class AdminDashboard extends JFrame {
 
         JMenuItem settingsItem = new JMenuItem("  Profile Settings");
         JMenuItem logoutItem = new JMenuItem("  Logout");
+
+        settingsItem.addActionListener(e -> {
+            cardLayout.show(cardPanel, "Profile");
+        });
 
         logoutItem.addActionListener(e -> {
             this.dispose();

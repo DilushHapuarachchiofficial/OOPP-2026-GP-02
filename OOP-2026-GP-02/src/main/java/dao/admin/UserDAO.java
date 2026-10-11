@@ -201,4 +201,76 @@ public class UserDAO {
             return false;
         }
     }
+
+    public static main.java.model.admin.Admin getAdminProfile(int adminId) {
+        String query = 
+            "SELECT a.admin_id, a.name, a.email, a.phone, a.address, u.username, u.role, u.status " +
+            "FROM admins a " +
+            "JOIN users u ON a.admin_id = u.user_id " +
+            "WHERE a.admin_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, adminId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new main.java.model.admin.Admin(
+                        rs.getInt("admin_id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("role"),
+                        rs.getString("email"),
+                        rs.getString("status"),
+                        rs.getString("phone"),
+                        rs.getString("address")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static boolean updateAdminProfile(int adminId, String name, String email, String phone, String address) {
+        String query = "UPDATE admins SET name = ?, email = ?, phone = ?, address = ? WHERE admin_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, name);
+            stmt.setString(2, email);
+            stmt.setString(3, phone);
+            stmt.setString(4, address);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean changeUserPassword(int userId, String oldPassword, String newPassword) {
+        String checkQuery = "SELECT password_hash FROM users WHERE user_id = ?";
+        String updateQuery = "UPDATE users SET password_hash = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            try (PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
+                checkStmt.setInt(1, userId);
+                try (ResultSet rs = checkStmt.executeQuery()) {
+                    if (rs.next()) {
+                        String currentPass = rs.getString("password_hash");
+                        if (!currentPass.equals(oldPassword)) {
+                            return false; // Old password doesn't match
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+            }
+            try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+                updateStmt.setString(1, newPassword);
+                updateStmt.setInt(2, userId);
+                return updateStmt.executeUpdate() > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
