@@ -255,12 +255,9 @@ public class LoginLogic {
             main.java.ui.Lecturer.LecturerDashboard dashboard = new main.java.ui.Lecturer.LecturerDashboard();
             mainContent.add(dashboard, main.java.ui.Lecturer.Navbar.PAGE_DASHBOARD);
 
-            // 2. Additional Navigation Modules (Placeholder panels ensuring single-window routing)
-            mainContent.add(createLecturerModulePlaceholder(
-                    "Course Materials",
-                    "Manage course syllabus, upload lecture notes, lab sheets, and student reference guides.",
-                    navbar, contentCards, mainContent
-            ), main.java.ui.Lecturer.Navbar.PAGE_MATERIALS);
+            // 2. Course Materials Module
+            main.java.ui.Lecturer.CourseMaterials materials = new main.java.ui.Lecturer.CourseMaterials(navbar, contentCards, mainContent);
+            mainContent.add(materials, main.java.ui.Lecturer.Navbar.PAGE_MATERIALS);
 
             mainContent.add(createLecturerModulePlaceholder(
                     "Student Eligibility",
@@ -285,6 +282,8 @@ public class LoginLogic {
                 contentCards.show(mainContent, pageName);
                 if (main.java.ui.Lecturer.Navbar.PAGE_DASHBOARD.equals(pageName)) {
                     dashboard.refreshDashboard();
+                } else if (main.java.ui.Lecturer.Navbar.PAGE_MATERIALS.equals(pageName)) {
+                    materials.refreshMaterials();
                 }
             });
 
