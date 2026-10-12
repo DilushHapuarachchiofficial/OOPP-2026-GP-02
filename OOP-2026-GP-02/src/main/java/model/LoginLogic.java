@@ -259,11 +259,9 @@ public class LoginLogic {
             main.java.ui.Lecturer.CourseMaterials materials = new main.java.ui.Lecturer.CourseMaterials(navbar, contentCards, mainContent);
             mainContent.add(materials, main.java.ui.Lecturer.Navbar.PAGE_MATERIALS);
 
-            mainContent.add(createLecturerModulePlaceholder(
-                    "Student Eligibility",
-                    "Review attendance thresholds (80% criteria), continuous assessment requirements, and exam admissions.",
-                    navbar, contentCards, mainContent
-            ), main.java.ui.Lecturer.Navbar.PAGE_ELIGIBILITY);
+            // 3. Student Details & Eligibility Module
+            main.java.ui.Lecturer.StudentDetailsEligibility eligibility = new main.java.ui.Lecturer.StudentDetailsEligibility(navbar, contentCards, mainContent);
+            mainContent.add(eligibility, main.java.ui.Lecturer.Navbar.PAGE_ELIGIBILITY);
 
             mainContent.add(createLecturerModulePlaceholder(
                     "Marks Management",
@@ -284,6 +282,8 @@ public class LoginLogic {
                     dashboard.refreshDashboard();
                 } else if (main.java.ui.Lecturer.Navbar.PAGE_MATERIALS.equals(pageName)) {
                     materials.refreshMaterials();
+                } else if (main.java.ui.Lecturer.Navbar.PAGE_ELIGIBILITY.equals(pageName)) {
+                    eligibility.refreshData();
                 }
             });
 
