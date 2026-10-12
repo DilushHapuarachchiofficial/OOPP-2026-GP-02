@@ -30,16 +30,25 @@ public class TimetableManagementPanel extends JPanel {
     private JPanel gridContainer;
     private JPanel tablePanel;
 
-    // Days and standard time slots
+    // 5 Days (Monday - Friday)
     private static final String[] DAYS = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
+
+    // Hourly ordered time slots from 8:00 to 19:00 (11 slots: 8-9, 9-10, ... 18-19)
     private static final String[] TIME_SLOTS = {
-        "8:00 - 10:00",
-        "10:00 - 12:00",
-        "12:00 - 14:00",
-        "14:00 - 16:00"
+        "8:00 - 9:00",
+        "9:00 - 10:00",
+        "10:00 - 11:00",
+        "11:00 - 12:00",
+        "12:00 - 13:00",
+        "13:00 - 14:00",
+        "14:00 - 15:00",
+        "15:00 - 16:00",
+        "16:00 - 17:00",
+        "17:00 - 18:00",
+        "18:00 - 19:00"
     };
 
-    // Loaded entries for current filters
+    // Current state
     private List<TimetableEntry> currentEntries = new ArrayList<>();
 
     // --- FORM VIEW COMPONENTS ---
@@ -78,7 +87,7 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     // =========================================================================
-    // 1. TIMETABLE VIEW (PREVIEW GRID & FILTER BAR)
+    // 1. TIMETABLE VIEW (HOURLY 8-19 GRID WITH VERTICAL SCROLLBAR)
     // =========================================================================
 
     private void buildTimetablePanel() {
@@ -188,12 +197,12 @@ public class TimetableManagementPanel extends JPanel {
         centerWrapper.setOpaque(false);
         centerWrapper.setBorder(new EmptyBorder(0, 30, 24, 30));
 
-        // Rounded white card containing grid + bottom legend
+        // Rounded white card container
         gridContainer = new JPanel(new BorderLayout(0, 16));
         gridContainer.setBackground(Color.WHITE);
         gridContainer.setBorder(BorderFactory.createCompoundBorder(
             new RoundedBorder(new Color(228, 232, 239), 18, 1),
-            new EmptyBorder(22, 24, 18, 24)
+            new EmptyBorder(18, 20, 18, 20)
         ));
 
         // Inner table grid with continuous grid lines
@@ -208,9 +217,9 @@ public class TimetableManagementPanel extends JPanel {
                 int w = getWidth();
                 int h = getHeight();
 
-                // Row lines (5 rows: header + 4 slots)
-                int rowH = h / 5;
-                for (int r = 1; r < 5; r++) {
+                int totalRows = TIME_SLOTS.length + 1; // 1 header row + 11 hourly slot rows
+                int rowH = h / totalRows;
+                for (int r = 1; r < totalRows; r++) {
                     int y = r * rowH;
                     g2.drawLine(0, y, w, y);
                 }
@@ -227,9 +236,27 @@ public class TimetableManagementPanel extends JPanel {
         };
         tablePanel.setOpaque(true);
         tablePanel.setBackground(Color.WHITE);
-        tablePanel.setLayout(new GridLayout(5, 6, 0, 0));
+        tablePanel.setLayout(new GridLayout(TIME_SLOTS.length + 1, 6, 0, 0));
 
-        gridContainer.add(tablePanel, BorderLayout.CENTER);
+        // Set generous preferred size so all 11 hourly rows have plenty of breathing room (82px per row)
+        int totalHeight = (TIME_SLOTS.length + 1) * 82;
+        tablePanel.setPreferredSize(new Dimension(860, totalHeight));
+
+        // Smooth vertical scroll pane for the grid
+        JScrollPane gridScrollPane = new JScrollPane(tablePanel);
+        gridScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        gridScrollPane.setOpaque(false);
+        gridScrollPane.getViewport().setOpaque(false);
+        gridScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        gridScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        gridScrollPane.getVerticalScrollBar().setUnitIncrement(24);
+
+        // Modern UI for grid vertical scrollbar
+        JScrollBar vBar = gridScrollPane.getVerticalScrollBar();
+        vBar.setPreferredSize(new Dimension(8, Integer.MAX_VALUE));
+        vBar.setUI(new ModernScrollBarUI());
+
+        gridContainer.add(gridScrollPane, BorderLayout.CENTER);
 
         // Bottom Legend Section
         JPanel legendPanel = createLegendPanel();
@@ -245,9 +272,10 @@ public class TimetableManagementPanel extends JPanel {
         legend.setBorder(new EmptyBorder(8, 4, 4, 4));
 
         legend.add(createLegendItem("Lecture", new Color(37, 99, 235)));   // Blue
-        legend.add(createLegendItem("Lab", new Color(16, 185, 129)));      // Green
-        legend.add(createLegendItem("Tutorial", new Color(245, 158, 11))); // Orange
-        legend.add(createLegendItem("Other", new Color(192, 132, 252)));   // Pink/Purple
+        legend.add(createLegendItem("Practical", new Color(16, 185, 129))); // Mint Green
+        legend.add(createLegendItem("Lab", new Color(16, 185, 129)));       // Mint Green
+        legend.add(createLegendItem("Tutorial", new Color(245, 158, 11)));  // Orange / Peach
+        legend.add(createLegendItem("Other", new Color(192, 132, 252)));    // Pink / Purple
 
         return legend;
     }
@@ -278,10 +306,6 @@ public class TimetableManagementPanel extends JPanel {
         return item;
     }
 
-    /**
-     * Loads entries based on department, academic year (level), and semester filters.
-     * When level == 0, loads entries across all levels.
-     */
     private void loadTimetableForSelectedFilters() {
         DepartmentItem selDept = (DepartmentItem) deptCombo.getSelectedItem();
         LevelItem selLevel = (LevelItem) levelCombo.getSelectedItem();
@@ -298,9 +322,7 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     /**
-     * Renders the schedule grid.
-     * If multiple entries fall into the same day and time slot,
-     * ALL entries are rendered side-by-side with an elegant horizontal scrollbar.
+     * Renders the schedule grid in orderly hourly rows from 8:00 to 19:00.
      */
     private void renderScheduleGrid() {
         tablePanel.removeAll();
@@ -310,20 +332,19 @@ public class TimetableManagementPanel extends JPanel {
         corner.setOpaque(false);
         tablePanel.add(corner);
 
-        // Columns 1-5: Day headers
+        // Columns 1-5: Days
         for (String day : DAYS) {
             JPanel dayCell = new JPanel(new GridBagLayout());
             dayCell.setOpaque(false);
             JLabel dayLabel = new JLabel(day);
-            dayLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            dayLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
             dayLabel.setForeground(new Color(110, 125, 145));
             dayCell.add(dayLabel);
             tablePanel.add(dayCell);
         }
 
-        // Rows 1-4: Time Slots
+        // Hourly Rows: 8:00 - 9:00, 9:00 - 10:00, ... 18:00 - 19:00
         for (String slot : TIME_SLOTS) {
-            // Time slot label
             JPanel timeCell = new JPanel(new GridBagLayout());
             timeCell.setOpaque(false);
             JLabel timeLabel = new JLabel(slot);
@@ -332,7 +353,7 @@ public class TimetableManagementPanel extends JPanel {
             timeCell.add(timeLabel);
             tablePanel.add(timeCell);
 
-            // Day cells for this slot
+            // Day cells for this hourly slot
             for (String day : DAYS) {
                 List<TimetableEntry> matches = findEntriesForSlot(day, slot);
                 if (matches.isEmpty()) {
@@ -348,7 +369,7 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     /**
-     * Finds ALL entries matching the specified day and time slot.
+     * Finds ALL entries that start at or overlap with this hourly slot.
      */
     private List<TimetableEntry> findEntriesForSlot(String day, String slotTime) {
         List<TimetableEntry> matches = new ArrayList<>();
@@ -357,16 +378,40 @@ public class TimetableManagementPanel extends JPanel {
         String startSlot = parts[0].trim();
         String endSlot = parts[1].trim();
 
+        int slotStartMin = parseTimeToMinutes(startSlot);
+        int slotEndMin = parseTimeToMinutes(endSlot);
+
         for (TimetableEntry entry : currentEntries) {
             if (entry.getDayOfWeek() != null && entry.getDayOfWeek().equalsIgnoreCase(day)) {
                 String entStart = cleanTime(entry.getStartTime());
                 String entEnd = cleanTime(entry.getEndTime());
-                if (entStart.equals(startSlot) && entEnd.equals(endSlot)) {
+
+                int eStart = parseTimeToMinutes(entStart);
+                int eEnd = parseTimeToMinutes(entEnd);
+
+                // Entry starts in this hour slot or matches exactly
+                if (eStart == slotStartMin || (eStart >= slotStartMin && eStart < slotEndMin)) {
+                    matches.add(entry);
+                } else if (eStart < slotStartMin && eEnd > slotStartMin) {
+                    // Multi-hour ongoing lecture spanning across this hour slot
                     matches.add(entry);
                 }
             }
         }
         return matches;
+    }
+
+    private int parseTimeToMinutes(String t) {
+        if (t == null || t.trim().isEmpty()) return 0;
+        try {
+            t = t.trim();
+            String[] parts = t.split(":");
+            int h = Integer.parseInt(parts[0].trim());
+            int m = parts.length > 1 ? Integer.parseInt(parts[1].trim()) : 0;
+            return h * 60 + m;
+        } catch (Exception ex) {
+            return 0;
+        }
     }
 
     private String cleanTime(String t) {
@@ -381,15 +426,12 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     /**
-     * Cell that displays 1 or more class cards.
-     * When there are multiple classes (e.g. Level 1, 2, 3 in the same slot),
-     * all cards are placed side-by-side with a horizontal scrollbar as requested!
+     * Cell that displays 1 or more class cards with generous height so text is clearly visible.
      */
     private JPanel createMultiCardSlotCell(String day, String slotTime, List<TimetableEntry> entries) {
         JPanel cellWrapper = new JPanel(new BorderLayout());
         cellWrapper.setOpaque(false);
 
-        // Panel holding cards in a horizontal row
         JPanel cardsRow = new JPanel();
         cardsRow.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 4));
         cardsRow.setOpaque(false);
@@ -402,7 +444,7 @@ public class TimetableManagementPanel extends JPanel {
         JButton addMoreBtn = createMiniAddButton(day, slotTime);
         cardsRow.add(addMoreBtn);
 
-        // Horizontal scroll pane for side-by-side cards
+        // Horizontal scroll pane for side-by-side cards if multiple entries exist
         JScrollPane scrollPane = new JScrollPane(cardsRow);
         scrollPane.setBorder(null);
         scrollPane.setOpaque(false);
@@ -410,13 +452,11 @@ public class TimetableManagementPanel extends JPanel {
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        // Custom slim modern horizontal scrollbar
         JScrollBar hBar = scrollPane.getHorizontalScrollBar();
-        hBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 6));
+        hBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 4));
         hBar.setUI(new ModernScrollBarUI());
         hBar.setUnitIncrement(16);
 
-        // Mouse wheel horizontal scrolling
         scrollPane.addMouseWheelListener(e -> {
             if (hBar.isVisible()) {
                 int scrollAmount = e.getUnitsToScroll() * 15;
@@ -430,7 +470,8 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     /**
-     * Creates an individual rounded pastel card matching the design.
+     * Creates an individual rounded pastel card with enlarged bounds (145x70)
+     * so Course Code and Hall / Location text are prominently, cleanly displayed without cutoff.
      */
     private JPanel createCardComponent(TimetableEntry entry) {
         SlotColorTheme theme = getThemeForSessionType(entry.getSessionType());
@@ -455,25 +496,26 @@ public class TimetableManagementPanel extends JPanel {
         };
         card.setOpaque(false);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(new EmptyBorder(8, 14, 8, 14));
-        card.setPreferredSize(new Dimension(135, 62));
-        card.setMinimumSize(new Dimension(110, 54));
+        card.setBorder(new EmptyBorder(8, 12, 8, 12));
+        // Generous size so subject & hall are beautifully displayed
+        card.setPreferredSize(new Dimension(145, 68));
+        card.setMinimumSize(new Dimension(130, 64));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Tooltip showing full course information
         String tip = (entry.getCourseCode() != null ? entry.getCourseCode() : "") +
                      (entry.getCourseName() != null ? " - " + entry.getCourseName() : "") +
                      " (" + (entry.getSessionType() != null ? entry.getSessionType() : "Class") + ")" +
+                     " [" + entry.getTimeSlotFormatted() + "]" +
                      " @ " + (entry.getHall() != null ? entry.getHall() : "TBA");
         card.setToolTipText(tip);
 
-        // Subject / Course Code
+        // Subject / Course Code - Enlarged & bold
         JLabel codeLabel = new JLabel(entry.getCourseCode() != null ? entry.getCourseCode() : "N/A");
-        codeLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        codeLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         codeLabel.setForeground(theme.text);
         codeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Hall / Location
+        // Hall / Location - Clear 12px font
         JLabel hallLabel = new JLabel(entry.getHall() != null ? entry.getHall() : "");
         hallLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         hallLabel.setForeground(theme.text);
@@ -481,11 +523,11 @@ public class TimetableManagementPanel extends JPanel {
 
         card.add(Box.createVerticalGlue());
         card.add(codeLabel);
-        card.add(Box.createVerticalStrut(3));
+        card.add(Box.createVerticalStrut(4));
         card.add(hallLabel);
         card.add(Box.createVerticalGlue());
 
-        // Clicking card switches in-place to edit form
+        // In-place edit on click
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -504,7 +546,7 @@ public class TimetableManagementPanel extends JPanel {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setForeground(new Color(160, 174, 192));
         btn.setBackground(new Color(248, 250, 252));
-        btn.setPreferredSize(new Dimension(28, 54));
+        btn.setPreferredSize(new Dimension(28, 56));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -565,24 +607,25 @@ public class TimetableManagementPanel extends JPanel {
     private SlotColorTheme getThemeForSessionType(String type) {
         if (type == null) type = "Lecture";
         switch (type.trim().toLowerCase()) {
-            case "lab":
             case "practical":
+            case "practicle":
+            case "lab":
                 return new SlotColorTheme(
                     new Color(213, 245, 227), // Soft pastel green
                     new Color(187, 240, 209),
-                    new Color(30, 130, 76)
+                    new Color(30, 130, 76)     // Deep green text
                 );
             case "tutorial":
                 return new SlotColorTheme(
                     new Color(254, 237, 214), // Soft pastel peach
                     new Color(250, 221, 180),
-                    new Color(194, 98, 7)
+                    new Color(194, 98, 7)      // Deep amber text
                 );
             case "other":
                 return new SlotColorTheme(
                     new Color(252, 228, 236), // Soft pastel pink
                     new Color(248, 205, 220),
-                    new Color(173, 20, 87)
+                    new Color(173, 20, 87)     // Deep magenta text
                 );
             case "lecture":
             case "theory":
@@ -590,7 +633,7 @@ public class TimetableManagementPanel extends JPanel {
                 return new SlotColorTheme(
                     new Color(212, 228, 252), // Soft pastel blue
                     new Color(187, 212, 250),
-                    new Color(30, 80, 180)
+                    new Color(30, 80, 180)     // Deep blue text
                 );
         }
     }
@@ -607,7 +650,7 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     // =========================================================================
-    // 2. IN-PLACE MODERN FORM VIEW (NO MODAL/POPUP WINDOW!)
+    // 2. IN-PLACE MODERN FORM VIEW
     // =========================================================================
 
     private void buildFormPanel() {
@@ -739,10 +782,42 @@ public class TimetableManagementPanel extends JPanel {
         styleFormFieldCombo(formDayCombo);
         fieldsGrid.add(createFormItem("Day of the Week", formDayCombo));
 
-        // 5. Time Slot
-        formTimeCombo = new JComboBox<>(TIME_SLOTS);
+        // 5. Time Slot - Chronologically organized hourly & multi-hour slots (8:00 to 19:00)
+        String[] allAvailableSlots = {
+            // Hourly slots (8:00 - 19:00 in perfect chronological order)
+            "8:00 - 9:00",
+            "9:00 - 10:00",
+            "10:00 - 11:00",
+            "11:00 - 12:00",
+            "12:00 - 13:00",
+            "13:00 - 14:00",
+            "14:00 - 15:00",
+            "15:00 - 16:00",
+            "16:00 - 17:00",
+            "17:00 - 18:00",
+            "18:00 - 19:00",
+            // Common 2-hour slots
+            "8:00 - 10:00",
+            "10:00 - 12:00",
+            "12:00 - 14:00",
+            "14:00 - 16:00",
+            "16:00 - 18:00",
+            // Common 3-hour slots
+            "8:00 - 11:00",
+            "9:00 - 12:00",
+            "13:00 - 16:00",
+            "14:00 - 17:00",
+            "16:00 - 19:00",
+            // Common 4-hour slots
+            "8:00 - 12:00",
+            "13:00 - 17:00",
+            "14:00 - 18:00",
+            "15:00 - 19:00"
+        };
+        formTimeCombo = new JComboBox<>(allAvailableSlots);
+        formTimeCombo.setEditable(true);
         styleFormFieldCombo(formTimeCombo);
-        fieldsGrid.add(createFormItem("Class Time Slot", formTimeCombo));
+        fieldsGrid.add(createFormItem("Class Time Slot (8:00 - 19:00)", formTimeCombo));
 
         // 6. Subject / Course (loaded from CourseDAO)
         formCourseCombo = new JComboBox<>();
@@ -750,8 +825,8 @@ public class TimetableManagementPanel extends JPanel {
         refreshCoursesInForm();
         fieldsGrid.add(createFormItem("Subject / Course Code", formCourseCombo));
 
-        // 7. Session Type (Lecture, Lab, Tutorial, Other)
-        String[] types = {"Lecture", "Lab", "Tutorial", "Other"};
+        // 7. Session Type (Lecture, Practical, Lab, Tutorial, Other)
+        String[] types = {"Lecture", "Practical", "Lab", "Tutorial", "Other"};
         formTypeCombo = new JComboBox<>(types);
         styleFormFieldCombo(formTypeCombo);
         fieldsGrid.add(createFormItem("Session Type", formTypeCombo));
@@ -1005,9 +1080,21 @@ public class TimetableManagementPanel extends JPanel {
             }
         }
 
-        // Session Type
+        // Session Type (handles Practical, Lab, Lecture, Tutorial, Other)
         if (entry.getSessionType() != null) {
-            formTypeCombo.setSelectedItem(entry.getSessionType());
+            String stype = entry.getSessionType().trim();
+            boolean found = false;
+            for (int i = 0; i < formTypeCombo.getItemCount(); i++) {
+                if (formTypeCombo.getItemAt(i).equalsIgnoreCase(stype)) {
+                    formTypeCombo.setSelectedIndex(i);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                formTypeCombo.addItem(stype);
+                formTypeCombo.setSelectedItem(stype);
+            }
         }
 
         // Hall
@@ -1037,12 +1124,17 @@ public class TimetableManagementPanel extends JPanel {
 
         String day = (String) formDayCombo.getSelectedItem();
         String slotStr = (String) formTimeCombo.getSelectedItem();
+        if (slotStr == null || !slotStr.contains("-")) {
+            JOptionPane.showMessageDialog(this, "Please specify a valid time slot like '8:00 - 9:00' or '8:00 - 10:00'.", "Invalid Time", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         String type = (String) formTypeCombo.getSelectedItem();
         String hall = (String) formHallCombo.getSelectedItem();
         if (hall != null) hall = hall.trim();
         if (hall == null || hall.isEmpty()) hall = "LT 1";
 
-        String[] times = slotStr.split(" - ");
+        String[] times = slotStr.split("-");
         String startSql = formatSqlTime(times[0].trim());
         String endSql = formatSqlTime(times[1].trim());
 
@@ -1056,7 +1148,6 @@ public class TimetableManagementPanel extends JPanel {
                 // Ensure newly added entry is visible by matching filter if needed
                 LevelItem currentLevel = (LevelItem) levelCombo.getSelectedItem();
                 if (currentLevel != null && currentLevel.level > 0 && currentLevel.level != year) {
-                    // Set to All Levels or to this year so user sees it immediately
                     levelCombo.setSelectedIndex(0); // All Levels
                 }
 
@@ -1101,10 +1192,12 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     private String formatSqlTime(String t) {
-        if (!t.contains(":")) return t + ":00:00";
+        if (t == null) return "08:00:00";
+        t = t.trim();
+        if (!t.contains(":")) return String.format("%02d:00:00", Integer.parseInt(t));
         String[] parts = t.split(":");
-        int h = Integer.parseInt(parts[0]);
-        int m = Integer.parseInt(parts[1]);
+        int h = Integer.parseInt(parts[0].trim());
+        int m = parts.length > 1 ? Integer.parseInt(parts[1].trim()) : 0;
         return String.format("%02d:%02d:00", h, m);
     }
 
@@ -1168,7 +1261,7 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     /**
-     * Sleek, modern scrollbar for cards overflowing inside slot cells
+     * Sleek, modern scrollbar for cards and grid scrolling
      */
     private static class ModernScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
         @Override
