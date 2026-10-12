@@ -204,7 +204,7 @@ public class UserDAO {
 
     public static main.java.model.admin.Admin getAdminProfile(int adminId) {
         String query = 
-            "SELECT a.admin_id, a.name, a.email, a.phone, a.address, u.username, u.role, u.status " +
+            "SELECT a.admin_id, a.name, a.email, a.phone, a.address, u.username, u.role, u.status, u.profile_picture " +
             "FROM admins a " +
             "JOIN users u ON a.admin_id = u.user_id " +
             "WHERE a.admin_id = ?";
@@ -221,7 +221,8 @@ public class UserDAO {
                         rs.getString("email"),
                         rs.getString("status"),
                         rs.getString("phone"),
-                        rs.getString("address")
+                        rs.getString("address"),
+                        rs.getString("profile_picture")
                     );
                 }
             }
@@ -231,19 +232,47 @@ public class UserDAO {
         return null;
     }
 
-    public static boolean updateAdminProfile(int adminId, String name, String email, String phone, String address) {
-        String query = "UPDATE admins SET name = ?, email = ?, phone = ?, address = ? WHERE admin_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setString(1, name);
-            stmt.setString(2, email);
-            stmt.setString(3, phone);
-            stmt.setString(4, address);
-            return stmt.executeUpdate() > 0;
+    public static boolean updateAdminProfile(int adminId, String name, String email, String phone, String address, String profilePicture) {
+        String adminQuery = "UPDATE admins SET name = ?, email = ?, phone = ?, address = ? WHERE admin_id = ?";
+        String userQuery = "UPDATE users SET profile_picture = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement stmt = conn.prepareStatement(adminQuery)) {
+                    stmt.setString(1, name);
+                    stmt.setString(2, email);
+                    stmt.setString(3, phone);
+                    stmt.setString(4, address);
+                    stmt.setInt(5, adminId);
+                    stmt.executeUpdate();
+                }
+
+                if (profilePicture != null && !profilePicture.trim().isEmpty()) {
+                    try (PreparedStatement stmt2 = conn.prepareStatement(userQuery)) {
+                        stmt2.setString(1, profilePicture.trim());
+                        stmt2.setInt(2, adminId);
+                        stmt2.executeUpdate();
+                    }
+                }
+
+                conn.commit();
+                conn.setAutoCommit(autoCommit);
+                return true;
+            } catch (SQLException ex) {
+                conn.rollback();
+                conn.setAutoCommit(autoCommit);
+                ex.printStackTrace();
+                return false;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public static boolean updateAdminProfile(int adminId, String name, String email, String phone, String address) {
+        return updateAdminProfile(adminId, name, email, phone, address, null);
     }
 
     public static boolean changeUserPassword(int userId, String oldPassword, String newPassword) {

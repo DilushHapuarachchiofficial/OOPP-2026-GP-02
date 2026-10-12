@@ -9,6 +9,9 @@ public class AdminDashboard extends JFrame {
     private JPanel cardPanel;
     private CardLayout cardLayout;
     private JButton activeButton;
+    private JLabel headerProfileIcon;
+    private JLabel headerProfileName;
+    private String currentProfilePicture;
 
     public AdminDashboard() {
         setTitle("FAMS - Faculty Academic Management System");
@@ -65,13 +68,20 @@ public class AdminDashboard extends JFrame {
         cardPanel = new JPanel(cardLayout);
         cardPanel.setBackground(new Color(245, 247, 250));
 
+        AdminProfilePanel profilePanel = new AdminProfilePanel(updatedAdmin -> {
+            updateHeaderProfile(updatedAdmin);
+        });
+        if (profilePanel.getCurrentAdmin() != null) {
+            currentProfilePicture = profilePanel.getCurrentAdmin().getProfilePicture();
+        }
+
         addSidebarButton(sidebar, "Dashboard", "src/main/resources/images/admin-icons/dashboard.png", new DashboardHomePanel(), true);
         addSidebarButton(sidebar, "User Management", "src/main/resources/images/admin-icons/users.png", new UserManagementPanel(), false);
         addSidebarButton(sidebar, "Course Management", "src/main/resources/images/admin-icons/courses.png", new CourseManagementPanel(), false);
         addSidebarButton(sidebar, "Notices", "src/main/resources/images/admin-icons/notices.png", new NoticeManagementPanel(), false);
         addSidebarButton(sidebar, "Timetables", "src/main/resources/images/admin-icons/timetables.png", new TimetableManagementPanel(), false);
         addSidebarButton(sidebar, "Reports", "src/main/resources/images/admin-icons/reports.png", new ReportsPanel(), false);
-        addSidebarButton(sidebar, "Profile", "src/main/resources/images/admin-icons/profile.png", new AdminProfilePanel(), false);
+        addSidebarButton(sidebar, "Profile", "src/main/resources/images/admin-icons/profile.png", profilePanel, false);
         addSidebarButton(sidebar, "Settings", "src/main/resources/images/admin-icons/settings.png", new SettingsPanel(), false);
 
         sidebar.add(Box.createVerticalGlue());
@@ -142,31 +152,29 @@ public class AdminDashboard extends JFrame {
         JPanel profileInfo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         profileInfo.setOpaque(false);
 
-        // Custom drawn avatar with letter "A"
-        JLabel profileIcon = new JLabel("A", SwingConstants.CENTER) {
+        // Circular profile avatar matching screenshot 2 (AvatarUtil with circular image or default silhouette)
+        headerProfileIcon = new JLabel() {
             @Override
             protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(30, 100, 220)); // Blue background
-                g2.fillOval(0, 0, getWidth(), getHeight());
                 super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                int size = Math.min(getWidth(), getHeight());
+                AvatarUtil.renderAvatar(g2, currentProfilePicture, 0, 0, size);
                 g2.dispose();
             }
         };
-        profileIcon.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        profileIcon.setForeground(Color.WHITE);
-        profileIcon.setPreferredSize(new Dimension(36, 36));
+        headerProfileIcon.setPreferredSize(new Dimension(36, 36));
 
         JPanel profileTexts = new JPanel();
         profileTexts.setLayout(new BoxLayout(profileTexts, BoxLayout.Y_AXIS));
         profileTexts.setOpaque(false);
-        JLabel pName = new JLabel("Admin");
-        pName.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        String initialName = (profilePanel.getCurrentAdmin() != null) ? profilePanel.getCurrentAdmin().getName() : "Admin";
+        headerProfileName = new JLabel(initialName);
+        headerProfileName.setFont(new Font("Segoe UI", Font.BOLD, 14));
         JLabel pRole = new JLabel("Administrator");
         pRole.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         pRole.setForeground(Color.GRAY);
-        profileTexts.add(pName);
+        profileTexts.add(headerProfileName);
         profileTexts.add(pRole);
 
         JLabel dropDownIcon = new JLabel(createScaledIcon("src/main/resources/images/admin-icons/dropdown.png", 16, 16));
@@ -219,7 +227,7 @@ public class AdminDashboard extends JFrame {
             }
         });
 
-        profileInfo.add(profileIcon);
+        profileInfo.add(headerProfileIcon);
         profileInfo.add(profileTexts);
         profileInfo.add(dropDownIcon);
 
@@ -314,6 +322,18 @@ public class AdminDashboard extends JFrame {
         header.setFont(new Font("Segoe UI", Font.BOLD, 24));
         panel.add(header, BorderLayout.NORTH);
         return panel;
+    }
+
+    public void updateHeaderProfile(main.java.model.admin.Admin admin) {
+        if (admin != null) {
+            currentProfilePicture = admin.getProfilePicture();
+            if (headerProfileName != null) {
+                headerProfileName.setText(admin.getName());
+            }
+            if (headerProfileIcon != null) {
+                headerProfileIcon.repaint();
+            }
+        }
     }
 
     private ImageIcon createScaledIcon(String path, int width, int height) {

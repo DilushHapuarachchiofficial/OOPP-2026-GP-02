@@ -4,9 +4,15 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import main.java.dao.admin.UserDAO;
 import main.java.model.admin.Admin;
@@ -16,8 +22,14 @@ public class AdminProfilePanel extends JPanel {
     private int currentAdminId = 1; // Default logged in admin id
     private Admin currentAdmin;
 
-    // Left card labels
-    private JLabel avatarLabel;
+    // Optional listener to notify AdminDashboard or other parent containers of changes
+    private Consumer<Admin> onProfileUpdatedListener;
+
+    // Pending selected picture (local file path or copied name)
+    private String selectedProfilePicture;
+
+    // Left card components
+    private JPanel avatarPanel;
     private JLabel nameDisplayLabel;
     private JLabel roleDisplayLabel;
     private JLabel emailDisplayLabel;
@@ -47,6 +59,11 @@ public class AdminProfilePanel extends JPanel {
     private JPasswordField confirmPasswordField;
 
     public AdminProfilePanel() {
+        this(null);
+    }
+
+    public AdminProfilePanel(Consumer<Admin> onProfileUpdatedListener) {
+        this.onProfileUpdatedListener = onProfileUpdatedListener;
         setLayout(new BorderLayout());
         setBackground(new Color(245, 247, 250));
 
@@ -54,6 +71,14 @@ public class AdminProfilePanel extends JPanel {
         loadAdminProfile();
 
         buildUI();
+    }
+
+    public void setOnProfileUpdatedListener(Consumer<Admin> listener) {
+        this.onProfileUpdatedListener = listener;
+    }
+
+    public Admin getCurrentAdmin() {
+        return currentAdmin;
     }
 
     private void loadAdminProfile() {
@@ -68,9 +93,11 @@ public class AdminProfilePanel extends JPanel {
                 "admin@tech.ac.lk",
                 "Active",
                 "+94 77 123 4567",
-                "Faculty of Technology, University of Ruhuna"
+                "Faculty of Technology, University of Ruhuna",
+                "default_avatar.png"
             );
         }
+        selectedProfilePicture = currentAdmin.getProfilePicture();
     }
 
     private void buildUI() {
@@ -89,7 +116,7 @@ public class AdminProfilePanel extends JPanel {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
         titleLabel.setForeground(new Color(30, 41, 59));
 
-        JLabel subtitleLabel = new JLabel("Manage your personal information");
+        JLabel subtitleLabel = new JLabel("Manage your personal information and profile picture");
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitleLabel.setForeground(new Color(120, 134, 150));
 
@@ -134,8 +161,9 @@ public class AdminProfilePanel extends JPanel {
     }
 
     /**
-     * Builds the left profile card matching the image:
-     * - Circular blue avatar with user silhouette
+     * Builds the left profile card matching the UI:
+     * - Circular avatar (uploaded image preview OR default blue silhouette avatar)
+     * - "Change Photo" / "Remove Photo" buttons directly under/beside avatar
      * - Name, "Administrator", email with @ icon, Active badge
      * - "Personal Information" active tab item
      * - "Change Password" inactive tab item
@@ -152,41 +180,50 @@ public class AdminProfilePanel extends JPanel {
         topSection.setLayout(new BoxLayout(topSection, BoxLayout.Y_AXIS));
         topSection.setOpaque(false);
 
-        // Header sub-panel with Avatar on left, info on right
+        // Header sub-panel with Avatar & photo button on left, info on right
         JPanel userHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 18, 0));
         userHeader.setOpaque(false);
 
-        // Circular Blue Avatar with user silhouette
-        avatarLabel = new JLabel() {
+        // Avatar container with interactive Change Photo hover
+        JPanel avatarWrapper = new JPanel();
+        avatarWrapper.setLayout(new BoxLayout(avatarWrapper, BoxLayout.Y_AXIS));
+        avatarWrapper.setOpaque(false);
+
+        avatarPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int size = Math.min(getWidth(), getHeight());
-
-                // Blue circle background (#4F83F0 / #3B82F6)
-                g2.setColor(new Color(66, 133, 244));
-                g2.fillOval(0, 0, size, size);
-
-                // Silhouette in light soft blue/white
-                g2.setColor(new Color(235, 243, 255));
-                // Head
-                int headR = (int)(size * 0.36);
-                int headX = (size - headR) / 2;
-                int headY = (int)(size * 0.18);
-                g2.fillOval(headX, headY, headR, headR);
-
-                // Body shoulders
-                int bodyW = (int)(size * 0.72);
-                int bodyH = (int)(size * 0.55);
-                int bodyX = (size - bodyW) / 2;
-                int bodyY = (int)(size * 0.58);
-                g2.fillArc(bodyX, bodyY, bodyW, bodyH, 0, 180);
-
+                AvatarUtil.renderAvatar(g2, selectedProfilePicture, 0, 0, size);
                 g2.dispose();
             }
         };
-        avatarLabel.setPreferredSize(new Dimension(84, 84));
+        avatarPanel.setPreferredSize(new Dimension(84, 84));
+        avatarPanel.setMaximumSize(new Dimension(84, 84));
+        avatarPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        avatarPanel.setToolTipText("Click to choose profile picture");
+        avatarPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                chooseProfilePicture();
+            }
+        });
+
+        // Small text link to upload/change photo
+        JButton uploadPhotoBtn = new JButton("Change Photo");
+        uploadPhotoBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        uploadPhotoBtn.setForeground(new Color(24, 119, 242));
+        uploadPhotoBtn.setContentAreaFilled(false);
+        uploadPhotoBtn.setBorderPainted(false);
+        uploadPhotoBtn.setFocusPainted(false);
+        uploadPhotoBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        uploadPhotoBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        uploadPhotoBtn.setBorder(new EmptyBorder(4, 0, 0, 0));
+        uploadPhotoBtn.addActionListener(e -> chooseProfilePicture());
+
+        avatarWrapper.add(avatarPanel);
+        avatarWrapper.add(uploadPhotoBtn);
 
         // User info texts
         JPanel infoTextPanel = new JPanel();
@@ -255,7 +292,7 @@ public class AdminProfilePanel extends JPanel {
         infoTextPanel.add(Box.createVerticalStrut(6));
         infoTextPanel.add(statusBadge);
 
-        userHeader.add(avatarLabel);
+        userHeader.add(avatarWrapper);
         userHeader.add(infoTextPanel);
 
         topSection.add(userHeader);
@@ -286,6 +323,66 @@ public class AdminProfilePanel extends JPanel {
         card.add(topSection, BorderLayout.NORTH);
 
         return card;
+    }
+
+    private void chooseProfilePicture() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Profile Picture");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Image files (*.png, *.jpg, *.jpeg)", "png", "jpg", "jpeg"));
+
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            if (selectedFile != null && selectedFile.exists()) {
+                try {
+                    File destDir = new File("src/main/resources/images/profiles");
+                    if (!destDir.exists()) {
+                        destDir.mkdirs();
+                    }
+
+                    // Create unique file name
+                    String ext = "";
+                    String name = selectedFile.getName();
+                    int dotIdx = name.lastIndexOf('.');
+                    if (dotIdx > 0) {
+                        ext = name.substring(dotIdx);
+                    }
+                    String savedFileName = "admin_" + currentAdminId + "_" + System.currentTimeMillis() + ext;
+                    File destFile = new File(destDir, savedFileName);
+
+                    Files.copy(selectedFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                    // Update in-memory state and repaint avatar preview immediately
+                    selectedProfilePicture = savedFileName;
+                    if (avatarPanel != null) {
+                        avatarPanel.repaint();
+                    }
+
+                    // Save directly or wait for Save Changes
+                    boolean ok = UserDAO.updateAdminProfile(
+                        currentAdminId,
+                        currentAdmin.getName(),
+                        currentAdmin.getEmail(),
+                        currentAdmin.getPhone(),
+                        currentAdmin.getAddress(),
+                        savedFileName
+                    );
+
+                    if (ok) {
+                        currentAdmin.setProfilePicture(savedFileName);
+                        if (onProfileUpdatedListener != null) {
+                            onProfileUpdatedListener.accept(currentAdmin);
+                        }
+                        JOptionPane.showMessageDialog(this, "Profile picture updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Profile picture selected for preview. Click 'Save Changes' to apply.", "Preview Ready", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Failed to copy image file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
     }
 
     /**
@@ -596,13 +693,25 @@ public class AdminProfilePanel extends JPanel {
             return;
         }
 
-        boolean success = UserDAO.updateAdminProfile(currentAdminId, newName, newEmail, newPhone, newAddress);
+        boolean success = UserDAO.updateAdminProfile(currentAdminId, newName, newEmail, newPhone, newAddress, selectedProfilePicture);
         if (success) {
+            currentAdmin.setName(newName);
+            currentAdmin.setEmail(newEmail);
             currentAdmin.setPhone(newPhone);
             currentAdmin.setAddress(newAddress);
+            currentAdmin.setProfilePicture(selectedProfilePicture);
+
             // Refresh display labels on left card
             nameDisplayLabel.setText(newName);
             emailDisplayLabel.setText(newEmail);
+            if (avatarPanel != null) {
+                avatarPanel.repaint();
+            }
+
+            // Notify header in AdminDashboard
+            if (onProfileUpdatedListener != null) {
+                onProfileUpdatedListener.accept(currentAdmin);
+            }
 
             JOptionPane.showMessageDialog(this, "Profile updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
         } else {
@@ -616,6 +725,10 @@ public class AdminProfilePanel extends JPanel {
             emailField.setText(currentAdmin.getEmail());
             phoneField.setText(currentAdmin.getPhone() != null ? currentAdmin.getPhone() : "");
             addressField.setText(currentAdmin.getAddress() != null ? currentAdmin.getAddress() : "");
+            selectedProfilePicture = currentAdmin.getProfilePicture();
+            if (avatarPanel != null) {
+                avatarPanel.repaint();
+            }
         }
     }
 
