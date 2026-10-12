@@ -132,7 +132,7 @@ public class LecturerDashboardDAO {
      */
     private static int fetchAssignedCoursesCount(Connection conn, int lecturerId) throws SQLException {
         String sql = "SELECT COUNT(DISTINCT course_id) AS course_count FROM (" +
-                     "    SELECT course_id FROM course_materials WHERE lecturer_id = ? " +
+                     "    SELECT course_id FROM course_lecturers WHERE lecturer_id = ? " +
                      "    UNION " +
                      "    SELECT ec.course_id " +
                      "    FROM marks m " +
@@ -143,6 +143,7 @@ public class LecturerDashboardDAO {
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, lecturerId);
             pstmt.setInt(2, lecturerId);
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt("course_count");
