@@ -1,6 +1,8 @@
 package main.java.ui.admin;
 
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
@@ -9,6 +11,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.plaf.basic.BasicComboBoxUI;
 
 import main.java.dao.admin.CourseDAO;
 import main.java.dao.admin.TimetableDAO;
@@ -33,7 +36,7 @@ public class TimetableManagementPanel extends JPanel {
     // 5 Days (Monday - Friday)
     private static final String[] DAYS = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
 
-    // Hourly ordered time slots from 8:00 to 19:00 (11 slots: 8-9, 9-10, ... 18-19)
+    // Hourly ordered time slots from 8:00 to 19:00
     private static final String[] TIME_SLOTS = {
         "8:00 - 9:00",
         "9:00 - 10:00",
@@ -120,7 +123,7 @@ public class TimetableManagementPanel extends JPanel {
         titleBlock.add(Box.createVerticalStrut(6));
         titleBlock.add(subtitleLabel);
 
-        // Header Right: "All Departments", "All Levels", "All Semesters", "+ Create Timetable"
+        // Header Right: Filters + Button
         JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         controlsPanel.setOpaque(false);
 
@@ -238,7 +241,6 @@ public class TimetableManagementPanel extends JPanel {
         tablePanel.setBackground(Color.WHITE);
         tablePanel.setLayout(new GridLayout(TIME_SLOTS.length + 1, 6, 0, 0));
 
-        // Set generous preferred size so all 11 hourly rows have plenty of breathing room (82px per row)
         int totalHeight = (TIME_SLOTS.length + 1) * 82;
         tablePanel.setPreferredSize(new Dimension(860, totalHeight));
 
@@ -251,7 +253,6 @@ public class TimetableManagementPanel extends JPanel {
         gridScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         gridScrollPane.getVerticalScrollBar().setUnitIncrement(24);
 
-        // Modern UI for grid vertical scrollbar
         JScrollBar vBar = gridScrollPane.getVerticalScrollBar();
         vBar.setPreferredSize(new Dimension(8, Integer.MAX_VALUE));
         vBar.setUI(new ModernScrollBarUI());
@@ -315,7 +316,6 @@ public class TimetableManagementPanel extends JPanel {
         int level = selLevel != null ? selLevel.level : 0;
         int sem = selSem != null ? selSem.semester : 0;
 
-        // Query entries matching filters
         currentEntries = TimetableDAO.getEntries(deptId, level, sem);
 
         renderScheduleGrid();
@@ -389,11 +389,9 @@ public class TimetableManagementPanel extends JPanel {
                 int eStart = parseTimeToMinutes(entStart);
                 int eEnd = parseTimeToMinutes(entEnd);
 
-                // Entry starts in this hour slot or matches exactly
                 if (eStart == slotStartMin || (eStart >= slotStartMin && eStart < slotEndMin)) {
                     matches.add(entry);
                 } else if (eStart < slotStartMin && eEnd > slotStartMin) {
-                    // Multi-hour ongoing lecture spanning across this hour slot
                     matches.add(entry);
                 }
             }
@@ -425,9 +423,6 @@ public class TimetableManagementPanel extends JPanel {
         return t;
     }
 
-    /**
-     * Cell that displays 1 or more class cards with generous height so text is clearly visible.
-     */
     private JPanel createMultiCardSlotCell(String day, String slotTime, List<TimetableEntry> entries) {
         JPanel cellWrapper = new JPanel(new BorderLayout());
         cellWrapper.setOpaque(false);
@@ -440,11 +435,9 @@ public class TimetableManagementPanel extends JPanel {
             cardsRow.add(createCardComponent(entry));
         }
 
-        // Mini "+" button to schedule another class in this same slot
         JButton addMoreBtn = createMiniAddButton(day, slotTime);
         cardsRow.add(addMoreBtn);
 
-        // Horizontal scroll pane for side-by-side cards if multiple entries exist
         JScrollPane scrollPane = new JScrollPane(cardsRow);
         scrollPane.setBorder(null);
         scrollPane.setOpaque(false);
@@ -469,10 +462,6 @@ public class TimetableManagementPanel extends JPanel {
         return cellWrapper;
     }
 
-    /**
-     * Creates an individual rounded pastel card with enlarged bounds (145x70)
-     * so Course Code and Hall / Location text are prominently, cleanly displayed without cutoff.
-     */
     private JPanel createCardComponent(TimetableEntry entry) {
         SlotColorTheme theme = getThemeForSessionType(entry.getSessionType());
 
@@ -482,11 +471,9 @@ public class TimetableManagementPanel extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Background
                 g2.setColor(theme.background);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 16, 16));
 
-                // Border
                 g2.setColor(theme.border);
                 g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 16, 16));
 
@@ -497,7 +484,6 @@ public class TimetableManagementPanel extends JPanel {
         card.setOpaque(false);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(new EmptyBorder(8, 12, 8, 12));
-        // Generous size so subject & hall are beautifully displayed
         card.setPreferredSize(new Dimension(145, 68));
         card.setMinimumSize(new Dimension(130, 64));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -509,13 +495,11 @@ public class TimetableManagementPanel extends JPanel {
                      " @ " + (entry.getHall() != null ? entry.getHall() : "TBA");
         card.setToolTipText(tip);
 
-        // Subject / Course Code - Enlarged & bold
         JLabel codeLabel = new JLabel(entry.getCourseCode() != null ? entry.getCourseCode() : "N/A");
         codeLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         codeLabel.setForeground(theme.text);
         codeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Hall / Location - Clear 12px font
         JLabel hallLabel = new JLabel(entry.getHall() != null ? entry.getHall() : "");
         hallLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         hallLabel.setForeground(theme.text);
@@ -527,7 +511,6 @@ public class TimetableManagementPanel extends JPanel {
         card.add(hallLabel);
         card.add(Box.createVerticalGlue());
 
-        // In-place edit on click
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -538,9 +521,6 @@ public class TimetableManagementPanel extends JPanel {
         return card;
     }
 
-    /**
-     * Small stylish add button next to cards in a slot to add another class
-     */
     private JButton createMiniAddButton(String day, String slotTime) {
         JButton btn = new JButton("+");
         btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -574,9 +554,6 @@ public class TimetableManagementPanel extends JPanel {
         return btn;
     }
 
-    /**
-     * Empty slot cell with hover cue and click-to-add action.
-     */
     private JPanel createEmptySlotCell(String day, String slotTime) {
         JPanel emptyCell = new JPanel();
         emptyCell.setOpaque(false);
@@ -650,7 +627,7 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     // =========================================================================
-    // 2. IN-PLACE MODERN FORM VIEW
+    // 2. ULTRA-MODERN IN-PLACE FORM VIEW (CLEAN DESIGN SYSTEM)
     // =========================================================================
 
     private void buildFormPanel() {
@@ -660,7 +637,7 @@ public class TimetableManagementPanel extends JPanel {
         // Form Header
         JPanel headerPanel = new JPanel(new BorderLayout(20, 10));
         headerPanel.setOpaque(false);
-        headerPanel.setBorder(new EmptyBorder(25, 30, 20, 30));
+        headerPanel.setBorder(new EmptyBorder(26, 36, 18, 36));
 
         JPanel titleBlock = new JPanel();
         titleBlock.setLayout(new BoxLayout(titleBlock, BoxLayout.Y_AXIS));
@@ -668,36 +645,38 @@ public class TimetableManagementPanel extends JPanel {
 
         formTitleLabel = new JLabel("Create Timetable Entry");
         formTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        formTitleLabel.setForeground(new Color(30, 41, 59));
+        formTitleLabel.setForeground(new Color(15, 23, 42)); // Slate 900
 
-        formSubtitleLabel = new JLabel("Schedule a class slot and assign course, hall, and timing details");
+        formSubtitleLabel = new JLabel("Configure schedule parameters, assign venue, and allocate course timing");
         formSubtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        formSubtitleLabel.setForeground(new Color(120, 134, 150));
+        formSubtitleLabel.setForeground(new Color(100, 116, 139)); // Slate 500
 
         titleBlock.add(formTitleLabel);
         titleBlock.add(Box.createVerticalStrut(6));
         titleBlock.add(formSubtitleLabel);
 
-        // Header Right: "← Back to Timetable" Button
+        // Header Right: Sleek "← Back to Timetable" Button
         JButton backBtn = new JButton("← Back to Timetable");
         backBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        backBtn.setForeground(new Color(71, 85, 105));
+        backBtn.setForeground(new Color(51, 65, 85));
         backBtn.setBackground(Color.WHITE);
         backBtn.setFocusPainted(false);
         backBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        backBtn.setPreferredSize(new Dimension(175, 38));
+        backBtn.setPreferredSize(new Dimension(175, 40));
         backBtn.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(new Color(203, 213, 225), 10, 1),
+            new RoundedBorder(new Color(226, 232, 240), 10, 1),
             new EmptyBorder(8, 16, 8, 16)
         ));
         backBtn.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 backBtn.setBackground(new Color(241, 245, 249));
+                backBtn.setForeground(new Color(15, 23, 42));
             }
             @Override
             public void mouseExited(MouseEvent e) {
                 backBtn.setBackground(Color.WHITE);
+                backBtn.setForeground(new Color(51, 65, 85));
             }
         });
         backBtn.addActionListener(e -> returnToTimetableGrid());
@@ -709,33 +688,52 @@ public class TimetableManagementPanel extends JPanel {
         // Main Form Container inside a clean ScrollPane
         JPanel scrollContentWrapper = new JPanel(new BorderLayout());
         scrollContentWrapper.setOpaque(false);
-        scrollContentWrapper.setBorder(new EmptyBorder(0, 30, 25, 30));
+        scrollContentWrapper.setBorder(new EmptyBorder(4, 36, 32, 36));
 
-        // Modern Card Container
-        JPanel cardBox = new JPanel(new BorderLayout(0, 24));
-        cardBox.setBackground(Color.WHITE);
-        cardBox.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(new Color(228, 232, 239), 18, 1),
-            new EmptyBorder(32, 36, 32, 36)
-        ));
+        // Modern Card Container with soft elevation
+        JPanel cardBox = new JPanel(new BorderLayout(0, 24)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Card Top Badge
-        JPanel badgePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        badgePanel.setOpaque(false);
-        JLabel badgeLabel = new JLabel("  ACADEMIC SCHEDULE DETAILS  ");
+                // Soft card background
+                g2.setColor(Color.WHITE);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 20, 20));
+
+                // Subtle border
+                g2.setColor(new Color(226, 232, 240));
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 20, 20));
+
+                g2.dispose();
+            }
+        };
+        cardBox.setOpaque(false);
+        cardBox.setBorder(new EmptyBorder(32, 38, 32, 38));
+
+        // Card Top Badge & Section Heading
+        JPanel cardTopPanel = new JPanel(new BorderLayout());
+        cardTopPanel.setOpaque(false);
+
+        JPanel badgeWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        badgeWrapper.setOpaque(false);
+
+        JLabel badgeLabel = new JLabel("  SCHEDULE CONFIGURATION  ");
         badgeLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
         badgeLabel.setForeground(new Color(24, 119, 242));
-        badgeLabel.setBackground(new Color(235, 244, 255));
+        badgeLabel.setBackground(new Color(239, 246, 255)); // Blue 50
         badgeLabel.setOpaque(true);
         badgeLabel.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(new Color(195, 220, 255), 8, 1),
-            new EmptyBorder(4, 8, 4, 8)
+            new RoundedBorder(new Color(191, 219, 254), 8, 1),
+            new EmptyBorder(5, 10, 5, 10)
         ));
-        badgePanel.add(badgeLabel);
-        cardBox.add(badgePanel, BorderLayout.NORTH);
+        badgeWrapper.add(badgeLabel);
 
-        // 2-Column Inputs Grid
-        JPanel fieldsGrid = new JPanel(new GridLayout(4, 2, 30, 20));
+        cardTopPanel.add(badgeWrapper, BorderLayout.WEST);
+        cardBox.add(cardTopPanel, BorderLayout.NORTH);
+
+        // 2-Column Inputs Grid with generous row spacing (24px)
+        JPanel fieldsGrid = new JPanel(new GridLayout(4, 2, 32, 24));
         fieldsGrid.setOpaque(false);
 
         // 1. Department
@@ -746,8 +744,8 @@ public class TimetableManagementPanel extends JPanel {
             new DepartmentItem(4, "Department of MDS")
         };
         formDeptCombo = new JComboBox<>(depts);
-        styleFormFieldCombo(formDeptCombo);
-        fieldsGrid.add(createFormItem("Faculty Department", formDeptCombo));
+        styleModernComboBox(formDeptCombo);
+        fieldsGrid.add(createModernFormItem("Faculty Department", formDeptCombo));
 
         // 2. Academic Year / Level
         Integer[] years = {1, 2, 3, 4};
@@ -757,11 +755,12 @@ public class TimetableManagementPanel extends JPanel {
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 setText("Level " + value + " (Year " + value + ")");
+                setBorder(new EmptyBorder(6, 12, 6, 12));
                 return this;
             }
         });
-        styleFormFieldCombo(formYearCombo);
-        fieldsGrid.add(createFormItem("Academic Year / Level", formYearCombo));
+        styleModernComboBox(formYearCombo);
+        fieldsGrid.add(createModernFormItem("Academic Year / Level", formYearCombo));
 
         // 3. Semester
         Integer[] sems = {1, 2};
@@ -771,20 +770,20 @@ public class TimetableManagementPanel extends JPanel {
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 setText("Semester " + value);
+                setBorder(new EmptyBorder(6, 12, 6, 12));
                 return this;
             }
         });
-        styleFormFieldCombo(formSemCombo);
-        fieldsGrid.add(createFormItem("Semester", formSemCombo));
+        styleModernComboBox(formSemCombo);
+        fieldsGrid.add(createModernFormItem("Semester", formSemCombo));
 
         // 4. Day of the Week
         formDayCombo = new JComboBox<>(DAYS);
-        styleFormFieldCombo(formDayCombo);
-        fieldsGrid.add(createFormItem("Day of the Week", formDayCombo));
+        styleModernComboBox(formDayCombo);
+        fieldsGrid.add(createModernFormItem("Day of the Week", formDayCombo));
 
-        // 5. Time Slot - Chronologically organized hourly & multi-hour slots (8:00 to 19:00)
+        // 5. Time Slot - Hourly & multi-hour slots
         String[] allAvailableSlots = {
-            // Hourly slots (8:00 - 19:00 in perfect chronological order)
             "8:00 - 9:00",
             "9:00 - 10:00",
             "10:00 - 11:00",
@@ -796,19 +795,16 @@ public class TimetableManagementPanel extends JPanel {
             "16:00 - 17:00",
             "17:00 - 18:00",
             "18:00 - 19:00",
-            // Common 2-hour slots
             "8:00 - 10:00",
             "10:00 - 12:00",
             "12:00 - 14:00",
             "14:00 - 16:00",
             "16:00 - 18:00",
-            // Common 3-hour slots
             "8:00 - 11:00",
             "9:00 - 12:00",
             "13:00 - 16:00",
             "14:00 - 17:00",
             "16:00 - 19:00",
-            // Common 4-hour slots
             "8:00 - 12:00",
             "13:00 - 17:00",
             "14:00 - 18:00",
@@ -816,34 +812,34 @@ public class TimetableManagementPanel extends JPanel {
         };
         formTimeCombo = new JComboBox<>(allAvailableSlots);
         formTimeCombo.setEditable(true);
-        styleFormFieldCombo(formTimeCombo);
-        fieldsGrid.add(createFormItem("Class Time Slot (8:00 - 19:00)", formTimeCombo));
+        styleModernComboBox(formTimeCombo);
+        fieldsGrid.add(createModernFormItem("Class Time Slot (8:00 - 19:00)", formTimeCombo));
 
         // 6. Subject / Course (loaded from CourseDAO)
         formCourseCombo = new JComboBox<>();
-        styleFormFieldCombo(formCourseCombo);
+        styleModernComboBox(formCourseCombo);
         refreshCoursesInForm();
-        fieldsGrid.add(createFormItem("Subject / Course Code", formCourseCombo));
+        fieldsGrid.add(createModernFormItem("Subject / Course Code", formCourseCombo));
 
         // 7. Session Type (Lecture, Practical, Lab, Tutorial, Other)
         String[] types = {"Lecture", "Practical", "Lab", "Tutorial", "Other"};
         formTypeCombo = new JComboBox<>(types);
-        styleFormFieldCombo(formTypeCombo);
-        fieldsGrid.add(createFormItem("Session Type", formTypeCombo));
+        styleModernComboBox(formTypeCombo);
+        fieldsGrid.add(createModernFormItem("Session Type", formTypeCombo));
 
         // 8. Hall / Venue
         String[] halls = {"LT 1", "LT 2", "LT 3", "Lab 1", "Lab 2", "Drawing Office", "Main Auditorium"};
         formHallCombo = new JComboBox<>(halls);
         formHallCombo.setEditable(true);
-        styleFormFieldCombo(formHallCombo);
-        fieldsGrid.add(createFormItem("Lecture Hall / Venue", formHallCombo));
+        styleModernComboBox(formHallCombo);
+        fieldsGrid.add(createModernFormItem("Lecture Hall / Venue", formHallCombo));
 
         cardBox.add(fieldsGrid, BorderLayout.CENTER);
 
         // Action Buttons Bar at Bottom of Card
         JPanel actionBar = new JPanel(new BorderLayout());
         actionBar.setOpaque(false);
-        actionBar.setBorder(new EmptyBorder(16, 0, 0, 0));
+        actionBar.setBorder(new EmptyBorder(18, 0, 0, 0));
 
         // Delete button on the left (only when editing)
         formDeleteBtn = new JButton("Delete Class Slot");
@@ -853,7 +849,7 @@ public class TimetableManagementPanel extends JPanel {
         formDeleteBtn.setFocusPainted(false);
         formDeleteBtn.setBorderPainted(false);
         formDeleteBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        formDeleteBtn.setPreferredSize(new Dimension(150, 42));
+        formDeleteBtn.setPreferredSize(new Dimension(155, 42));
         formDeleteBtn.setBorder(new EmptyBorder(10, 18, 10, 18));
         formDeleteBtn.addMouseListener(new MouseAdapter() {
             @Override
@@ -873,15 +869,27 @@ public class TimetableManagementPanel extends JPanel {
 
         formCancelBtn = new JButton("Cancel");
         formCancelBtn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        formCancelBtn.setForeground(new Color(100, 116, 139));
+        formCancelBtn.setForeground(new Color(71, 85, 105));
         formCancelBtn.setBackground(Color.WHITE);
         formCancelBtn.setFocusPainted(false);
         formCancelBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         formCancelBtn.setPreferredSize(new Dimension(110, 42));
         formCancelBtn.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(new Color(203, 213, 225), 8, 1),
-            new EmptyBorder(8, 16, 8, 16)
+            new RoundedBorder(new Color(203, 213, 225), 10, 1),
+            new EmptyBorder(8, 18, 8, 18)
         ));
+        formCancelBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                formCancelBtn.setBackground(new Color(241, 245, 249));
+                formCancelBtn.setForeground(new Color(15, 23, 42));
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                formCancelBtn.setBackground(Color.WHITE);
+                formCancelBtn.setForeground(new Color(71, 85, 105));
+            }
+        });
         formCancelBtn.addActionListener(e -> returnToTimetableGrid());
 
         formSaveBtn = new JButton("Save Timetable Entry");
@@ -891,8 +899,8 @@ public class TimetableManagementPanel extends JPanel {
         formSaveBtn.setFocusPainted(false);
         formSaveBtn.setBorderPainted(false);
         formSaveBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        formSaveBtn.setPreferredSize(new Dimension(190, 42));
-        formSaveBtn.setBorder(new EmptyBorder(10, 20, 10, 20));
+        formSaveBtn.setPreferredSize(new Dimension(195, 42));
+        formSaveBtn.setBorder(new EmptyBorder(10, 22, 10, 22));
         formSaveBtn.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -924,35 +932,120 @@ public class TimetableManagementPanel extends JPanel {
         formPanel.add(scrollPane, BorderLayout.CENTER);
     }
 
-    private JPanel createFormItem(String labelText, JComponent field) {
+    /**
+     * Modern Form Field Container with typography & clear spacing
+     */
+    private JPanel createModernFormItem(String labelText, JComponent field) {
         JPanel wrapper = new JPanel();
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
         wrapper.setOpaque(false);
 
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        label.setForeground(new Color(51, 65, 85));
+        label.setForeground(new Color(30, 41, 59)); // Slate 800
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         field.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         wrapper.add(label);
-        wrapper.add(Box.createVerticalStrut(7));
+        wrapper.add(Box.createVerticalStrut(8));
         wrapper.add(field);
 
         return wrapper;
     }
 
-    private void styleFormFieldCombo(JComboBox<?> box) {
+    /**
+     * Custom Modern ComboBox Styling:
+     * - Flat white rounded pill
+     * - Subtle slate border
+     * - Minimalist arrow
+     * - Clean padding
+     */
+    private void styleModernComboBox(JComboBox<?> box) {
         box.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         box.setBackground(Color.WHITE);
-        box.setForeground(new Color(30, 41, 59));
-        box.setPreferredSize(new Dimension(300, 42));
-        box.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        box.setForeground(new Color(15, 23, 42)); // Slate 900
+        box.setPreferredSize(new Dimension(320, 44));
+        box.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        box.setFocusable(true);
+
+        // Modern flat UI
+        box.setUI(new BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton button = new JButton() {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                        // Draw clean modern chevron arrow
+                        int w = getWidth();
+                        int h = getHeight();
+                        int size = 5;
+                        int x = (w - size * 2) / 2;
+                        int y = (h - size) / 2;
+
+                        g2.setColor(new Color(100, 116, 139)); // Slate 500
+                        g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                        g2.drawLine(x, y, x + size, y + size);
+                        g2.drawLine(x + size, y + size, x + size * 2, y);
+
+                        g2.dispose();
+                    }
+                };
+                button.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+                button.setContentAreaFilled(false);
+                button.setFocusPainted(false);
+                button.setOpaque(false);
+                button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                return button;
+            }
+
+            @Override
+            public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+                // Keep clean flat white
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(Color.WHITE);
+                g2.fill(bounds);
+                g2.dispose();
+            }
+        });
+
+        // Set rounded border with soft gray outline
         box.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(new Color(214, 221, 230), 8, 1),
-            new EmptyBorder(4, 10, 4, 10)
+            new RoundedBorder(new Color(214, 222, 232), 10, 1),
+            new EmptyBorder(4, 12, 4, 6)
         ));
+
+        // Style the popup menu list
+        Object comp = box.getUI().getAccessibleChild(box, 0);
+        if (comp instanceof JPopupMenu) {
+            JPopupMenu popup = (JPopupMenu) comp;
+            popup.setBorder(BorderFactory.createCompoundBorder(
+                new RoundedBorder(new Color(226, 232, 240), 10, 1),
+                new EmptyBorder(4, 4, 4, 4)
+            ));
+            popup.setBackground(Color.WHITE);
+        }
+
+        // Focus outline transition
+        box.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                box.setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedBorder(new Color(24, 119, 242), 10, 1),
+                    new EmptyBorder(4, 12, 4, 6)
+                ));
+            }
+            @Override
+            public void focusLost(FocusEvent e) {
+                box.setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedBorder(new Color(214, 222, 232), 10, 1),
+                    new EmptyBorder(4, 12, 4, 6)
+                ));
+            }
+        });
     }
 
     private void refreshCoursesInForm() {
@@ -977,7 +1070,7 @@ public class TimetableManagementPanel extends JPanel {
     private void openCreateForm(String defaultDay, String defaultSlot) {
         editingEntryId = null;
         formTitleLabel.setText("Create Timetable Entry");
-        formSubtitleLabel.setText("Schedule a class slot and assign course, hall, and timing details");
+        formSubtitleLabel.setText("Configure schedule parameters, assign venue, and allocate course timing");
         formSaveBtn.setText("Save Timetable Entry");
         formDeleteBtn.setVisible(false);
 
