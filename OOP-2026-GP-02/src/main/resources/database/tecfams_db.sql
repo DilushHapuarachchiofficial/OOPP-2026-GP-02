@@ -505,6 +505,28 @@ INSERT INTO `courses` (`course_id`, `department_id`, `course_code`, `course_name
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `course_lecturers`
+--
+
+CREATE TABLE `course_lecturers` (
+  `assignment_id` int(11) NOT NULL,
+  `course_id` int(11) NOT NULL,
+  `lecturer_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `course_lecturers`
+--
+
+INSERT INTO `course_lecturers` (`assignment_id`, `course_id`, `lecturer_id`) VALUES
+(1, 1, 4),
+(2, 2, 5),
+(3, 3, 6),
+(4, 4, 11);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `course_materials`
 --
 
@@ -514,7 +536,9 @@ CREATE TABLE `course_materials` (
   `lecturer_id` int(11) NOT NULL,
   `material_title` varchar(150) NOT NULL,
   `material_description` text DEFAULT NULL,
-  `file_path` varchar(255) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `file_data` longblob NOT NULL,
+  `file_size` bigint(20) DEFAULT 0,
   `uploaded_date` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -522,10 +546,11 @@ CREATE TABLE `course_materials` (
 -- Dumping data for table `course_materials`
 --
 
-INSERT INTO `course_materials` (`material_id`, `course_id`, `lecturer_id`, `material_title`, `material_description`, `file_path`, `uploaded_date`) VALUES
-(1, 1, 4, 'Lecture 01 - Introduction to OOP Concepts', 'Covers Classes, Objects, and Encapsulation principles.', 'materials/ICT2132_Lec01.pdf', '2026-10-07 13:46:54'),
-(2, 1, 4, 'Lab Sheet 01 - Java GUI Development with Swing', 'Instructions on setting up Java Swing interfaces.', 'materials/ICT2132_Lab01.pdf', '2026-10-07 13:46:54'),
-(3, 3, 6, 'Lecture 01 - Relational Model & Normalization', 'First, Second, and Third Normal Forms explained with examples.', 'materials/ICT2122_Lec01.pdf', '2026-10-07 13:46:54');
+INSERT INTO `course_materials` (`material_id`, `course_id`, `lecturer_id`, `material_title`, `material_description`, `file_name`, `file_data`, `file_size`, `uploaded_date`) VALUES
+(1, 1, 4, 'Lecture 01 - Introduction to OOP Concepts', 'Covers Classes, Objects, and Encapsulation principles.', 'ICT2132_Lec01.pdf', 0x255044462D312E340A25D0D4C5D80A, 102400, '2026-10-07 13:46:54'),
+(2, 1, 4, 'Lab Sheet 01 - Java GUI Development with Swing', 'Instructions on setting up Java Swing interfaces.', 'ICT2132_Lab01.pdf', 0x255044462D312E340A25D0D4C5D80A, 204800, '2026-10-07 13:46:54'),
+(3, 3, 6, 'Lecture 01 - Relational Model & Normalization', 'First, Second, and Third Normal Forms explained with examples.', 'ICT2122_Lec01.pdf', 0x255044462D312E340A25D0D4C5D80A, 153600, '2026-10-07 13:46:54');
+
 
 -- --------------------------------------------------------
 
@@ -1211,6 +1236,15 @@ ALTER TABLE `courses`
   ADD KEY `fk_courses_dept` (`department_id`);
 
 --
+-- Indexes for table `course_lecturers`
+--
+ALTER TABLE `course_lecturers`
+  ADD PRIMARY KEY (`assignment_id`),
+  ADD UNIQUE KEY `uq_course_lecturer` (`course_id`,`lecturer_id`),
+  ADD KEY `fk_cl_lecturer` (`lecturer_id`);
+
+
+--
 -- Indexes for table `course_materials`
 --
 ALTER TABLE `course_materials`
@@ -1336,6 +1370,13 @@ ALTER TABLE `courses`
   MODIFY `course_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT for table `course_lecturers`
+--
+ALTER TABLE `course_lecturers`
+  MODIFY `assignment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+
+--
 -- AUTO_INCREMENT for table `course_materials`
 --
 ALTER TABLE `course_materials`
@@ -1424,6 +1465,14 @@ ALTER TABLE `attendance_sessions`
 --
 ALTER TABLE `courses`
   ADD CONSTRAINT `fk_courses_dept` FOREIGN KEY (`department_id`) REFERENCES `departments` (`department_id`);
+
+--
+-- Constraints for table `course_lecturers`
+--
+ALTER TABLE `course_lecturers`
+  ADD CONSTRAINT `fk_cl_course` FOREIGN KEY (`course_id`) REFERENCES `courses` (`course_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_cl_lecturer` FOREIGN KEY (`lecturer_id`) REFERENCES `lecturers` (`lecturer_id`) ON DELETE CASCADE;
+
 
 --
 -- Constraints for table `course_materials`
