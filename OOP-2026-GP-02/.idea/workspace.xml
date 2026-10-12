@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="" />
+    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/materials/1791737173945_Adjetives.pptx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/CourseMaterialsLogic.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/CourseMaterialsLogic.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/CourseMaterials.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/CourseMaterials.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/database/tecfams_db.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/database/tecfams_db.sql" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
