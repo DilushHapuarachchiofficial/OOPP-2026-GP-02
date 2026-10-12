@@ -921,6 +921,15 @@ public class CourseMaterials extends JPanel {
             return;
         }
 
+        if (assignedCourses == null || assignedCourses.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "You do not have any courses assigned to your account.\n" +
+                    "Lecturers can only upload materials for their assigned courses.\n" +
+                    "Please contact the administration.",
+                    "No Assigned Courses", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Upload Course Material", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setSize(520, 500);
         dialog.setLocationRelativeTo(this);
@@ -932,7 +941,7 @@ public class CourseMaterials extends JPanel {
         form.setBorder(new EmptyBorder(24, 28, 24, 28));
 
         // 1. Course Selection
-        JLabel courseLbl = new JLabel("Select Course *");
+        JLabel courseLbl = new JLabel("Assigned Course * (Only your assigned courses)");
         courseLbl.setFont(FONT_CARD_LABEL);
         courseLbl.setForeground(COLOR_DEEP_NAVY);
 
@@ -941,6 +950,10 @@ public class CourseMaterials extends JPanel {
         for (CourseItem c : assignedCourses) {
             courseCombo.addItem(c);
         }
+        if (assignedCourses.size() == 1) {
+            courseCombo.setSelectedIndex(0);
+        }
+
 
         // 2. Material Title
         JLabel titleLbl = new JLabel("Material Title *");
@@ -1297,13 +1310,12 @@ public class CourseMaterials extends JPanel {
         if (item == null) return;
 
         try {
-            CourseMaterialsLogic.openFile(item.getFilePath());
+            CourseMaterialsLogic.openMaterial(item.getMaterialId());
         } catch (FileNotFoundException fnf) {
             JOptionPane.showMessageDialog(this,
-                    "The requested file was not found in the materials directory.\n" +
-                    "File: " + item.getFileName() + "\n\n" +
-                    "Please check that the file exists in the 'materials/' folder.",
-                    "File Missing on Disk", JOptionPane.WARNING_MESSAGE);
+                    "The requested material binary was not found in the database.\n" +
+                    "Material: " + item.getTitle() + "\nFile: " + item.getFileName(),
+                    "Material Not Found in Database", JOptionPane.WARNING_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Could not open document: " + ex.getMessage(),
@@ -1335,7 +1347,7 @@ public class CourseMaterials extends JPanel {
             }
 
             try {
-                CourseMaterialsLogic.downloadFile(item.getFilePath(), dest);
+                CourseMaterialsLogic.downloadMaterial(item.getMaterialId(), dest);
                 JOptionPane.showMessageDialog(this,
                         "File saved successfully to:\n" + dest.getAbsolutePath(),
                         "Download Complete", JOptionPane.INFORMATION_MESSAGE);
@@ -1346,6 +1358,7 @@ public class CourseMaterials extends JPanel {
             }
         }
     }
+
 
     /**
      * Confirms and deletes the selected material from database and disk.
