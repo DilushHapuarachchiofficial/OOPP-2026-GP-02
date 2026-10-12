@@ -167,7 +167,7 @@ public class TimetableDAO {
     }
 
     public static List<TimetableEntry> getEntries(int departmentId, int academicYear, int semester) {
-        if (departmentId > 0 && semester > 0) {
+        if (departmentId > 0 && semester > 0 && academicYear > 0) {
             Timetable t = getTimetable(departmentId, academicYear, semester);
             if (t == null) {
                 return new ArrayList<>();

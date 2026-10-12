@@ -25,11 +25,12 @@ public class TimetableManagementPanel extends JPanel {
     // --- TIMETABLE VIEW COMPONENTS ---
     private JPanel timetablePanel;
     private JComboBox<DepartmentItem> deptCombo;
+    private JComboBox<LevelItem> levelCombo;
     private JComboBox<SemesterItem> semCombo;
     private JPanel gridContainer;
     private JPanel tablePanel;
 
-    // Exactly 5 days and 4 slots
+    // Days and standard time slots
     private static final String[] DAYS = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
     private static final String[] TIME_SLOTS = {
         "8:00 - 10:00",
@@ -38,7 +39,7 @@ public class TimetableManagementPanel extends JPanel {
         "14:00 - 16:00"
     };
 
-    // State for grid view
+    // Loaded entries for current filters
     private List<TimetableEntry> currentEntries = new ArrayList<>();
 
     // --- FORM VIEW COMPONENTS ---
@@ -77,7 +78,7 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     // =========================================================================
-    // 1. TIMETABLE VIEW (GRID & FILTERS)
+    // 1. TIMETABLE VIEW (PREVIEW GRID & FILTER BAR)
     // =========================================================================
 
     private void buildTimetablePanel() {
@@ -110,8 +111,8 @@ public class TimetableManagementPanel extends JPanel {
         titleBlock.add(Box.createVerticalStrut(6));
         titleBlock.add(subtitleLabel);
 
-        // Header Right: "All Departments", "All Semesters", "+ Create Timetable"
-        JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 0));
+        // Header Right: "All Departments", "All Levels", "All Semesters", "+ Create Timetable"
+        JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         controlsPanel.setOpaque(false);
 
         // 1. Department dropdown
@@ -123,28 +124,40 @@ public class TimetableManagementPanel extends JPanel {
             new DepartmentItem(4, "Department of MDS")
         };
         deptCombo = new JComboBox<>(depts);
-        stylePillComboBox(deptCombo, 160);
+        stylePillComboBox(deptCombo, 155);
         deptCombo.addActionListener(e -> loadTimetableForSelectedFilters());
 
-        // 2. Semester dropdown
+        // 2. Level / Academic Year dropdown
+        LevelItem[] levels = {
+            new LevelItem(0, "All Levels"),
+            new LevelItem(1, "Level 1"),
+            new LevelItem(2, "Level 2"),
+            new LevelItem(3, "Level 3"),
+            new LevelItem(4, "Level 4")
+        };
+        levelCombo = new JComboBox<>(levels);
+        stylePillComboBox(levelCombo, 120);
+        levelCombo.addActionListener(e -> loadTimetableForSelectedFilters());
+
+        // 3. Semester dropdown
         SemesterItem[] sems = {
             new SemesterItem(0, "All Semesters"),
             new SemesterItem(1, "Semester 1"),
             new SemesterItem(2, "Semester 2")
         };
         semCombo = new JComboBox<>(sems);
-        stylePillComboBox(semCombo, 150);
+        stylePillComboBox(semCombo, 140);
         semCombo.addActionListener(e -> loadTimetableForSelectedFilters());
 
-        // 3. "+ Create Timetable" button
+        // 4. "+ Create Timetable" button
         JButton createBtn = new JButton("+ Create Timetable");
-        createBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        createBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         createBtn.setForeground(Color.WHITE);
-        createBtn.setBackground(new Color(24, 119, 242)); // Modern vibrant blue
+        createBtn.setBackground(new Color(24, 119, 242));
         createBtn.setFocusPainted(false);
         createBtn.setBorderPainted(false);
         createBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        createBtn.setPreferredSize(new Dimension(170, 38));
+        createBtn.setPreferredSize(new Dimension(165, 38));
         createBtn.setBorder(new EmptyBorder(8, 16, 8, 16));
         createBtn.addMouseListener(new MouseAdapter() {
             @Override
@@ -159,8 +172,9 @@ public class TimetableManagementPanel extends JPanel {
         createBtn.addActionListener(e -> openCreateForm(null, null));
 
         controlsPanel.add(deptCombo);
+        controlsPanel.add(levelCombo);
         controlsPanel.add(semCombo);
-        controlsPanel.add(Box.createHorizontalStrut(4));
+        controlsPanel.add(Box.createHorizontalStrut(2));
         controlsPanel.add(createBtn);
 
         headerPanel.add(titleBlock, BorderLayout.WEST);
@@ -194,14 +208,14 @@ public class TimetableManagementPanel extends JPanel {
                 int w = getWidth();
                 int h = getHeight();
 
-                // Row height = h / 5
+                // Row lines (5 rows: header + 4 slots)
                 int rowH = h / 5;
                 for (int r = 1; r < 5; r++) {
                     int y = r * rowH;
                     g2.drawLine(0, y, w, y);
                 }
 
-                // Column width = w / 6
+                // Column lines (6 cols: time label + 5 days)
                 int colW = w / 6;
                 for (int c = 1; c < 6; c++) {
                     int x = c * colW;
@@ -264,22 +278,30 @@ public class TimetableManagementPanel extends JPanel {
         return item;
     }
 
+    /**
+     * Loads entries based on department, academic year (level), and semester filters.
+     * When level == 0, loads entries across all levels.
+     */
     private void loadTimetableForSelectedFilters() {
         DepartmentItem selDept = (DepartmentItem) deptCombo.getSelectedItem();
+        LevelItem selLevel = (LevelItem) levelCombo.getSelectedItem();
         SemesterItem selSem = (SemesterItem) semCombo.getSelectedItem();
 
         int deptId = selDept != null ? selDept.id : 0;
+        int level = selLevel != null ? selLevel.level : 0;
         int sem = selSem != null ? selSem.semester : 0;
 
-        // Query entries matching department and semester
-        currentEntries = TimetableDAO.getEntries(deptId, 1, sem);
-        if (currentEntries.isEmpty() && (deptId == 0 || sem == 0)) {
-            currentEntries = TimetableDAO.getEntries(deptId, 0, sem);
-        }
+        // Query entries matching filters
+        currentEntries = TimetableDAO.getEntries(deptId, level, sem);
 
         renderScheduleGrid();
     }
 
+    /**
+     * Renders the schedule grid.
+     * If multiple entries fall into the same day and time slot,
+     * ALL entries are rendered side-by-side with an elegant horizontal scrollbar.
+     */
     private void renderScheduleGrid() {
         tablePanel.removeAll();
 
@@ -288,7 +310,7 @@ public class TimetableManagementPanel extends JPanel {
         corner.setOpaque(false);
         tablePanel.add(corner);
 
-        // Columns 1-5: Days
+        // Columns 1-5: Day headers
         for (String day : DAYS) {
             JPanel dayCell = new JPanel(new GridBagLayout());
             dayCell.setOpaque(false);
@@ -301,6 +323,7 @@ public class TimetableManagementPanel extends JPanel {
 
         // Rows 1-4: Time Slots
         for (String slot : TIME_SLOTS) {
+            // Time slot label
             JPanel timeCell = new JPanel(new GridBagLayout());
             timeCell.setOpaque(false);
             JLabel timeLabel = new JLabel(slot);
@@ -309,12 +332,13 @@ public class TimetableManagementPanel extends JPanel {
             timeCell.add(timeLabel);
             tablePanel.add(timeCell);
 
+            // Day cells for this slot
             for (String day : DAYS) {
-                TimetableEntry match = findEntryForSlot(day, slot);
-                if (match != null) {
-                    tablePanel.add(createCardCell(match));
-                } else {
+                List<TimetableEntry> matches = findEntriesForSlot(day, slot);
+                if (matches.isEmpty()) {
                     tablePanel.add(createEmptySlotCell(day, slot));
+                } else {
+                    tablePanel.add(createMultiCardSlotCell(day, slot, matches));
                 }
             }
         }
@@ -323,9 +347,13 @@ public class TimetableManagementPanel extends JPanel {
         tablePanel.repaint();
     }
 
-    private TimetableEntry findEntryForSlot(String day, String slotTime) {
+    /**
+     * Finds ALL entries matching the specified day and time slot.
+     */
+    private List<TimetableEntry> findEntriesForSlot(String day, String slotTime) {
+        List<TimetableEntry> matches = new ArrayList<>();
         String[] parts = slotTime.split(" - ");
-        if (parts.length < 2) return null;
+        if (parts.length < 2) return matches;
         String startSlot = parts[0].trim();
         String endSlot = parts[1].trim();
 
@@ -334,11 +362,11 @@ public class TimetableManagementPanel extends JPanel {
                 String entStart = cleanTime(entry.getStartTime());
                 String entEnd = cleanTime(entry.getEndTime());
                 if (entStart.equals(startSlot) && entEnd.equals(endSlot)) {
-                    return entry;
+                    matches.add(entry);
                 }
             }
         }
-        return null;
+        return matches;
     }
 
     private String cleanTime(String t) {
@@ -352,11 +380,59 @@ public class TimetableManagementPanel extends JPanel {
         return t;
     }
 
-    private JPanel createCardCell(TimetableEntry entry) {
-        JPanel wrapper = new JPanel(new GridBagLayout());
-        wrapper.setOpaque(false);
-        wrapper.setBorder(new EmptyBorder(8, 8, 8, 8));
+    /**
+     * Cell that displays 1 or more class cards.
+     * When there are multiple classes (e.g. Level 1, 2, 3 in the same slot),
+     * all cards are placed side-by-side with a horizontal scrollbar as requested!
+     */
+    private JPanel createMultiCardSlotCell(String day, String slotTime, List<TimetableEntry> entries) {
+        JPanel cellWrapper = new JPanel(new BorderLayout());
+        cellWrapper.setOpaque(false);
 
+        // Panel holding cards in a horizontal row
+        JPanel cardsRow = new JPanel();
+        cardsRow.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 4));
+        cardsRow.setOpaque(false);
+
+        for (TimetableEntry entry : entries) {
+            cardsRow.add(createCardComponent(entry));
+        }
+
+        // Mini "+" button to schedule another class in this same slot
+        JButton addMoreBtn = createMiniAddButton(day, slotTime);
+        cardsRow.add(addMoreBtn);
+
+        // Horizontal scroll pane for side-by-side cards
+        JScrollPane scrollPane = new JScrollPane(cardsRow);
+        scrollPane.setBorder(null);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        // Custom slim modern horizontal scrollbar
+        JScrollBar hBar = scrollPane.getHorizontalScrollBar();
+        hBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 6));
+        hBar.setUI(new ModernScrollBarUI());
+        hBar.setUnitIncrement(16);
+
+        // Mouse wheel horizontal scrolling
+        scrollPane.addMouseWheelListener(e -> {
+            if (hBar.isVisible()) {
+                int scrollAmount = e.getUnitsToScroll() * 15;
+                hBar.setValue(hBar.getValue() + scrollAmount);
+                e.consume();
+            }
+        });
+
+        cellWrapper.add(scrollPane, BorderLayout.CENTER);
+        return cellWrapper;
+    }
+
+    /**
+     * Creates an individual rounded pastel card matching the design.
+     */
+    private JPanel createCardComponent(TimetableEntry entry) {
         SlotColorTheme theme = getThemeForSessionType(entry.getSessionType());
 
         JPanel card = new JPanel() {
@@ -365,9 +441,11 @@ public class TimetableManagementPanel extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+                // Background
                 g2.setColor(theme.background);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 16, 16));
 
+                // Border
                 g2.setColor(theme.border);
                 g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 16, 16));
 
@@ -377,16 +455,25 @@ public class TimetableManagementPanel extends JPanel {
         };
         card.setOpaque(false);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(new EmptyBorder(10, 16, 10, 16));
+        card.setBorder(new EmptyBorder(8, 14, 8, 14));
         card.setPreferredSize(new Dimension(135, 62));
         card.setMinimumSize(new Dimension(110, 54));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
+        // Tooltip showing full course information
+        String tip = (entry.getCourseCode() != null ? entry.getCourseCode() : "") +
+                     (entry.getCourseName() != null ? " - " + entry.getCourseName() : "") +
+                     " (" + (entry.getSessionType() != null ? entry.getSessionType() : "Class") + ")" +
+                     " @ " + (entry.getHall() != null ? entry.getHall() : "TBA");
+        card.setToolTipText(tip);
+
+        // Subject / Course Code
         JLabel codeLabel = new JLabel(entry.getCourseCode() != null ? entry.getCourseCode() : "N/A");
         codeLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         codeLabel.setForeground(theme.text);
         codeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        // Hall / Location
         JLabel hallLabel = new JLabel(entry.getHall() != null ? entry.getHall() : "");
         hallLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         hallLabel.setForeground(theme.text);
@@ -398,7 +485,7 @@ public class TimetableManagementPanel extends JPanel {
         card.add(hallLabel);
         card.add(Box.createVerticalGlue());
 
-        // In-place edit on click - no separate window!
+        // Clicking card switches in-place to edit form
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -406,16 +493,48 @@ public class TimetableManagementPanel extends JPanel {
             }
         });
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        gbc.insets = new Insets(4, 6, 4, 6);
-        wrapper.add(card, gbc);
-
-        return wrapper;
+        return card;
     }
 
+    /**
+     * Small stylish add button next to cards in a slot to add another class
+     */
+    private JButton createMiniAddButton(String day, String slotTime) {
+        JButton btn = new JButton("+");
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btn.setForeground(new Color(160, 174, 192));
+        btn.setBackground(new Color(248, 250, 252));
+        btn.setPreferredSize(new Dimension(28, 54));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setToolTipText("Add another class to " + day + " (" + slotTime + ")");
+
+        btn.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(new Color(226, 232, 240), 10, 1),
+            new EmptyBorder(4, 4, 4, 4)
+        ));
+
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(new Color(237, 242, 247));
+                btn.setForeground(new Color(24, 119, 242));
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(new Color(248, 250, 252));
+                btn.setForeground(new Color(160, 174, 192));
+            }
+        });
+
+        btn.addActionListener(e -> openCreateForm(day, slotTime));
+        return btn;
+    }
+
+    /**
+     * Empty slot cell with hover cue and click-to-add action.
+     */
     private JPanel createEmptySlotCell(String day, String slotTime) {
         JPanel emptyCell = new JPanel();
         emptyCell.setOpaque(false);
@@ -594,7 +713,7 @@ public class TimetableManagementPanel extends JPanel {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                setText("Year " + value + " (Level " + value + ")");
+                setText("Level " + value + " (Year " + value + ")");
                 return this;
             }
         });
@@ -789,7 +908,7 @@ public class TimetableManagementPanel extends JPanel {
 
         refreshCoursesInForm();
 
-        // Sync with currently selected header filters if valid
+        // Sync with currently selected header department filter if specific
         DepartmentItem selDept = (DepartmentItem) deptCombo.getSelectedItem();
         if (selDept != null && selDept.id > 0) {
             for (int i = 0; i < formDeptCombo.getItemCount(); i++) {
@@ -802,14 +921,21 @@ public class TimetableManagementPanel extends JPanel {
             formDeptCombo.setSelectedIndex(0);
         }
 
+        // Sync with currently selected level filter if specific
+        LevelItem selLevel = (LevelItem) levelCombo.getSelectedItem();
+        if (selLevel != null && selLevel.level > 0) {
+            formYearCombo.setSelectedItem(selLevel.level);
+        } else {
+            formYearCombo.setSelectedItem(1);
+        }
+
+        // Sync with currently selected semester filter if specific
         SemesterItem selSem = (SemesterItem) semCombo.getSelectedItem();
         if (selSem != null && selSem.semester > 0) {
             formSemCombo.setSelectedItem(selSem.semester);
         } else {
             formSemCombo.setSelectedItem(1);
         }
-
-        formYearCombo.setSelectedItem(1);
 
         if (defaultDay != null) {
             formDayCombo.setSelectedItem(defaultDay);
@@ -921,18 +1047,26 @@ public class TimetableManagementPanel extends JPanel {
         String endSql = formatSqlTime(times[1].trim());
 
         if (editingEntryId == null) {
-            // Create New Entry
+            // Create New Entry in Database
             int targetTtId = TimetableDAO.getOrCreateTimetable(deptId, year, sem);
             boolean success = TimetableDAO.addEntry(targetTtId, selCourse.id, day, startSql, endSql, hall, type);
             if (success) {
                 JOptionPane.showMessageDialog(this, "Timetable entry created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                // Ensure newly added entry is visible by matching filter if needed
+                LevelItem currentLevel = (LevelItem) levelCombo.getSelectedItem();
+                if (currentLevel != null && currentLevel.level > 0 && currentLevel.level != year) {
+                    // Set to All Levels or to this year so user sees it immediately
+                    levelCombo.setSelectedIndex(0); // All Levels
+                }
+
                 loadTimetableForSelectedFilters();
                 returnToTimetableGrid();
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to create timetable entry. Please verify inputs.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            // Update Existing Entry
+            // Update Existing Entry in Database
             boolean success = TimetableDAO.updateEntry(editingEntryId, selCourse.id, day, startSql, endSql, hall, type);
             if (success) {
                 JOptionPane.showMessageDialog(this, "Timetable entry updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -994,6 +1128,13 @@ public class TimetableManagementPanel extends JPanel {
         @Override public String toString() { return name; }
     }
 
+    private static class LevelItem {
+        int level;
+        String title;
+        LevelItem(int level, String title) { this.level = level; this.title = title; }
+        @Override public String toString() { return title; }
+    }
+
     private static class SemesterItem {
         int semester;
         String title;
@@ -1022,6 +1163,53 @@ public class TimetableManagementPanel extends JPanel {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(lineColor);
             g2.draw(new RoundRectangle2D.Float(x, y, width - 1, height - 1, radius, radius));
+            g2.dispose();
+        }
+    }
+
+    /**
+     * Sleek, modern scrollbar for cards overflowing inside slot cells
+     */
+    private static class ModernScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
+        @Override
+        protected void configureScrollBarColors() {
+            this.thumbColor = new Color(203, 213, 225);
+            this.trackColor = new Color(245, 247, 250);
+        }
+
+        @Override
+        protected JButton createDecreaseButton(int orientation) {
+            return createZeroButton();
+        }
+
+        @Override
+        protected JButton createIncreaseButton(int orientation) {
+            return createZeroButton();
+        }
+
+        private JButton createZeroButton() {
+            JButton btn = new JButton();
+            btn.setPreferredSize(new Dimension(0, 0));
+            btn.setMinimumSize(new Dimension(0, 0));
+            btn.setMaximumSize(new Dimension(0, 0));
+            return btn;
+        }
+
+        @Override
+        protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+            if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(185, 198, 214));
+            g2.fill(new RoundRectangle2D.Float(thumbBounds.x + 1, thumbBounds.y + 1, thumbBounds.width - 2, thumbBounds.height - 2, 4, 4));
+            g2.dispose();
+        }
+
+        @Override
+        protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setColor(new Color(241, 245, 249));
+            g2.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
             g2.dispose();
         }
     }
