@@ -1342,11 +1342,9 @@ public class LecturerDashboard extends JPanel {
             CourseMaterials materials = new CourseMaterials(navbar, cardLayout, contentPanel);
             contentPanel.add(materials, Navbar.PAGE_MATERIALS);
 
-            contentPanel.add(createModulePlaceholder(
-                    "Student Eligibility",
-                    "Review attendance thresholds (80% criteria), continuous assessment requirements, and exam admissions.",
-                    navbar, cardLayout, contentPanel
-            ), Navbar.PAGE_ELIGIBILITY);
+            // 3. Live Student Details & Eligibility Module
+            StudentDetailsEligibility eligibility = new StudentDetailsEligibility(navbar, cardLayout, contentPanel);
+            contentPanel.add(eligibility, Navbar.PAGE_ELIGIBILITY);
 
             contentPanel.add(createModulePlaceholder(
                     "Marks Management",
@@ -1367,6 +1365,8 @@ public class LecturerDashboard extends JPanel {
                     dashboard.refreshDashboard();
                 } else if (Navbar.PAGE_MATERIALS.equals(pageName)) {
                     materials.refreshMaterials();
+                } else if (Navbar.PAGE_ELIGIBILITY.equals(pageName)) {
+                    eligibility.refreshData();
                 }
             });
 
