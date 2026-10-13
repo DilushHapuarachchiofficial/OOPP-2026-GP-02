@@ -518,7 +518,7 @@ public class StudentDetailsEligibility extends JPanel {
 
         scenarioSelector = new ModernComboBox<>(Scenario.values());
         scenarioSelector.setPreferredSize(new Dimension(230, 34));
-        scenarioSelector.setToolTipText("Filter by attendance & medical scenarios 1 to 5");
+        scenarioSelector.setToolTipText("Filter by attendance threshold and medical records");
         scenarioSelector.addActionListener(e -> applyFilters());
 
         eligibilityFilterCombo = new ModernComboBox<>(EligibilityFilter.values());
@@ -542,7 +542,7 @@ public class StudentDetailsEligibility extends JPanel {
 
         row2.add(new JLabel("Search:"));
         row2.add(searchField);
-        row2.add(new JLabel("Scenario:"));
+        row2.add(new JLabel("Attendance:"));
         row2.add(scenarioSelector);
         row2.add(new JLabel("Status:"));
         row2.add(eligibilityFilterCombo);
@@ -2320,27 +2320,27 @@ public class StudentDetailsEligibility extends JPanel {
                 switch (s) {
                     case ALL:
                         lbl.setIcon(new EligibilityVectorIcon(EligibilityVectorIcon.Type.LAYERS, 13, 13, COLOR_DEEP_NAVY));
-                        lbl.setText("All Scenarios (1 to 5)");
+                        lbl.setText("All Attendance Levels");
                         break;
                     case SCENARIO_1_ABOVE_80_NO_MED:
                         lbl.setIcon(new EligibilityVectorIcon(EligibilityVectorIcon.Type.DOT_SUCCESS, 12, 12));
-                        lbl.setText("Scenario 1: Above 80% (No Med)");
+                        lbl.setText("Above 80% (No Medical)");
                         break;
                     case SCENARIO_2_EXACTLY_80:
                         lbl.setIcon(new EligibilityVectorIcon(EligibilityVectorIcon.Type.DOT_WARNING, 12, 12));
-                        lbl.setText("Scenario 2: Exactly 80% Attendance");
+                        lbl.setText("Exactly 80% Attendance");
                         break;
                     case SCENARIO_3_BELOW_80_NO_MED:
                         lbl.setIcon(new EligibilityVectorIcon(EligibilityVectorIcon.Type.DOT_DANGER, 12, 12));
-                        lbl.setText("Scenario 3: Below 80% (No Med)");
+                        lbl.setText("Below 80% (No Medical)");
                         break;
                     case SCENARIO_4_ABOVE_80_WITH_MED:
                         lbl.setIcon(new EligibilityVectorIcon(EligibilityVectorIcon.Type.DOT_BLUE, 12, 12));
-                        lbl.setText("Scenario 4: Above 80% (With Med)");
+                        lbl.setText("Above 80% (With Medical)");
                         break;
                     case SCENARIO_5_BELOW_80_WITH_MED:
                         lbl.setIcon(new EligibilityVectorIcon(EligibilityVectorIcon.Type.DOT_ORANGE, 12, 12));
-                        lbl.setText("Scenario 5: Below 80% (With Med)");
+                        lbl.setText("Below 80% (With Medical)");
                         break;
                     default:
                         lbl.setIcon(null);

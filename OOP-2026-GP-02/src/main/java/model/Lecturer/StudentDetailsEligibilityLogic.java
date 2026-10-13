@@ -52,12 +52,12 @@ public class StudentDetailsEligibilityLogic {
     }
 
     public enum Scenario {
-        ALL("All Scenarios"),
-        SCENARIO_1_ABOVE_80_NO_MED("Scenario 1: Above 80% (No Medical)"),
-        SCENARIO_2_EXACTLY_80("Scenario 2: Exactly 80% Attendance"),
-        SCENARIO_3_BELOW_80_NO_MED("Scenario 3: Below 80% (No Medical)"),
-        SCENARIO_4_ABOVE_80_WITH_MED("Scenario 4: Above 80% (With Medical)"),
-        SCENARIO_5_BELOW_80_WITH_MED("Scenario 5: Below 80% (With Medical)");
+        ALL("All Attendance Levels"),
+        SCENARIO_1_ABOVE_80_NO_MED("Above 80% (No Medical)"),
+        SCENARIO_2_EXACTLY_80("Exactly 80% Attendance"),
+        SCENARIO_3_BELOW_80_NO_MED("Below 80% (No Medical)"),
+        SCENARIO_4_ABOVE_80_WITH_MED("Above 80% (With Medical)"),
+        SCENARIO_5_BELOW_80_WITH_MED("Below 80% (With Medical)");
 
         private final String label;
         Scenario(String label) { this.label = label; }
