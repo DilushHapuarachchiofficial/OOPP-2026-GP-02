@@ -109,76 +109,20 @@ public class LecturerDashboard extends JPanel {
     private String targetUsername = null;
 
     // =========================================================================
-    // TECHNOLOGY BACKGROUND IMAGE MANAGEMENT
+    // CANVAS BACKGROUND RENDERING
     // =========================================================================
-    private static BufferedImage bgImage = null;
-    private static boolean bgImageChecked = false;
-
-    private static synchronized BufferedImage getDashboardBackgroundImage() {
-        if (!bgImageChecked) {
-            bgImageChecked = true;
-            String[] candidatePaths = {
-                "src/main/resources/images/dashboard_tech_bg.jpg",
-                "resources/images/dashboard_tech_bg.jpg",
-                "images/dashboard_tech_bg.jpg",
-                "OOP-2026-GP-02/src/main/resources/images/dashboard_tech_bg.jpg"
-            };
-            for (String p : candidatePaths) {
-                File f = new File(p);
-                if (f.exists()) {
-                    try {
-                        bgImage = ImageIO.read(f);
-                        if (bgImage != null) break;
-                    } catch (Exception ignored) {}
-                }
-            }
-            if (bgImage == null) {
-                try {
-                    InputStream is = LecturerDashboard.class.getResourceAsStream("/images/dashboard_tech_bg.jpg");
-                    if (is == null) {
-                        is = LecturerDashboard.class.getResourceAsStream("/dashboard_tech_bg.jpg");
-                    }
-                    if (is != null) {
-                        bgImage = ImageIO.read(is);
-                        is.close();
-                    }
-                } catch (Exception ignored) {}
-            }
-        }
-        return bgImage;
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
         int w = getWidth();
         int h = getHeight();
 
-        BufferedImage bg = getDashboardBackgroundImage();
-        if (bg != null) {
-            // Draw technology background image scaled to cover panel
-            g2.drawImage(bg, 0, 0, w, h, null);
-
-            // Refined translucent gradient overlay keeping all cards and typography crystal clear
-            GradientPaint overlay = new GradientPaint(
-                0, 0, new Color(11, 31, 58, 140),
-                0, h, new Color(244, 247, 251, 220)
-            );
-            g2.setPaint(overlay);
-            g2.fillRect(0, 0, w, h);
-        } else {
-            // Fallback tech gradient if image is not present
-            GradientPaint fallback = new GradientPaint(
-                0, 0, new Color(236, 242, 250),
-                w, h, COLOR_PAGE_BG
-            );
-            g2.setPaint(fallback);
-            g2.fillRect(0, 0, w, h);
-        }
+        // Clean academic canvas background (#F4F7FB) matching all portal modules
+        g2.setColor(COLOR_PAGE_BG);
+        g2.fillRect(0, 0, w, h);
 
         g2.dispose();
     }
