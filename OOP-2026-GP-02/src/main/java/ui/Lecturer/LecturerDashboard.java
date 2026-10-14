@@ -1296,11 +1296,8 @@ public class LecturerDashboard extends JPanel {
                     navbar, cardLayout, contentPanel
             ), Navbar.PAGE_MARKS);
 
-            contentPanel.add(createModulePlaceholder(
-                    "My Profile",
-                    "View and update your academic designations, department affiliations, and contact credentials.",
-                    navbar, cardLayout, contentPanel
-            ), Navbar.PAGE_PROFILE);
+            LecturerProfile profile = new LecturerProfile(navbar, cardLayout, contentPanel);
+            contentPanel.add(profile, Navbar.PAGE_PROFILE);
 
             // Wire Navigation Listener to switch views in the same window
             navbar.addNavigationListener(pageName -> {
@@ -1311,6 +1308,8 @@ public class LecturerDashboard extends JPanel {
                     materials.refreshMaterials();
                 } else if (Navbar.PAGE_ELIGIBILITY.equals(pageName)) {
                     eligibility.refreshData();
+                } else if (Navbar.PAGE_PROFILE.equals(pageName)) {
+                    profile.loadLecturerProfile();
                 }
             });
 
