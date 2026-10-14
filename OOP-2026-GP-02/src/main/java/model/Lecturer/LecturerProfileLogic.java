@@ -3,11 +3,17 @@ package main.java.model.Lecturer;
 import main.java.dao.DBConnection;
 import main.java.model.UserSession;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
 
 /**
  * LecturerProfileLogic.java
@@ -504,5 +510,223 @@ public class LecturerProfileLogic {
         } catch (SQLException e) {
             return new OperationResult(false, "Database error while updating password: " + e.getMessage());
         }
+    }
+
+    // =========================================================================
+    // PROFILE PICTURE MANAGEMENT METHODS
+    // =========================================================================
+
+    // Directory path for profile uploads relative to workspace
+    public static final String UPLOAD_DIR_PATH = "uploads/profiles";
+
+    // 5 MB maximum image file size
+    public static final long MAX_IMAGE_SIZE_BYTES = 5L * 1024L * 1024L;
+
+    // Allowed image formats
+    public static final String[] ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif", "bmp"};
+
+    /**
+     * Validates an image file before upload.
+     * Enforces existence, file readability, size limit, extension, and ImageIO decoding.
+     *
+     * @param file The file selected by the lecturer
+     * @return ValidationResult
+     */
+    public static ValidationResult validateProfilePicture(File file) {
+        if (file == null) {
+            return ValidationResult.fail("Please choose an image file to upload.", "profilePicture");
+        }
+        if (!file.exists() || !file.isFile()) {
+            return ValidationResult.fail("The selected file does not exist or is not a regular file.", "profilePicture");
+        }
+        if (!file.canRead()) {
+            return ValidationResult.fail("The selected file cannot be read. Check file permissions.", "profilePicture");
+        }
+        if (file.length() == 0) {
+            return ValidationResult.fail("The selected file is empty (0 bytes).", "profilePicture");
+        }
+        if (file.length() > MAX_IMAGE_SIZE_BYTES) {
+            return ValidationResult.fail("Image size exceeds the maximum allowed limit of 5 MB.", "profilePicture");
+        }
+
+        // Check file extension
+        String name = file.getName().toLowerCase();
+        int dot = name.lastIndexOf('.');
+        if (dot < 0) {
+            return ValidationResult.fail("The file must have an image extension (.png, .jpg, .jpeg, etc.).", "profilePicture");
+        }
+        String ext = name.substring(dot + 1);
+        boolean allowed = false;
+        for (String a : ALLOWED_IMAGE_EXTENSIONS) {
+            if (a.equalsIgnoreCase(ext)) {
+                allowed = true;
+                break;
+            }
+        }
+        if (!allowed) {
+            return ValidationResult.fail("Unsupported image format. Allowed formats: PNG, JPG, JPEG, WEBP, GIF, BMP.", "profilePicture");
+        }
+
+        // Verify valid image header / decoding
+        try {
+            BufferedImage img = ImageIO.read(file);
+            if (img == null) {
+                return ValidationResult.fail("The selected file is not a valid or readable image.", "profilePicture");
+            }
+        } catch (IOException e) {
+            return ValidationResult.fail("Unable to read image file: " + e.getMessage(), "profilePicture");
+        }
+
+        return ValidationResult.ok();
+    }
+
+    /**
+     * Updates the lecturer's profile photo in the `users` table `profile_picture` column.
+     * Copies the image file securely to the uploads directory and records the path.
+     *
+     * @param userId    Lecturer's user ID (users.user_id)
+     * @param imageFile Selected image file
+     * @return OperationResult
+     */
+    public static OperationResult updateProfilePicture(int userId, File imageFile) {
+        if (userId <= 0) {
+            return new OperationResult(false, "Invalid user session: User ID not found.");
+        }
+
+        // 1. Validate image file
+        ValidationResult val = validateProfilePicture(imageFile);
+        if (!val.isValid()) {
+            return new OperationResult(false, val.getMessage());
+        }
+
+        try {
+            // 2. Ensure target upload directory exists
+            File dir = new File(UPLOAD_DIR_PATH);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // 3. Generate unique filename: user_<userId>_<timestamp>.<ext>
+            String originalName = imageFile.getName();
+            int dot = originalName.lastIndexOf('.');
+            String ext = (dot >= 0) ? originalName.substring(dot).toLowerCase() : ".png";
+            String newFileName = "user_" + userId + "_" + System.currentTimeMillis() + ext;
+            File destFile = new File(dir, newFileName);
+
+            // 4. Copy image file to uploads folder
+            Files.copy(imageFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            // 5. Normalized path stored in MySQL users table
+            String storedPath = UPLOAD_DIR_PATH + "/" + newFileName;
+
+            // 6. Execute parameterized update on users table
+            try (Connection conn = DBConnection.getConnection()) {
+                if (conn == null) {
+                    return new OperationResult(false, "Database connection failed. Please ensure MySQL server is online.");
+                }
+
+                String sql = "UPDATE users SET profile_picture = ? WHERE user_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, storedPath);
+                    pstmt.setInt(2, userId);
+
+                    int rows = pstmt.executeUpdate();
+                    if (rows > 0) {
+                        return new OperationResult(true, "Profile photo updated successfully!");
+                    } else {
+                        return new OperationResult(false, "No user record found in database for ID: " + userId);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            return new OperationResult(false, "Failed to save image file: " + e.getMessage());
+        } catch (SQLException e) {
+            return new OperationResult(false, "Database error while updating profile picture: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Resets the user's profile photo back to the default avatar ('default_avatar.png')
+     * in the `users` table.
+     *
+     * @param userId Lecturer's user ID
+     * @return OperationResult
+     */
+    public static OperationResult resetProfilePicture(int userId) {
+        if (userId <= 0) {
+            return new OperationResult(false, "Invalid user session: User ID not found.");
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            if (conn == null) {
+                return new OperationResult(false, "Database connection failed. Please ensure MySQL server is online.");
+            }
+
+            String sql = "UPDATE users SET profile_picture = 'default_avatar.png' WHERE user_id = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, userId);
+                int rows = pstmt.executeUpdate();
+                if (rows > 0) {
+                    return new OperationResult(true, "Profile photo reset to default avatar.");
+                } else {
+                    return new OperationResult(false, "No user record found for ID: " + userId);
+                }
+            }
+        } catch (SQLException e) {
+            return new OperationResult(false, "Database error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Attempts to resolve and decode a BufferedImage from the stored profile_picture path.
+     * Checks relative file path, uploads directory, resources, and classpath.
+     *
+     * @param pathStr The profile_picture string from database users table
+     * @return Decoded BufferedImage, or null if default or not found
+     */
+    public static BufferedImage resolveProfileImage(String pathStr) {
+        if (pathStr == null || pathStr.trim().isEmpty() || "default_avatar.png".equalsIgnoreCase(pathStr.trim())) {
+            return null;
+        }
+
+        String clean = pathStr.trim();
+
+        // 1. Direct file path check
+        File direct = new File(clean);
+        if (direct.exists() && direct.isFile()) {
+            try {
+                BufferedImage img = ImageIO.read(direct);
+                if (img != null) return img;
+            } catch (Exception ignored) {}
+        }
+
+        // 2. Relative to UPLOAD_DIR_PATH
+        File inUpload = new File(UPLOAD_DIR_PATH, new File(clean).getName());
+        if (inUpload.exists() && inUpload.isFile()) {
+            try {
+                BufferedImage img = ImageIO.read(inUpload);
+                if (img != null) return img;
+            } catch (Exception ignored) {}
+        }
+
+        // 3. In src/main/resources/images
+        File inRes = new File("src/main/resources/images", new File(clean).getName());
+        if (inRes.exists() && inRes.isFile()) {
+            try {
+                BufferedImage img = ImageIO.read(inRes);
+                if (img != null) return img;
+            } catch (Exception ignored) {}
+        }
+
+        // 4. Classpath resource
+        try {
+            java.io.InputStream is = LecturerProfileLogic.class.getResourceAsStream("/images/" + new File(clean).getName());
+            if (is != null) {
+                BufferedImage img = ImageIO.read(is);
+                if (img != null) return img;
+            }
+        } catch (Exception ignored) {}
+
+        return null;
     }
 }

@@ -9,10 +9,13 @@ import main.java.model.UserSession;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.sql.SQLException;
 
 /**
@@ -81,6 +84,9 @@ public class LecturerProfile extends JPanel {
 
     // Overview Components
     private JLabel avatarLabel;
+    private BufferedImage loadedProfileImage = null;
+    private JButton changePhotoBtn;
+    private JButton removePhotoBtn;
     private JLabel overviewNameLabel;
     private JLabel overviewDesignationBadge;
     private JLabel overviewDeptBadge;
@@ -281,39 +287,99 @@ public class LecturerProfile extends JPanel {
     private JPanel createOverviewCard() {
         RoundedPanel card = new RoundedPanel(14, COLOR_CARD_BG, COLOR_BORDER);
         card.setLayout(new BorderLayout(24, 0));
-        card.setBorder(new EmptyBorder(20, 24, 20, 24));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        card.setBorder(new EmptyBorder(16, 24, 16, 24));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
 
-        // A. Left Avatar Circle
-        JPanel avatarContainer = new JPanel(new GridBagLayout());
+        // A. Left Avatar & Photo Edit Actions Container
+        JPanel avatarContainer = new JPanel();
+        avatarContainer.setLayout(new BoxLayout(avatarContainer, BoxLayout.Y_AXIS));
         avatarContainer.setOpaque(false);
+        avatarContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         avatarLabel = new JLabel("CP", SwingConstants.CENTER) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
                 int size = Math.min(getWidth(), getHeight());
-                // Gradient fill from Navy to Pro Blue
-                GradientPaint gp = new GradientPaint(0, 0, COLOR_DEEP_NAVY, size, size, COLOR_PRO_BLUE);
-                g2.setPaint(gp);
-                g2.fill(new Ellipse2D.Float(0, 0, size, size));
+                if (loadedProfileImage != null) {
+                    Shape oldClip = g2.getClip();
+                    g2.setClip(new Ellipse2D.Float(0, 0, size, size));
+                    g2.drawImage(loadedProfileImage, 0, 0, size, size, null);
+                    g2.setClip(oldClip);
 
-                // Crisp border
-                g2.setColor(new Color(255, 255, 255, 120));
-                g2.setStroke(new BasicStroke(2.0f));
-                g2.draw(new Ellipse2D.Float(1, 1, size - 2, size - 2));
+                    // Circular ring border
+                    g2.setColor(new Color(255, 255, 255, 220));
+                    g2.setStroke(new BasicStroke(2.0f));
+                    g2.draw(new Ellipse2D.Float(1, 1, size - 2, size - 2));
 
+                    g2.setColor(COLOR_BORDER);
+                    g2.setStroke(new BasicStroke(1.0f));
+                    g2.draw(new Ellipse2D.Float(0, 0, size - 1, size - 1));
+                } else {
+                    // Gradient fill from Navy to Pro Blue
+                    GradientPaint gp = new GradientPaint(0, 0, COLOR_DEEP_NAVY, size, size, COLOR_PRO_BLUE);
+                    g2.setPaint(gp);
+                    g2.fill(new Ellipse2D.Float(0, 0, size, size));
+
+                    // Crisp border
+                    g2.setColor(new Color(255, 255, 255, 120));
+                    g2.setStroke(new BasicStroke(2.0f));
+                    g2.draw(new Ellipse2D.Float(1, 1, size - 2, size - 2));
+
+                    g2.dispose();
+                    super.paintComponent(g);
+                    return;
+                }
                 g2.dispose();
-                super.paintComponent(g);
             }
         };
-        avatarLabel.setPreferredSize(new Dimension(64, 64));
+        avatarLabel.setPreferredSize(new Dimension(68, 68));
+        avatarLabel.setMaximumSize(new Dimension(68, 68));
         avatarLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         avatarLabel.setForeground(Color.WHITE);
+        avatarLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Buttons for photo actions
+        JPanel photoButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
+        photoButtonsPanel.setOpaque(false);
+        photoButtonsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        changePhotoBtn = new JButton("📷 Edit Photo");
+        changePhotoBtn.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 10));
+        changePhotoBtn.setForeground(COLOR_PRO_BLUE);
+        changePhotoBtn.setBackground(new Color(235, 243, 254));
+        changePhotoBtn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(191, 219, 254), 1),
+                new EmptyBorder(3, 8, 3, 8)
+        ));
+        changePhotoBtn.setFocusPainted(false);
+        changePhotoBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        changePhotoBtn.setToolTipText("Upload a new profile picture to your account");
+        changePhotoBtn.addActionListener(e -> chooseAndUploadProfilePicture());
+
+        removePhotoBtn = new JButton("✕");
+        removePhotoBtn.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        removePhotoBtn.setForeground(COLOR_DANGER);
+        removePhotoBtn.setBackground(new Color(254, 242, 242));
+        removePhotoBtn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(254, 202, 202), 1),
+                new EmptyBorder(3, 6, 3, 6)
+        ));
+        removePhotoBtn.setFocusPainted(false);
+        removePhotoBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        removePhotoBtn.setToolTipText("Reset to default avatar");
+        removePhotoBtn.setVisible(false);
+        removePhotoBtn.addActionListener(e -> resetProfilePictureToDefault());
+
+        photoButtonsPanel.add(changePhotoBtn);
+        photoButtonsPanel.add(removePhotoBtn);
 
         avatarContainer.add(avatarLabel);
+        avatarContainer.add(Box.createVerticalStrut(6));
+        avatarContainer.add(photoButtonsPanel);
 
         // B. Center Details (Name, Badges, Identifiers)
         JPanel detailsPanel = new JPanel();
@@ -684,11 +750,25 @@ public class LecturerProfile extends JPanel {
 
         // Overview Header
         overviewNameLabel.setText(data.getLecturerName());
-        avatarLabel.setText(data.getInitials());
         overviewDesignationBadge.setText(data.getDesignation());
         overviewDeptBadge.setText(data.getDepartmentName());
         overviewIdLabel.setText("Lecturer ID: #" + data.getLecturerId());
         overviewUsernameLabel.setText("Username: @" + data.getUsername());
+
+        // Resolve custom profile photo if uploaded
+        this.loadedProfileImage = LecturerProfileLogic.resolveProfileImage(data.getProfilePicture());
+        if (this.loadedProfileImage != null) {
+            avatarLabel.setText("");
+            if (removePhotoBtn != null) {
+                removePhotoBtn.setVisible(true);
+            }
+        } else {
+            avatarLabel.setText(data.getInitials());
+            if (removePhotoBtn != null) {
+                removePhotoBtn.setVisible(false);
+            }
+        }
+        avatarLabel.repaint();
 
         // Form Fields
         lecturerIdField.setText(String.valueOf(data.getLecturerId()));
@@ -698,6 +778,60 @@ public class LecturerProfile extends JPanel {
         fullNameField.setText(data.getLecturerName());
         emailField.setText(data.getEmail());
         phoneField.setText(data.getPhone());
+    }
+
+    /**
+     * Opens a file chooser allowing the lecturer to select a new profile photo.
+     * Validates and saves the photo to uploads directory, updating users.profile_picture in database.
+     */
+    public void chooseAndUploadProfilePicture() {
+        personalInfoBanner.clear();
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Profile Photo");
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter(
+                "Image Files (*.png, *.jpg, *.jpeg, *.webp, *.gif, *.bmp)",
+                "png", "jpg", "jpeg", "webp", "gif", "bmp"
+        ));
+
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            OperationResult op = LecturerProfileLogic.updateProfilePicture(this.lecturerId, selectedFile);
+
+            if (op.isSuccess()) {
+                loadLecturerProfile();
+                personalInfoBanner.showSuccess("✓ " + op.getMessage());
+            } else {
+                personalInfoBanner.showError(op.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Resets the profile photo back to the default avatar and re-enables initials display.
+     */
+    public void resetProfilePictureToDefault() {
+        personalInfoBanner.clear();
+
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to remove your custom profile photo and revert to default initials?",
+                "Reset Profile Photo",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            OperationResult op = LecturerProfileLogic.resetProfilePicture(this.lecturerId);
+            if (op.isSuccess()) {
+                loadLecturerProfile();
+                personalInfoBanner.showSuccess("✓ " + op.getMessage());
+            } else {
+                personalInfoBanner.showError(op.getMessage());
+            }
+        }
     }
 
     // =========================================================================
