@@ -269,11 +269,8 @@ public class LoginLogic {
                     navbar, contentCards, mainContent
             ), main.java.ui.Lecturer.Navbar.PAGE_MARKS);
 
-            mainContent.add(createLecturerModulePlaceholder(
-                    "My Profile",
-                    "View and update your academic designations, department affiliations, and contact credentials.",
-                    navbar, contentCards, mainContent
-            ), main.java.ui.Lecturer.Navbar.PAGE_PROFILE);
+            main.java.ui.Lecturer.LecturerProfile profile = new main.java.ui.Lecturer.LecturerProfile(navbar, contentCards, mainContent);
+            mainContent.add(profile, main.java.ui.Lecturer.Navbar.PAGE_PROFILE);
 
             // Wire Navigation Listener: Smooth switching in same window without duplicate frames
             navbar.addNavigationListener(pageName -> {
@@ -284,6 +281,8 @@ public class LoginLogic {
                     materials.refreshMaterials();
                 } else if (main.java.ui.Lecturer.Navbar.PAGE_ELIGIBILITY.equals(pageName)) {
                     eligibility.refreshData();
+                } else if (main.java.ui.Lecturer.Navbar.PAGE_PROFILE.equals(pageName)) {
+                    profile.loadLecturerProfile();
                 }
             });
 
