@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import main.java.dao.DBConnection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
@@ -178,28 +179,23 @@ public class Navbar extends JPanel {
         List<NotificationItem> list = new ArrayList<>();
 
         // Method A: Direct JDBC Query (if MySQL server is running)
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection conn = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
-                    "root", ""
-            );
+        try (Connection conn = DBConnection.getConnection()) {
             if (conn != null) {
                 String sql = "SELECT notice_id, title, description, published_date FROM notices " +
                              "WHERE target_audience IN ('All', 'Lecturers') ORDER BY notice_id DESC";
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                ResultSet rs = stmt.executeQuery();
-                while (rs.next()) {
-                    list.add(new NotificationItem(
-                            "NOTICE-" + rs.getInt("notice_id"),
-                            rs.getString("title"),
-                            rs.getString("description"),
-                            "NOTICE",
-                            rs.getString("published_date"),
-                            false
-                    ));
+                try (PreparedStatement stmt = conn.prepareStatement(sql);
+                     ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(new NotificationItem(
+                                "NOTICE-" + rs.getInt("notice_id"),
+                                rs.getString("title"),
+                                rs.getString("description"),
+                                "NOTICE",
+                                rs.getString("published_date"),
+                                false
+                        ));
+                    }
                 }
-                conn.close();
                 return list;
             }
         } catch (Exception ignored) {
