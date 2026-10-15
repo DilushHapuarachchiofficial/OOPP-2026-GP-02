@@ -168,6 +168,9 @@ public class CourseMaterials extends JPanel {
         UserSession session = UserSession.getCurrentSession();
         if (session != null && "Lecturer".equalsIgnoreCase(session.getRole())) {
             this.lecturerId = session.getUserId();
+        } else if (this.lecturerId <= 0 && session == null) {
+            // Default fallback for standalone execution / direct IDE testing
+            this.lecturerId = 4;
         }
     }
 
