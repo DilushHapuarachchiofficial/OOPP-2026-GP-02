@@ -21,7 +21,8 @@ public class DBConnection {
     private static final String DB_NAME = "tecfams_db";
     private static final String DB_URL = "jdbc:mysql://localhost:3306/" + DB_NAME + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "";
+    private static final String DB_PASSWORD = "1234";
+    private static final String FALLBACK_PASSWORD = "";
 
     // Secondary URL fallback if database is named tecFams
     private static final String ALT_DB_URL = "jdbc:mysql://localhost:3306/tecFams?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
@@ -54,7 +55,8 @@ public class DBConnection {
     }
 
     /**
-
+     * Attempts MySQL connection with user "root" and password "1234" (MySQL 8.0),
+     * with fallback to empty password (XAMPP).
      * Returns null if MySQL server is offline or JDBC driver is not present.
      */
     public static Connection getConnection() {
@@ -64,13 +66,28 @@ public class DBConnection {
             } catch (ClassNotFoundException e) {
                 Class.forName("com.mysql.jdbc.Driver");
             }
-            return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-        } catch (Exception e1) {
+
+            // 1. Try primary credentials (root / 1234 for MySQL 8.0)
+            try {
+                return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            } catch (Exception ignored) {}
+
             try {
                 return DriverManager.getConnection(ALT_DB_URL, DB_USER, DB_PASSWORD);
-            } catch (Exception e2) {
-                return null;
-            }
+            } catch (Exception ignored) {}
+
+            // 2. Try fallback credentials (root / "" for XAMPP / MariaDB)
+            try {
+                return DriverManager.getConnection(DB_URL, DB_USER, FALLBACK_PASSWORD);
+            } catch (Exception ignored) {}
+
+            try {
+                return DriverManager.getConnection(ALT_DB_URL, DB_USER, FALLBACK_PASSWORD);
+            } catch (Exception ignored) {}
+
+            return null;
+        } catch (Exception e) {
+            return null;
         }
     }
 
