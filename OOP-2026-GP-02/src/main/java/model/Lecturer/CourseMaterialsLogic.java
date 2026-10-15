@@ -229,7 +229,7 @@ public class CourseMaterialsLogic {
                 stmt.executeUpdate("ALTER TABLE course_materials ADD COLUMN file_size BIGINT DEFAULT 0 AFTER file_data");
             } catch (SQLException ignored) {}
             try {
-                stmt.executeUpdate("ALTER TABLE course_materials MODIFY file_path VARCHAR(255) NULL DEFAULT NULL");
+                stmt.executeUpdate("ALTER TABLE course_materials ADD COLUMN file_path VARCHAR(255) NULL DEFAULT NULL AFTER file_name");
             } catch (SQLException ignored) {}
         } catch (Exception ignored) {
             // Non-critical if user does not have DDL privileges
