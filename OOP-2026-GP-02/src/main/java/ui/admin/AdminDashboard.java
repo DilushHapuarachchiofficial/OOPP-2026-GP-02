@@ -21,12 +21,6 @@ public class AdminDashboard extends JFrame {
         initUI();
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new AdminDashboard().setVisible(true);
-        });
-    }
-
     private void initUI() {
         setLayout(new BorderLayout());
 

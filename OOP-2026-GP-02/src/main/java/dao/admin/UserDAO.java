@@ -53,14 +53,40 @@ public class UserDAO {
     }
 
     public static boolean deleteUser(int userId) {
-        String query = "DELETE FROM users WHERE user_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, userId);
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-            
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM students WHERE student_id = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM lecturers WHERE lecturer_id = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM technical_officers WHERE officer_id = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM admins WHERE admin_id = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+                int rowsAffected = 0;
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM users WHERE user_id = ?")) {
+                    stmt.setInt(1, userId);
+                    rowsAffected = stmt.executeUpdate();
+                }
+                conn.commit();
+                conn.setAutoCommit(autoCommit);
+                return rowsAffected > 0;
+            } catch (SQLException ex) {
+                conn.rollback();
+                conn.setAutoCommit(autoCommit);
+                ex.printStackTrace();
+                return false;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -157,10 +183,11 @@ public class UserDAO {
     // Simplistic updateUser logic (does not handle role change for simplicity)
     public static boolean updateUser(int userId, String name, String username, String email, String role) {
         String dbRole = role;
-        if ("Technical Officer".equals(role)) dbRole = "Technical_Officer";
-        else if ("Undergraduate".equals(role)) dbRole = "Student";
+        if ("Technical Officer".equals(role) || "Technical_Officer".equals(role)) dbRole = "Technical_Officer";
+        else if ("Undergraduate".equals(role) || "Student".equals(role)) dbRole = "Student";
         
         try (Connection conn = DatabaseConnection.getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
             conn.setAutoCommit(false);
             try {
                 // Update users table
@@ -182,17 +209,21 @@ public class UserDAO {
                     roleQuery = "UPDATE students SET full_name = ?, email = ? WHERE student_id = ?";
                 }
                 
-                try (PreparedStatement roleStmt = conn.prepareStatement(roleQuery)) {
-                    roleStmt.setString(1, name);
-                    roleStmt.setString(2, email);
-                    roleStmt.setInt(3, userId);
-                    roleStmt.executeUpdate();
+                if (!roleQuery.isEmpty()) {
+                    try (PreparedStatement roleStmt = conn.prepareStatement(roleQuery)) {
+                        roleStmt.setString(1, name);
+                        roleStmt.setString(2, email);
+                        roleStmt.setInt(3, userId);
+                        roleStmt.executeUpdate();
+                    }
                 }
                 
                 conn.commit();
+                conn.setAutoCommit(autoCommit);
                 return true;
             } catch (SQLException ex) {
                 conn.rollback();
+                conn.setAutoCommit(autoCommit);
                 ex.printStackTrace();
                 return false;
             }
