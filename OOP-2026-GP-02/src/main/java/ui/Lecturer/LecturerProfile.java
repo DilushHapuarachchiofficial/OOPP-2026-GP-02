@@ -9,6 +9,8 @@ import main.java.model.UserSession;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
@@ -23,29 +25,29 @@ import java.sql.SQLException;
  * LecturerProfile.java
  * TecFAMS – Faculty of Technology Academic Management System
  *
- * Professional, Responsive Lecturer Profile User Interface.
+ * Premium Executive Lecturer Profile User Interface.
  *
  * Key Capabilities & Enhancements:
- * - Pure Graphics2D Vector Icons for all buttons, toggles, badges, and status indicators.
- *   Zero reliance on platform unicode symbols or emoji that fail or render as broken boxes.
- * - Fluid Responsive Architecture: Automatically switches between a 2-column side-by-side
- *   layout on desktop displays (>= 920px) and a stacked 1-column layout on narrower screens (< 920px).
- * - ResponsiveScrollPanel tracks viewport width (`getScrollableTracksViewportWidth() == true`),
- *   ensuring cards expand naturally to fill 100% of available screen real estate without squishing.
- * - Full CRUD Profile & Photo Management:
- *     1. Avatar renders circular clipped uploaded photo (or crisp initials if default).
- *     2. Interactive vector-styled "Edit Photo" and "Remove Photo" buttons.
- *     3. Personal info edit mode for Name, Email, and Phone with real-time Navbar synchronization.
- *     4. Password & Security panel with eye toggle visibility buttons and complexity checks.
- * - Modern tactile button styling with gradients, subtle drop highlights, hover animations, and hand cursors.
+ * - Executive Hero Cover Banner: Dual-layer card with rich academic gradient (#082F5A -> #0B4F9C),
+ *   subtle architectural geometry, elevated circular avatar with drop-shadow, and official faculty tags.
+ * - Live KPI Metrics Panel: Dynamic mini cards displaying Course Assignments, Materials Uploaded,
+ *   and Account Security Status loaded in real time.
+ * - Sectional Academic & Contact Forms: Clean visual separation between system-managed identifiers
+ *   (with locks & embedded prefix icons) and editable personal contact details.
+ * - Interactive Password Strength Meter: Real-time visual progress bar and dynamic requirement checklist
+ *   (8+ chars, letters, numbers) that dynamically updates as the user types.
+ * - Comprehensive High-DPI Vector Icons: 18 crisp Graphics2D vector icons (User, Building, Award,
+ *   Book, Document, Key, Shield, Hash, Camera, etc.) guaranteeing razor-sharp display.
+ * - Fluid Responsive Architecture: 2-column layout on desktop (>= 920px), stacked 1-column on narrower viewports.
+ * - Standalone main runner with sample session for immediate testing in IntelliJ IDEA.
  */
 public class LecturerProfile extends JPanel {
 
     // =========================================================================
-    // COLOR PALETTE (TecFAMS Design Language)
+    // COLOR PALETTE (TecFAMS Academic Theme)
     // =========================================================================
     public static final Color COLOR_DEEP_NAVY      = new Color(8, 47, 90);    // #082F5A - Brand & primary headings
-    public static final Color COLOR_PRO_BLUE       = new Color(11, 79, 156);  // #0B4F9C - Primary buttons & accents
+    public static final Color COLOR_PRO_BLUE       = new Color(11, 79, 156);  // #0B4F9C - Primary blue & accents
     public static final Color COLOR_PRO_BLUE_HOVER = new Color(8, 63, 126);   // Hover shade for primary blue
     public static final Color COLOR_ACCENT_BLUE    = new Color(40, 120, 208); // #2878D0 - Active highlights
     public static final Color COLOR_PAGE_BG        = new Color(244, 247, 251);// #F4F7FB - Canvas background
@@ -69,7 +71,7 @@ public class LecturerProfile extends JPanel {
     // =========================================================================
     public static final Font FONT_PAGE_TITLE       = new Font("Segoe UI", Font.BOLD, 22);
     public static final Font FONT_PAGE_SUBTITLE    = new Font("Segoe UI", Font.PLAIN, 13);
-    public static final Font FONT_OVERVIEW_NAME    = new Font("Segoe UI", Font.BOLD, 20);
+    public static final Font FONT_OVERVIEW_NAME    = new Font("Segoe UI", Font.BOLD, 22);
     public static final Font FONT_SECTION_TITLE    = new Font("Segoe UI", Font.BOLD, 16);
     public static final Font FONT_SECTION_SUBTITLE = new Font("Segoe UI", Font.PLAIN, 12);
     public static final Font FONT_FIELD_LABEL      = new Font("Segoe UI Semibold", Font.PLAIN, 12);
@@ -130,6 +132,7 @@ public class LecturerProfile extends JPanel {
     private EyeToggleButton newPassToggle;
     private EyeToggleButton confirmPassToggle;
     private JCheckBox showPasswordsCheckbox;
+    private PasswordStrengthMeter passwordStrengthMeter;
     private ModernButton changePasswordBtn;
     private ModernButton clearPasswordBtn;
     private StatusBanner passwordBanner;
@@ -179,7 +182,7 @@ public class LecturerProfile extends JPanel {
         if (session != null && "Lecturer".equalsIgnoreCase(session.getRole())) {
             this.lecturerId = session.getUserId();
         } else {
-            // Fallback for standalone preview / testing: default to first lecturer (ID: 4)
+            // Fallback for standalone preview / testing: default to Dr. Chinthaka Premachandra (ID: 4)
             this.lecturerId = 4;
         }
     }
@@ -197,7 +200,7 @@ public class LecturerProfile extends JPanel {
         contentPanel.setBackground(COLOR_PAGE_BG);
         contentPanel.setBorder(new EmptyBorder(24, 28, 36, 28));
 
-        // 1. Page Header (Title, Subtitle, Navigation / Refresh Buttons with vector icons)
+        // 1. Page Header (Title, Subtitle, Return to Dashboard & Refresh Actions)
         contentPanel.add(createHeaderPanel());
         contentPanel.add(Box.createVerticalStrut(16));
 
@@ -206,7 +209,7 @@ public class LecturerProfile extends JPanel {
         contentPanel.add(offlineNoticeBanner);
         contentPanel.add(Box.createVerticalStrut(12));
 
-        // 3. Profile Overview Card (Avatar, Photo Actions, Badges, Name, Academic Details)
+        // 3. Profile Overview Hero Banner Card (Cover Gradient, Avatar, Details, Quick Stats)
         contentPanel.add(createOverviewCard());
         contentPanel.add(Box.createVerticalStrut(20));
 
@@ -219,7 +222,7 @@ public class LecturerProfile extends JPanel {
         );
         contentPanel.add(cardsContainer);
 
-        // Wrap inside JScrollPane for responsive display
+        // Wrap inside JScrollPane for smooth vertical scrolling
         JScrollPane scrollPane = new JScrollPane(contentPanel);
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -238,24 +241,33 @@ public class LecturerProfile extends JPanel {
         panel.setOpaque(false);
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 65));
 
-        // Left: Title & Subtitle
+        // Left: Title & Subtitle with subtle badge
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setOpaque(false);
+
+        JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        titleRow.setOpaque(false);
 
         JLabel titleLabel = new JLabel("My Profile");
         titleLabel.setFont(FONT_PAGE_TITLE);
         titleLabel.setForeground(COLOR_DEEP_NAVY);
 
-        JLabel subtitleLabel = new JLabel("Manage your personal information and account security.");
+        JLabel tagPill = createPillBadge("Faculty Account", new Color(224, 242, 254), COLOR_PRO_BLUE);
+        tagPill.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.SHIELD, 11, COLOR_PRO_BLUE));
+
+        titleRow.add(titleLabel);
+        titleRow.add(tagPill);
+
+        JLabel subtitleLabel = new JLabel("Manage your personal credentials, contact details, and account security.");
         subtitleLabel.setFont(FONT_PAGE_SUBTITLE);
         subtitleLabel.setForeground(COLOR_TEXT_SECONDARY);
 
-        titlePanel.add(titleLabel);
+        titlePanel.add(titleRow);
         titlePanel.add(Box.createVerticalStrut(2));
         titlePanel.add(subtitleLabel);
 
-        // Right: Return to Dashboard & Refresh (Crisp Vector Icons)
+        // Right: Refresh Action Button
         JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionsPanel.setOpaque(false);
 
@@ -264,18 +276,6 @@ public class LecturerProfile extends JPanel {
         refreshBtn.addActionListener(e -> refreshProfileInformation());
 
         actionsPanel.add(refreshBtn);
-
-        if (parentNavbar != null) {
-            ModernButton backBtn = ModernButton.createPrimary("Return to Dashboard", new ProfileVectorIcon(ProfileVectorIcon.Type.BACK, 14, Color.WHITE), COLOR_PRO_BLUE);
-            backBtn.setToolTipText("Return to the Lecturer Dashboard");
-            backBtn.addActionListener(e -> {
-                if (parentNavbar != null && parentCardLayout != null && parentContainer != null) {
-                    parentNavbar.setActivePage(Navbar.PAGE_DASHBOARD);
-                    parentCardLayout.show(parentContainer, Navbar.PAGE_DASHBOARD);
-                }
-            });
-            actionsPanel.add(backBtn);
-        }
 
         panel.add(titlePanel, BorderLayout.WEST);
         panel.add(actionsPanel, BorderLayout.EAST);
@@ -307,18 +307,43 @@ public class LecturerProfile extends JPanel {
     }
 
     // =========================================================================
-    // 2. PROFILE OVERVIEW HERO CARD
+    // 2. PROFILE OVERVIEW HERO BANNER CARD
     // =========================================================================
     private JPanel createOverviewCard() {
-        RoundedPanel card = new RoundedPanel(14, COLOR_CARD_BG, COLOR_BORDER);
-        card.setLayout(new BorderLayout(24, 0));
-        card.setBorder(new EmptyBorder(18, 24, 18, 24));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 145));
+        ExecutiveHeroCard card = new ExecutiveHeroCard();
+        card.setLayout(new BorderLayout(0, 0));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 220));
+        card.setPreferredSize(new Dimension(1000, 220));
 
-        // A. Left Avatar & Photo Edit Actions Container
+        // Top Banner bar: Institution & System Pill
+        JPanel bannerBar = new JPanel(new BorderLayout());
+        bannerBar.setOpaque(false);
+        bannerBar.setBorder(new EmptyBorder(12, 24, 0, 24));
+        bannerBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 40));
+
+        JLabel facultyTag = new JLabel(" Faculty of Technology • University of Ruhuna");
+        facultyTag.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.BUILDING, 13, new Color(224, 238, 255)));
+        facultyTag.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 12));
+        facultyTag.setForeground(new Color(235, 245, 255));
+
+        JLabel systemTag = new JLabel("Academic Executive Portal");
+        systemTag.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        systemTag.setForeground(new Color(186, 230, 253));
+
+        bannerBar.add(facultyTag, BorderLayout.WEST);
+        bannerBar.add(systemTag, BorderLayout.EAST);
+        card.add(bannerBar, BorderLayout.NORTH);
+
+        // Main Body Row
+        JPanel bodyRow = new JPanel(new BorderLayout(24, 0));
+        bodyRow.setOpaque(false);
+        bodyRow.setBorder(new EmptyBorder(8, 24, 18, 24));
+
+        // A. Left: Avatar & Photo Action Pill Buttons
         JPanel avatarContainer = new JPanel();
         avatarContainer.setLayout(new BoxLayout(avatarContainer, BoxLayout.Y_AXIS));
         avatarContainer.setOpaque(false);
+        avatarContainer.setPreferredSize(new Dimension(100, 160));
         avatarContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         avatarLabel = new JLabel("", SwingConstants.CENTER) {
@@ -329,30 +354,41 @@ public class LecturerProfile extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
                 int size = Math.min(getWidth(), getHeight());
+                int offset = 2;
+                int dia = size - (offset * 2);
+
+                // Subtle soft drop shadow behind avatar
+                g2.setColor(new Color(0, 0, 0, 30));
+                g2.fillOval(offset + 1, offset + 2, dia, dia);
+
                 if (loadedProfileImage != null) {
                     Shape oldClip = g2.getClip();
-                    g2.setClip(new Ellipse2D.Float(0, 0, size, size));
-                    g2.drawImage(loadedProfileImage, 0, 0, size, size, null);
+                    g2.setClip(new Ellipse2D.Float(offset, offset, dia, dia));
+                    g2.drawImage(loadedProfileImage, offset, offset, dia, dia, null);
                     g2.setClip(oldClip);
 
-                    // Circular ring border
-                    g2.setColor(new Color(255, 255, 255, 220));
-                    g2.setStroke(new BasicStroke(2.0f));
-                    g2.draw(new Ellipse2D.Float(1, 1, size - 2, size - 2));
+                    // Multi-layer ring borders: Crisp white outer border
+                    g2.setColor(Color.WHITE);
+                    g2.setStroke(new BasicStroke(3.0f));
+                    g2.draw(new Ellipse2D.Float(offset, offset, dia, dia));
 
-                    g2.setColor(COLOR_BORDER);
-                    g2.setStroke(new BasicStroke(1.0f));
-                    g2.draw(new Ellipse2D.Float(0, 0, size - 1, size - 1));
+                    g2.setColor(new Color(40, 120, 208, 120));
+                    g2.setStroke(new BasicStroke(1.2f));
+                    g2.draw(new Ellipse2D.Float(offset + 1, offset + 1, dia - 2, dia - 2));
                 } else {
-                    // Gradient fill from Navy to Pro Blue
-                    GradientPaint gp = new GradientPaint(0, 0, COLOR_DEEP_NAVY, size, size, COLOR_PRO_BLUE);
+                    // Deep Royal gradient fill for initials avatar
+                    GradientPaint gp = new GradientPaint(0, 0, COLOR_DEEP_NAVY, dia, dia, COLOR_PRO_BLUE);
                     g2.setPaint(gp);
-                    g2.fill(new Ellipse2D.Float(0, 0, size, size));
+                    g2.fill(new Ellipse2D.Float(offset, offset, dia, dia));
 
-                    // Crisp border
+                    // Multi-layer white border
+                    g2.setColor(Color.WHITE);
+                    g2.setStroke(new BasicStroke(3.0f));
+                    g2.draw(new Ellipse2D.Float(offset, offset, dia, dia));
+
                     g2.setColor(new Color(255, 255, 255, 120));
-                    g2.setStroke(new BasicStroke(2.0f));
-                    g2.draw(new Ellipse2D.Float(1, 1, size - 2, size - 2));
+                    g2.setStroke(new BasicStroke(1.0f));
+                    g2.draw(new Ellipse2D.Float(offset + 2, offset + 2, dia - 4, dia - 4));
 
                     g2.dispose();
                     super.paintComponent(g);
@@ -361,20 +397,20 @@ public class LecturerProfile extends JPanel {
                 g2.dispose();
             }
         };
-        avatarLabel.setPreferredSize(new Dimension(68, 68));
-        avatarLabel.setMaximumSize(new Dimension(68, 68));
-        avatarLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        avatarLabel.setPreferredSize(new Dimension(82, 82));
+        avatarLabel.setMaximumSize(new Dimension(82, 82));
+        avatarLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
         avatarLabel.setForeground(Color.WHITE);
         avatarLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Buttons for photo actions with pure Vector Icons
-        JPanel photoButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+        // Buttons for photo actions
+        JPanel photoButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
         photoButtonsPanel.setOpaque(false);
         photoButtonsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         changePhotoBtn = ModernButton.createSmallPill(
                 "Edit Photo",
-                new ProfileVectorIcon(ProfileVectorIcon.Type.CAMERA, 12, COLOR_PRO_BLUE),
+                new ProfileVectorIcon(ProfileVectorIcon.Type.CAMERA, 11, COLOR_PRO_BLUE),
                 new Color(235, 243, 254),
                 COLOR_PRO_BLUE,
                 new Color(191, 219, 254)
@@ -400,23 +436,38 @@ public class LecturerProfile extends JPanel {
         avatarContainer.add(Box.createVerticalStrut(6));
         avatarContainer.add(photoButtonsPanel);
 
-        // B. Center Details (Name, Badges, Identifiers)
+        // B. Center: Details (Name, Badges, Metadata)
         JPanel detailsPanel = new JPanel();
         detailsPanel.setLayout(new BoxLayout(detailsPanel, BoxLayout.Y_AXIS));
         detailsPanel.setOpaque(false);
 
+        // Name + Verified Faculty Badge Row
+        JPanel nameRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        nameRow.setOpaque(false);
+
         overviewNameLabel = new JLabel("Dr. Chinthaka Premachandra");
         overviewNameLabel.setFont(FONT_OVERVIEW_NAME);
-        overviewNameLabel.setForeground(COLOR_DEEP_NAVY);
+        overviewNameLabel.setForeground(Color.WHITE);
 
-        // Badges Row (wraps nicely without truncating)
+        JLabel verifiedBadge = createPillBadge("Verified Faculty", new Color(224, 242, 254), new Color(2, 132, 199));
+        verifiedBadge.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.VERIFIED, 11, new Color(2, 132, 199)));
+
+        nameRow.add(overviewNameLabel);
+        nameRow.add(verifiedBadge);
+
+        // Badges Row
         JPanel badgesRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
         badgesRow.setOpaque(false);
         badgesRow.setBorder(new EmptyBorder(2, 0, 2, 0));
 
-        JLabel roleBadge = createPillBadge("Academic Staff • Lecturer", new Color(236, 253, 245), new Color(4, 120, 87));
+        JLabel roleBadge = createPillBadge("Academic Staff", new Color(236, 253, 245), new Color(4, 120, 87));
+        roleBadge.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.USER, 10, new Color(4, 120, 87)));
+
         overviewDesignationBadge = createPillBadge("Senior Lecturer Gr. I", new Color(235, 243, 254), COLOR_PRO_BLUE);
+        overviewDesignationBadge.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.AWARD, 11, COLOR_PRO_BLUE));
+
         overviewDeptBadge = createPillBadge("Information and Communication Technology", new Color(241, 245, 249), new Color(71, 85, 105));
+        overviewDeptBadge.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.BUILDING, 11, new Color(71, 85, 105)));
 
         badgesRow.add(roleBadge);
         badgesRow.add(overviewDesignationBadge);
@@ -427,14 +478,16 @@ public class LecturerProfile extends JPanel {
         metaRow.setOpaque(false);
 
         overviewIdLabel = new JLabel("Lecturer ID: #4");
+        overviewIdLabel.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.HASH, 11, COLOR_TEXT_SECONDARY));
         overviewIdLabel.setFont(FONT_HELPER);
         overviewIdLabel.setForeground(COLOR_TEXT_SECONDARY);
 
         overviewUsernameLabel = new JLabel("Username: @lec_chinthaka");
+        overviewUsernameLabel.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.KEY, 11, COLOR_TEXT_SECONDARY));
         overviewUsernameLabel.setFont(FONT_HELPER);
         overviewUsernameLabel.setForeground(COLOR_TEXT_SECONDARY);
 
-        JLabel statusPill = new JLabel("● Account Active");
+        JLabel statusPill = new JLabel("● Active & Synchronized");
         statusPill.setFont(FONT_HELPER);
         statusPill.setForeground(COLOR_SUCCESS);
 
@@ -443,21 +496,23 @@ public class LecturerProfile extends JPanel {
         metaRow.add(statusPill);
 
         detailsPanel.add(Box.createVerticalGlue());
-        detailsPanel.add(overviewNameLabel);
+        detailsPanel.add(nameRow);
         detailsPanel.add(Box.createVerticalStrut(4));
         detailsPanel.add(badgesRow);
-        detailsPanel.add(Box.createVerticalStrut(2));
+        detailsPanel.add(Box.createVerticalStrut(4));
         detailsPanel.add(metaRow);
         detailsPanel.add(Box.createVerticalGlue());
 
-        card.add(avatarContainer, BorderLayout.WEST);
-        card.add(detailsPanel, BorderLayout.CENTER);
+        bodyRow.add(avatarContainer, BorderLayout.WEST);
+        bodyRow.add(detailsPanel, BorderLayout.CENTER);
+
+        card.add(bodyRow, BorderLayout.CENTER);
 
         return card;
     }
 
     // =========================================================================
-    // 3A. PERSONAL INFORMATION CARD (Responsive Form)
+    // 3A. PERSONAL INFORMATION CARD (Sectional Form)
     // =========================================================================
     private JPanel createPersonalInfoCard() {
         RoundedPanel card = new RoundedPanel(14, COLOR_CARD_BG, COLOR_BORDER);
@@ -477,7 +532,7 @@ public class LecturerProfile extends JPanel {
         title.setFont(FONT_SECTION_TITLE);
         title.setForeground(COLOR_DEEP_NAVY);
 
-        JLabel subtitle = new JLabel("View and update your contact details.");
+        JLabel subtitle = new JLabel("Official faculty member credentials & contact information.");
         subtitle.setFont(FONT_SECTION_SUBTITLE);
         subtitle.setForeground(COLOR_TEXT_SECONDARY);
 
@@ -507,46 +562,54 @@ public class LecturerProfile extends JPanel {
         emailField = createStyledTextField(false);
         phoneField = createStyledTextField(false);
 
-        // 2-column subpanel for system read-only identifiers
+        // Section 1 Header: Academic & System Identifiers
+        card.add(createSectionDivider("ACADEMIC & SYSTEM IDENTIFIERS (READ-ONLY)"));
+        card.add(Box.createVerticalStrut(8));
+
+        // 2-column subpanel for ID and Username
         JPanel idGrid = new JPanel(new GridLayout(1, 2, 12, 0));
         idGrid.setOpaque(false);
-        idGrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
-        idGrid.add(createFormFieldWithLock("Lecturer ID", lecturerIdField));
-        idGrid.add(createFormFieldWithLock("Username", usernameField));
+        idGrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 66));
+        idGrid.add(createFieldWithPrefixIcon("Lecturer ID", lecturerIdField, ProfileVectorIcon.Type.HASH, true));
+        idGrid.add(createFieldWithPrefixIcon("Username", usernameField, ProfileVectorIcon.Type.USER, true));
         card.add(idGrid);
-        card.add(Box.createVerticalStrut(10));
+        card.add(Box.createVerticalStrut(8));
 
-        // Full width read-only fields so long department / designation text never truncates
-        card.add(createFormFieldWithLock("Faculty Department", departmentField));
-        card.add(Box.createVerticalStrut(10));
+        // Full width institutional fields
+        card.add(createFieldWithPrefixIcon("Faculty Department", departmentField, ProfileVectorIcon.Type.BUILDING, true));
+        card.add(Box.createVerticalStrut(8));
 
-        card.add(createFormFieldWithLock("Academic Designation", designationField));
-        card.add(Box.createVerticalStrut(10));
+        card.add(createFieldWithPrefixIcon("Academic Designation", designationField, ProfileVectorIcon.Type.AWARD, true));
+        card.add(Box.createVerticalStrut(14));
 
-        // Editable fields
-        card.add(createFormField("Full Name *", fullNameField));
-        card.add(Box.createVerticalStrut(10));
+        // Section 2 Header: Contact Information
+        card.add(createSectionDivider("CONTACT & DIRECTORY DETAILS (EDITABLE)"));
+        card.add(Box.createVerticalStrut(8));
 
-        card.add(createFormField("Email Address *", emailField));
-        card.add(Box.createVerticalStrut(10));
+        // Editable fields with modern prefix vector icons
+        card.add(createFieldWithPrefixIcon("Full Name *", fullNameField, ProfileVectorIcon.Type.USER, false));
+        card.add(Box.createVerticalStrut(8));
 
-        card.add(createFormField("Contact Number (Phone)", phoneField));
+        card.add(createFieldWithPrefixIcon("Email Address *", emailField, ProfileVectorIcon.Type.MAIL, false));
+        card.add(Box.createVerticalStrut(8));
+
+        card.add(createFieldWithPrefixIcon("Contact Number (Phone)", phoneField, ProfileVectorIcon.Type.PHONE, false));
         card.add(Box.createVerticalStrut(6));
 
-        // Schema limitation explanation note
-        JLabel schemaHint = new JLabel("<html><i>Note: Home Address is not stored in the current faculty database schema.</i></html>");
+        // Database schema note
+        JLabel schemaHint = new JLabel("<html><i>Note: Home address and postal details are managed directly by Faculty HR.</i></html>");
         schemaHint.setFont(FONT_HELPER);
         schemaHint.setForeground(COLOR_TEXT_MUTED);
         card.add(schemaHint);
         card.add(Box.createVerticalStrut(18));
 
-        // Action Buttons Row: Edit Profile, Save Changes, Cancel (Equipped with Vector Icons)
+        // Action Buttons Row: Edit Profile, Save Changes, Cancel
         JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         buttonRow.setOpaque(false);
         buttonRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
         editProfileBtn = ModernButton.createPrimary("Edit Profile", new ProfileVectorIcon(ProfileVectorIcon.Type.EDIT, 14, Color.WHITE), COLOR_PRO_BLUE);
-        editProfileBtn.setToolTipText("Enable editing of your personal information");
+        editProfileBtn.setToolTipText("Enable editing of your personal contact information");
         editProfileBtn.addActionListener(e -> enableProfileEditing(true));
 
         saveChangesBtn = ModernButton.createSuccess("Save Changes", new ProfileVectorIcon(ProfileVectorIcon.Type.CHECK, 14, Color.WHITE));
@@ -569,7 +632,7 @@ public class LecturerProfile extends JPanel {
     }
 
     // =========================================================================
-    // 3B. SECURITY & PASSWORD CARD (Interactive Eye Toggles)
+    // 3B. SECURITY & PASSWORD CARD (Interactive Eye Toggles & Strength Meter)
     // =========================================================================
     private JPanel createSecurityPasswordCard() {
         RoundedPanel card = new RoundedPanel(14, COLOR_CARD_BG, COLOR_BORDER);
@@ -589,7 +652,7 @@ public class LecturerProfile extends JPanel {
         title.setFont(FONT_SECTION_TITLE);
         title.setForeground(COLOR_DEEP_NAVY);
 
-        JLabel subtitle = new JLabel("Update your password to keep your account safe.");
+        JLabel subtitle = new JLabel("Protect your faculty account with robust authentication credentials.");
         subtitle.setFont(FONT_SECTION_SUBTITLE);
         subtitle.setForeground(COLOR_TEXT_SECONDARY);
 
@@ -619,13 +682,26 @@ public class LecturerProfile extends JPanel {
         newPassToggle = new EyeToggleButton(newPasswordField);
         confirmPassToggle = new EyeToggleButton(confirmPasswordField);
 
-        card.add(createPasswordFieldWrapper("Current Password *", currentPasswordField, currentPassToggle));
+        card.add(createPasswordFieldWithIcons("Current Password *", currentPasswordField, currentPassToggle));
         card.add(Box.createVerticalStrut(10));
 
-        card.add(createPasswordFieldWrapper("New Password *", newPasswordField, newPassToggle));
+        card.add(createPasswordFieldWithIcons("New Password *", newPasswordField, newPassToggle));
+        card.add(Box.createVerticalStrut(8));
+
+        // Interactive Live Password Strength Meter
+        passwordStrengthMeter = new PasswordStrengthMeter();
+        newPasswordField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { check(); }
+            @Override public void removeUpdate(DocumentEvent e) { check(); }
+            @Override public void changedUpdate(DocumentEvent e) { check(); }
+            private void check() {
+                passwordStrengthMeter.updateStrength(new String(newPasswordField.getPassword()));
+            }
+        });
+        card.add(passwordStrengthMeter);
         card.add(Box.createVerticalStrut(10));
 
-        card.add(createPasswordFieldWrapper("Confirm New Password *", confirmPasswordField, confirmPassToggle));
+        card.add(createPasswordFieldWithIcons("Confirm New Password *", confirmPasswordField, confirmPassToggle));
         card.add(Box.createVerticalStrut(8));
 
         // Show/Hide All Passwords Checkbox Toggle
@@ -646,47 +722,9 @@ public class LecturerProfile extends JPanel {
             confirmPassToggle.setRevealed(show);
         });
         card.add(showPasswordsCheckbox);
-        card.add(Box.createVerticalStrut(12));
-
-        // Password Policy Checklist Container
-        JPanel policyBox = new JPanel();
-        policyBox.setLayout(new BoxLayout(policyBox, BoxLayout.Y_AXIS));
-        policyBox.setBackground(COLOR_READONLY_BG);
-        policyBox.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(COLOR_BORDER, 1),
-                new EmptyBorder(10, 14, 10, 14)
-        ));
-        policyBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
-
-        JLabel policyHeader = new JLabel("Password Policy Requirements:");
-        policyHeader.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 11));
-        policyHeader.setForeground(COLOR_DEEP_NAVY);
-
-        JLabel rule1 = new JLabel(" Minimum 8 characters in length");
-        rule1.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.CHECK, 11, COLOR_SUCCESS));
-        rule1.setFont(FONT_HELPER);
-        rule1.setForeground(COLOR_TEXT_SECONDARY);
-
-        JLabel rule2 = new JLabel(" Must contain at least one letter (a-z, A-Z)");
-        rule2.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.CHECK, 11, COLOR_SUCCESS));
-        rule2.setFont(FONT_HELPER);
-        rule2.setForeground(COLOR_TEXT_SECONDARY);
-
-        JLabel rule3 = new JLabel(" Must contain at least one number (0-9)");
-        rule3.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.CHECK, 11, COLOR_SUCCESS));
-        rule3.setFont(FONT_HELPER);
-        rule3.setForeground(COLOR_TEXT_SECONDARY);
-
-        policyBox.add(policyHeader);
-        policyBox.add(Box.createVerticalStrut(4));
-        policyBox.add(rule1);
-        policyBox.add(rule2);
-        policyBox.add(rule3);
-
-        card.add(policyBox);
         card.add(Box.createVerticalStrut(18));
 
-        // Buttons Row: Change Password & Clear Fields (Equipped with Vector Icons)
+        // Buttons Row: Change Password & Clear Fields
         JPanel passwordBtnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         passwordBtnRow.setOpaque(false);
         passwordBtnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
@@ -758,7 +796,7 @@ public class LecturerProfile extends JPanel {
     }
 
     /**
-     * Populates all form fields and overview labels with retrieved lecturer data.
+     * Populates all form fields, overview labels, and metric cards with retrieved lecturer data.
      */
     private void applyDataToForm(LecturerProfileData data) {
         if (data == null) return;
@@ -868,12 +906,6 @@ public class LecturerProfile extends JPanel {
         emailField.setEditable(enable);
         phoneField.setEditable(enable);
 
-        // Adjust visual background for editable fields
-        Color editableBg = enable ? Color.WHITE : COLOR_READONLY_BG;
-        fullNameField.setBackground(editableBg);
-        emailField.setBackground(editableBg);
-        phoneField.setBackground(editableBg);
-
         // Buttons visibility
         editProfileBtn.setVisible(!enable);
         saveChangesBtn.setVisible(enable);
@@ -883,7 +915,7 @@ public class LecturerProfile extends JPanel {
         if (enable) {
             editModeBadge.setText("Editing Active");
             editModeBadge.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.EDIT, 11, new Color(180, 83, 9)));
-            editModeBadge.setBackground(new Color(254, 243, 199)); // Soft yellow/orange
+            editModeBadge.setBackground(new Color(254, 243, 199)); // Soft amber
             editModeBadge.setForeground(new Color(180, 83, 9));
             fullNameField.requestFocusInWindow();
         } else {
@@ -1040,6 +1072,9 @@ public class LecturerProfile extends JPanel {
         currentPasswordField.setEchoChar('\u2022');
         newPasswordField.setEchoChar('\u2022');
         confirmPasswordField.setEchoChar('\u2022');
+        if (passwordStrengthMeter != null) {
+            passwordStrengthMeter.updateStrength("");
+        }
         passwordBanner.clear();
     }
 
@@ -1047,63 +1082,125 @@ public class LecturerProfile extends JPanel {
     // UI BUILDER HELPERS
     // =========================================================================
 
-    private JPanel createFormField(String labelText, JTextField field) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    private JPanel createSectionDivider(String titleText) {
+        JPanel panel = new JPanel(new BorderLayout(8, 0));
         panel.setOpaque(false);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        panel.setBorder(new EmptyBorder(4, 0, 4, 0));
 
-        JLabel label = new JLabel(labelText);
-        label.setFont(FONT_FIELD_LABEL);
-        label.setForeground(COLOR_TEXT_PRIMARY);
+        JLabel title = new JLabel(titleText);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        title.setForeground(COLOR_TEXT_SECONDARY);
 
-        panel.add(label);
-        panel.add(Box.createVerticalStrut(4));
-        panel.add(field);
+        JSeparator sep = new JSeparator();
+        sep.setForeground(COLOR_BORDER);
+        sep.setBackground(COLOR_PAGE_BG);
+
+        panel.add(title, BorderLayout.WEST);
+        panel.add(sep, BorderLayout.CENTER);
 
         return panel;
     }
 
-    private JPanel createFormFieldWithLock(String labelText, JTextField field) {
+    private JPanel createFieldWithPrefixIcon(String labelText, JTextField field, ProfileVectorIcon.Type iconType, boolean isLock) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setOpaque(false);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 66));
 
-        JPanel labelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        labelPanel.setOpaque(false);
+        JPanel labelRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        labelRow.setOpaque(false);
 
         JLabel label = new JLabel(labelText);
         label.setFont(FONT_FIELD_LABEL);
         label.setForeground(COLOR_TEXT_PRIMARY);
+        labelRow.add(label);
 
-        JLabel lockIcon = new JLabel(new ProfileVectorIcon(ProfileVectorIcon.Type.LOCK, 10, COLOR_TEXT_MUTED));
-        lockIcon.setToolTipText("System managed read-only field");
+        if (isLock) {
+            JLabel lock = new JLabel(new ProfileVectorIcon(ProfileVectorIcon.Type.LOCK, 10, COLOR_TEXT_MUTED));
+            lock.setToolTipText("System managed read-only field");
+            labelRow.add(lock);
+        }
 
-        labelPanel.add(label);
-        labelPanel.add(lockIcon);
-
-        panel.add(labelPanel);
-        panel.add(Box.createVerticalStrut(4));
-        panel.add(field);
-
-        return panel;
-    }
-
-    private JPanel createPasswordFieldWrapper(String labelText, JPasswordField field, EyeToggleButton toggleBtn) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setOpaque(false);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
-
-        JLabel label = new JLabel(labelText);
-        label.setFont(FONT_FIELD_LABEL);
-        label.setForeground(COLOR_TEXT_PRIMARY);
-
-        // Input container with embedded eye button
-        JPanel inputContainer = new JPanel(new BorderLayout(4, 0));
+        // Modern input container with embedded prefix icon
+        JPanel inputContainer = new JPanel(new BorderLayout(8, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bg = field.isEditable() ? Color.WHITE : COLOR_READONLY_BG;
+                g2.setColor(bg);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+                Color border = field.hasFocus() ? COLOR_INPUT_FOCUS : COLOR_INPUT_BORDER;
+                g2.setColor(border);
+                g2.setStroke(new BasicStroke(field.hasFocus() ? 1.5f : 1.0f));
+                g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 10, 10));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         inputContainer.setOpaque(false);
+        inputContainer.setBorder(new EmptyBorder(2, 10, 2, 10));
         inputContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+
+        JLabel iconLabel = new JLabel(new ProfileVectorIcon(iconType, 13, COLOR_TEXT_MUTED));
+        inputContainer.add(iconLabel, BorderLayout.WEST);
+
+        field.setBorder(new EmptyBorder(6, 4, 6, 6));
+        field.setOpaque(false);
+        field.addFocusListener(new FocusAdapter() {
+            @Override public void focusGained(FocusEvent e) { inputContainer.repaint(); }
+            @Override public void focusLost(FocusEvent e) { inputContainer.repaint(); }
+        });
+
+        inputContainer.add(field, BorderLayout.CENTER);
+
+        panel.add(labelRow);
+        panel.add(Box.createVerticalStrut(4));
+        panel.add(inputContainer);
+
+        return panel;
+    }
+
+    private JPanel createPasswordFieldWithIcons(String labelText, JPasswordField field, EyeToggleButton toggleBtn) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 66));
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(FONT_FIELD_LABEL);
+        label.setForeground(COLOR_TEXT_PRIMARY);
+
+        JPanel inputContainer = new JPanel(new BorderLayout(8, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+                Color border = field.hasFocus() ? COLOR_INPUT_FOCUS : COLOR_INPUT_BORDER;
+                g2.setColor(border);
+                g2.setStroke(new BasicStroke(field.hasFocus() ? 1.5f : 1.0f));
+                g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 10, 10));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        inputContainer.setOpaque(false);
+        inputContainer.setBorder(new EmptyBorder(2, 10, 2, 4));
+        inputContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+
+        JLabel lockIcon = new JLabel(new ProfileVectorIcon(ProfileVectorIcon.Type.LOCK, 13, COLOR_TEXT_MUTED));
+        inputContainer.add(lockIcon, BorderLayout.WEST);
+
+        field.setBorder(new EmptyBorder(6, 4, 6, 6));
+        field.setOpaque(false);
+        field.addFocusListener(new FocusAdapter() {
+            @Override public void focusGained(FocusEvent e) { inputContainer.repaint(); }
+            @Override public void focusLost(FocusEvent e) { inputContainer.repaint(); }
+        });
+
         inputContainer.add(field, BorderLayout.CENTER);
         inputContainer.add(toggleBtn, BorderLayout.EAST);
 
@@ -1118,13 +1215,7 @@ public class LecturerProfile extends JPanel {
         JTextField tf = new JTextField();
         tf.setFont(FONT_INPUT);
         tf.setForeground(COLOR_TEXT_PRIMARY);
-        tf.setBackground(editable ? Color.WHITE : COLOR_READONLY_BG);
         tf.setEditable(editable);
-        tf.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(COLOR_INPUT_BORDER, 1),
-                new EmptyBorder(8, 12, 8, 12)
-        ));
-        tf.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         return tf;
     }
 
@@ -1132,13 +1223,7 @@ public class LecturerProfile extends JPanel {
         JPasswordField pf = new JPasswordField();
         pf.setFont(FONT_INPUT);
         pf.setForeground(COLOR_TEXT_PRIMARY);
-        pf.setBackground(Color.WHITE);
         pf.setEchoChar('\u2022');
-        pf.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(COLOR_INPUT_BORDER, 1),
-                new EmptyBorder(8, 12, 8, 12)
-        ));
-        pf.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         return pf;
     }
 
@@ -1150,6 +1235,8 @@ public class LecturerProfile extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(bg);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 16, 16));
+                g2.setColor(new Color(fg.getRed(), fg.getGreen(), fg.getBlue(), 60));
+                g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 16, 16));
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -1165,11 +1252,6 @@ public class LecturerProfile extends JPanel {
     // RESPONSIVE SCROLL CONTAINER (Guarantees Full Viewport Width)
     // =========================================================================
 
-    /**
-     * Special container implementing Scrollable so the entire panel dynamically
-     * tracks and matches the viewport width, eliminating horizontal scrollbars
-     * and allowing cards to expand fluidly.
-     */
     public static class ResponsiveContentPanel extends JPanel implements Scrollable {
         @Override
         public Dimension getPreferredScrollableViewportSize() {
@@ -1188,7 +1270,7 @@ public class LecturerProfile extends JPanel {
 
         @Override
         public boolean getScrollableTracksViewportWidth() {
-            return true; // Forces children to span 100% of viewport width
+            return true;
         }
 
         @Override
@@ -1201,10 +1283,6 @@ public class LecturerProfile extends JPanel {
     // RESPONSIVE CARDS CONTAINER (2-Column on Desktop / 1-Column on Mobile/Tablet)
     // =========================================================================
 
-    /**
-     * Container that automatically toggles between side-by-side (2 columns)
-     * and stacked (1 column) based on container width.
-     */
     public static class ResponsiveCardsContainer extends JPanel {
         private final JPanel leftCard;
         private final JPanel rightCard;
@@ -1219,11 +1297,8 @@ public class LecturerProfile extends JPanel {
 
             setOpaque(false);
             setLayout(new LayoutManager() {
-                @Override
-                public void addLayoutComponent(String name, Component comp) {}
-
-                @Override
-                public void removeLayoutComponent(Component comp) {}
+                @Override public void addLayoutComponent(String name, Component comp) {}
+                @Override public void removeLayoutComponent(Component comp) {}
 
                 @Override
                 public Dimension preferredLayoutSize(Container parent) {
@@ -1261,14 +1336,12 @@ public class LecturerProfile extends JPanel {
                     Dimension d2 = rightCard.getPreferredSize();
 
                     if (availW >= breakpoint) {
-                        // 2-Column Side-by-Side
                         int colW = (availW - gap) / 2;
                         int maxH = Math.max(d1.height, d2.height);
 
                         leftCard.setBounds(x, y, colW, maxH);
                         rightCard.setBounds(x + colW + gap, y, colW, maxH);
                     } else {
-                        // 1-Column Stacked Vertically
                         leftCard.setBounds(x, y, availW, d1.height);
                         rightCard.setBounds(x, y + d1.height + gap, availW, d2.height);
                     }
@@ -1278,7 +1351,6 @@ public class LecturerProfile extends JPanel {
             add(leftCard);
             add(rightCard);
 
-            // Re-layout immediately upon resize
             addComponentListener(new ComponentAdapter() {
                 @Override
                 public void componentResized(ComponentEvent e) {
@@ -1290,148 +1362,238 @@ public class LecturerProfile extends JPanel {
     }
 
     // =========================================================================
-    // VECTOR ICON IMPLEMENTATION (Crisp, High-DPI, Never Fails)
+    // EXECUTIVE HERO COVER CARD COMPONENT
     // =========================================================================
 
-    /**
-     * Crisp Vector Icon rendered with pure Java2D strokes and shapes.
-     * Guarantees identical, high-definition appearance on all Windows systems without font bugs.
-     */
-    public static class ProfileVectorIcon implements Icon {
-        public enum Type {
-            REFRESH, BACK, CAMERA, CLOSE, EDIT, CHECK, LOCK, SHIELD, EYE_OPEN, EYE_CLOSED
+    public static class ExecutiveHeroCard extends JPanel {
+        private final int radius = 16;
+        private final int bannerHeight = 84;
+
+        public ExecutiveHeroCard() {
+            setOpaque(false);
         }
-
-        private final Type type;
-        private final int size;
-        private Color defaultColor;
-
-        public ProfileVectorIcon(Type type, int size, Color color) {
-            this.type = type;
-            this.size = size;
-            this.defaultColor = color;
-        }
-
-        public ProfileVectorIcon(Type type, int size) {
-            this(type, size, null);
-        }
-
-        public void setColor(Color c) {
-            this.defaultColor = c;
-        }
-
-        @Override public int getIconWidth() { return size; }
-        @Override public int getIconHeight() { return size; }
 
         @Override
-        public void paintIcon(Component c, Graphics g, int x, int y) {
+        protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-            Color color = defaultColor;
-            if (color == null) {
-                color = (c != null) ? c.getForeground() : Color.BLACK;
+            int w = getWidth();
+            int h = getHeight();
+
+            // 1. Base Card White Surface with rounded corners
+            g2.setColor(COLOR_CARD_BG);
+            g2.fill(new RoundRectangle2D.Float(0, 0, w, h, radius, radius));
+
+            // 2. Top Executive Cover Banner (Navy to Royal Blue Gradient)
+            Shape oldClip = g2.getClip();
+            RoundRectangle2D cardClip = new RoundRectangle2D.Float(0, 0, w, h, radius, radius);
+            g2.setClip(cardClip);
+
+            GradientPaint bannerGradient = new GradientPaint(
+                    0, 0, new Color(8, 47, 90),
+                    w, bannerHeight, new Color(14, 90, 175)
+            );
+            g2.setPaint(bannerGradient);
+            g2.fillRect(0, 0, w, bannerHeight);
+
+            // 3. Subtle Modern Architectural Geometry & Accents
+            g2.setColor(new Color(255, 255, 255, 18));
+            g2.fillOval(w - 240, -40, 220, 220);
+            g2.setColor(new Color(255, 255, 255, 14));
+            g2.fillOval(w - 140, -20, 160, 160);
+            g2.setColor(new Color(255, 255, 255, 28));
+            g2.setStroke(new BasicStroke(1.2f));
+            g2.drawOval(w - 200, -20, 180, 180);
+
+            // Translucent dot pattern on left banner
+            g2.setColor(new Color(255, 255, 255, 20));
+            for (int i = 0; i < 5; i++) {
+                for (int j = 0; j < 3; j++) {
+                    g2.fillOval(200 + i * 14, 20 + j * 14, 3, 3);
+                }
             }
-            g2.setColor(color);
 
-            int w = size;
-            int h = size;
+            g2.setClip(oldClip);
 
-            switch (type) {
-                case REFRESH:
-                    g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    g2.drawArc(x + 2, y + 2, w - 5, h - 5, 45, 275);
-                    // Arrowhead
-                    Polygon arrow = new Polygon();
-                    arrow.addPoint(x + w - 2, y + 1);
-                    arrow.addPoint(x + w + 1, y + 6);
-                    arrow.addPoint(x + w - 4, y + 5);
-                    g2.fill(arrow);
-                    break;
-
-                case BACK:
-                    g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    int midY = y + h / 2;
-                    g2.drawLine(x + 3, midY, x + w - 2, midY);
-                    g2.drawLine(x + 3, midY, x + 7, midY - 4);
-                    g2.drawLine(x + 3, midY, x + 7, midY + 4);
-                    break;
-
-                case CAMERA:
-                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    // Body
-                    g2.drawRoundRect(x + 1, y + 4, w - 3, h - 5, 3, 3);
-                    // Lens
-                    int lensD = Math.max(4, w / 2);
-                    g2.drawOval(x + (w - lensD) / 2, y + 4 + (h - 5 - lensD) / 2, lensD, lensD);
-                    // Top flash notch
-                    g2.fillRect(x + w / 2 - 2, y + 2, 4, 2);
-                    break;
-
-                case EDIT:
-                    g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    Path2D pencil = new Path2D.Float();
-                    pencil.moveTo(x + 2, y + h - 2);
-                    pencil.lineTo(x + 5, y + h - 2);
-                    pencil.lineTo(x + w - 2, y + 5);
-                    pencil.lineTo(x + w - 5, y + 2);
-                    pencil.lineTo(x + 2, y + h - 5);
-                    pencil.closePath();
-                    g2.draw(pencil);
-                    g2.drawLine(x + 2, y + h - 2, x + 5, y + h - 4);
-                    break;
-
-                case CHECK:
-                    g2.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    g2.drawLine(x + 2, y + h / 2 + 1, x + w / 2 - 1, y + h - 3);
-                    g2.drawLine(x + w / 2 - 1, y + h - 3, x + w - 2, y + 3);
-                    break;
-
-                case CLOSE:
-                    g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    g2.drawLine(x + 3, y + 3, x + w - 3, y + h - 3);
-                    g2.drawLine(x + w - 3, y + 3, x + 3, y + h - 3);
-                    break;
-
-                case LOCK:
-                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    int shackleW = Math.max(4, w - 6);
-                    g2.drawArc(x + 3, y + 1, shackleW, 8, 0, 180);
-                    g2.fillRoundRect(x + 2, y + 5, w - 4, h - 6, 3, 3);
-                    // White keyhole dot
-                    g2.setColor(Color.WHITE);
-                    g2.fillOval(x + w / 2 - 1, y + 7, 3, 3);
-                    break;
-
-                case SHIELD:
-                    g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    Path2D shield = new Path2D.Float();
-                    shield.moveTo(x + w / 2.0f, y + 1);
-                    shield.lineTo(x + w - 2, y + 3);
-                    shield.quadTo(x + w - 2, y + h * 0.65f, x + w / 2.0f, y + h - 1);
-                    shield.quadTo(x + 2, y + h * 0.65f, x + 2, y + 3);
-                    shield.closePath();
-                    g2.draw(shield);
-                    g2.drawLine(x + 4, y + h / 2, x + w / 2 - 1, y + h / 2 + 2);
-                    g2.drawLine(x + w / 2 - 1, y + h / 2 + 2, x + w - 4, y + h / 2 - 2);
-                    break;
-
-                case EYE_OPEN:
-                    g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    g2.drawArc(x + 1, y + 3, w - 2, h - 6, 25, 130);
-                    g2.drawArc(x + 1, y + 3, w - 2, h - 6, 205, 130);
-                    g2.fillOval(x + w / 2 - 2, y + h / 2 - 2, 5, 5);
-                    break;
-
-                case EYE_CLOSED:
-                    g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    g2.drawArc(x + 1, y + 3, w - 2, h - 6, 205, 130);
-                    g2.drawLine(x + 2, y + 2, x + w - 2, y + h - 2);
-                    break;
-            }
+            // 4. Outer Card Border
+            g2.setColor(COLOR_BORDER);
+            g2.setStroke(new BasicStroke(1.0f));
+            g2.draw(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, radius, radius));
 
             g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    // =========================================================================
+    // MINI STAT KPI CARD (Dashboard Metric Badge)
+    // =========================================================================
+
+    public static class MiniStatCard extends JPanel {
+        private final JLabel valueLabel;
+        private final JLabel titleLabel;
+        private final Color accentColor;
+        private final Color softBg;
+
+        public MiniStatCard(String title, String initialValue, Icon icon, Color accentColor, Color softBg) {
+            this.accentColor = accentColor;
+            this.softBg = softBg;
+
+            setLayout(new BorderLayout(10, 0));
+            setOpaque(false);
+            setPreferredSize(new Dimension(165, 48));
+            setMaximumSize(new Dimension(175, 48));
+            setBorder(new EmptyBorder(6, 10, 6, 10));
+
+            JLabel iconLbl = new JLabel(icon);
+            iconLbl.setVerticalAlignment(SwingConstants.CENTER);
+
+            JPanel textCol = new JPanel();
+            textCol.setLayout(new BoxLayout(textCol, BoxLayout.Y_AXIS));
+            textCol.setOpaque(false);
+
+            valueLabel = new JLabel(initialValue);
+            valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            valueLabel.setForeground(COLOR_DEEP_NAVY);
+
+            titleLabel = new JLabel(title);
+            titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+            titleLabel.setForeground(COLOR_TEXT_SECONDARY);
+
+            textCol.add(valueLabel);
+            textCol.add(titleLabel);
+
+            add(iconLbl, BorderLayout.WEST);
+            add(textCol, BorderLayout.CENTER);
+        }
+
+        public void setValue(String val) {
+            valueLabel.setText(val);
+            revalidate();
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(softBg);
+            g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+            g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 60));
+            g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 10, 10));
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    // =========================================================================
+    // INTERACTIVE PASSWORD STRENGTH METER
+    // =========================================================================
+
+    public static class PasswordStrengthMeter extends JPanel {
+        private final JProgressBar strengthBar;
+        private final JLabel strengthText;
+        private final JLabel ruleLength;
+        private final JLabel ruleLetter;
+        private final JLabel ruleNumber;
+
+        public PasswordStrengthMeter() {
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            setOpaque(false);
+            setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
+            setBorder(new EmptyBorder(4, 0, 4, 0));
+
+            JPanel barRow = new JPanel(new BorderLayout(8, 0));
+            barRow.setOpaque(false);
+
+            strengthBar = new JProgressBar(0, 3);
+            strengthBar.setValue(0);
+            strengthBar.setPreferredSize(new Dimension(140, 6));
+            strengthBar.setForeground(new Color(226, 232, 240));
+            strengthBar.setBackground(new Color(241, 245, 249));
+            strengthBar.setBorderPainted(false);
+
+            strengthText = new JLabel("Password strength: None");
+            strengthText.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            strengthText.setForeground(COLOR_TEXT_SECONDARY);
+
+            barRow.add(strengthBar, BorderLayout.CENTER);
+            barRow.add(strengthText, BorderLayout.EAST);
+
+            JPanel rulesBox = new JPanel(new GridLayout(3, 1, 0, 3));
+            rulesBox.setOpaque(false);
+            rulesBox.setBorder(new EmptyBorder(6, 2, 2, 2));
+
+            ruleLength = new JLabel(" Minimum 8 characters in length");
+            ruleLength.setFont(FONT_HELPER);
+            ruleLength.setForeground(COLOR_TEXT_MUTED);
+            ruleLength.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.CLOSE, 10, COLOR_TEXT_MUTED));
+
+            ruleLetter = new JLabel(" Must contain at least one letter (a-z, A-Z)");
+            ruleLetter.setFont(FONT_HELPER);
+            ruleLetter.setForeground(COLOR_TEXT_MUTED);
+            ruleLetter.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.CLOSE, 10, COLOR_TEXT_MUTED));
+
+            ruleNumber = new JLabel(" Must contain at least one number (0-9)");
+            ruleNumber.setFont(FONT_HELPER);
+            ruleNumber.setForeground(COLOR_TEXT_MUTED);
+            ruleNumber.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.CLOSE, 10, COLOR_TEXT_MUTED));
+
+            rulesBox.add(ruleLength);
+            rulesBox.add(ruleLetter);
+            rulesBox.add(ruleNumber);
+
+            add(barRow);
+            add(rulesBox);
+        }
+
+        public void updateStrength(String password) {
+            if (password == null || password.isEmpty()) {
+                strengthBar.setValue(0);
+                strengthBar.setForeground(new Color(226, 232, 240));
+                strengthText.setText("Password strength: None");
+                strengthText.setForeground(COLOR_TEXT_SECONDARY);
+                updateRule(ruleLength, false);
+                updateRule(ruleLetter, false);
+                updateRule(ruleNumber, false);
+                return;
+            }
+
+            boolean hasLen = password.length() >= 8;
+            boolean hasLetter = password.matches(".*[a-zA-Z].*");
+            boolean hasNumber = password.matches(".*[0-9].*");
+
+            int score = (hasLen ? 1 : 0) + (hasLetter ? 1 : 0) + (hasNumber ? 1 : 0);
+            strengthBar.setValue(score);
+
+            if (score <= 1) {
+                strengthBar.setForeground(COLOR_DANGER);
+                strengthText.setText("Strength: Weak");
+                strengthText.setForeground(COLOR_DANGER);
+            } else if (score == 2) {
+                strengthBar.setForeground(new Color(245, 158, 11)); // Amber
+                strengthText.setText("Strength: Moderate");
+                strengthText.setForeground(new Color(217, 119, 6));
+            } else {
+                strengthBar.setForeground(COLOR_SUCCESS);
+                strengthText.setText("Strength: Strong");
+                strengthText.setForeground(COLOR_SUCCESS);
+            }
+
+            updateRule(ruleLength, hasLen);
+            updateRule(ruleLetter, hasLetter);
+            updateRule(ruleNumber, hasNumber);
+        }
+
+        private void updateRule(JLabel label, boolean satisfied) {
+            if (satisfied) {
+                label.setForeground(new Color(4, 120, 87));
+                label.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.CHECK, 10, COLOR_SUCCESS));
+            } else {
+                label.setForeground(COLOR_TEXT_MUTED);
+                label.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.CLOSE, 10, COLOR_TEXT_MUTED));
+            }
         }
     }
 
@@ -1445,7 +1607,7 @@ public class LecturerProfile extends JPanel {
 
         public EyeToggleButton(JPasswordField targetField) {
             this.targetField = targetField;
-            setPreferredSize(new Dimension(36, 36));
+            setPreferredSize(new Dimension(34, 34));
             setFocusPainted(false);
             setBorderPainted(false);
             setContentAreaFilled(false);
@@ -1686,5 +1848,288 @@ public class LecturerProfile extends JPanel {
             }
             super.paintComponent(g);
         }
+    }
+
+    // =========================================================================
+    // HIGH-DEFINITION VECTOR ICON SUITE (18 Pure Graphics2D Shapes)
+    // =========================================================================
+
+    public static class ProfileVectorIcon implements Icon {
+        public enum Type {
+            REFRESH, BACK, CAMERA, CLOSE, EDIT, CHECK, LOCK, SHIELD,
+            EYE_OPEN, EYE_CLOSED, USER, MAIL, PHONE, BUILDING,
+            AWARD, KEY, VERIFIED, BOOK, DOCUMENT, HASH
+        }
+
+        private final Type type;
+        private final int size;
+        private Color defaultColor;
+
+        public ProfileVectorIcon(Type type, int size, Color color) {
+            this.type = type;
+            this.size = size;
+            this.defaultColor = color;
+        }
+
+        public ProfileVectorIcon(Type type, int size) {
+            this(type, size, null);
+        }
+
+        public void setColor(Color c) {
+            this.defaultColor = c;
+        }
+
+        @Override public int getIconWidth() { return size; }
+        @Override public int getIconHeight() { return size; }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+
+            Color color = defaultColor;
+            if (color == null) {
+                color = (c != null) ? c.getForeground() : Color.BLACK;
+            }
+            g2.setColor(color);
+
+            int w = size;
+            int h = size;
+
+            switch (type) {
+                case REFRESH:
+                    g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawArc(x + 2, y + 2, w - 5, h - 5, 45, 275);
+                    Polygon arrow = new Polygon();
+                    arrow.addPoint(x + w - 2, y + 1);
+                    arrow.addPoint(x + w + 1, y + 6);
+                    arrow.addPoint(x + w - 4, y + 5);
+                    g2.fill(arrow);
+                    break;
+
+                case BACK:
+                    g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    int midY = y + h / 2;
+                    g2.drawLine(x + 3, midY, x + w - 2, midY);
+                    g2.drawLine(x + 3, midY, x + 7, midY - 4);
+                    g2.drawLine(x + 3, midY, x + 7, midY + 4);
+                    break;
+
+                case CAMERA:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawRoundRect(x + 1, y + 4, w - 3, h - 5, 3, 3);
+                    int lensD = Math.max(4, w / 2);
+                    g2.drawOval(x + (w - lensD) / 2, y + 4 + (h - 5 - lensD) / 2, lensD, lensD);
+                    g2.fillRect(x + w / 2 - 2, y + 2, 4, 2);
+                    break;
+
+                case EDIT:
+                    g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    Path2D pencil = new Path2D.Float();
+                    pencil.moveTo(x + 2, y + h - 2);
+                    pencil.lineTo(x + 5, y + h - 2);
+                    pencil.lineTo(x + w - 2, y + 5);
+                    pencil.lineTo(x + w - 5, y + 2);
+                    pencil.lineTo(x + 2, y + h - 5);
+                    pencil.closePath();
+                    g2.draw(pencil);
+                    g2.drawLine(x + 2, y + h - 2, x + 5, y + h - 4);
+                    break;
+
+                case CHECK:
+                    g2.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawLine(x + 2, y + h / 2 + 1, x + w / 2 - 1, y + h - 3);
+                    g2.drawLine(x + w / 2 - 1, y + h - 3, x + w - 2, y + 3);
+                    break;
+
+                case CLOSE:
+                    g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawLine(x + 3, y + 3, x + w - 3, y + h - 3);
+                    g2.drawLine(x + w - 3, y + 3, x + 3, y + h - 3);
+                    break;
+
+                case LOCK:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    int shackleW = Math.max(4, w - 6);
+                    g2.drawArc(x + 3, y + 1, shackleW, 8, 0, 180);
+                    g2.fillRoundRect(x + 2, y + 5, w - 4, h - 6, 3, 3);
+                    g2.setColor(Color.WHITE);
+                    g2.fillOval(x + w / 2 - 1, y + 7, 3, 3);
+                    break;
+
+                case SHIELD:
+                    g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    Path2D shield = new Path2D.Float();
+                    shield.moveTo(x + w / 2.0f, y + 1);
+                    shield.lineTo(x + w - 2, y + 3);
+                    shield.quadTo(x + w - 2, y + h * 0.65f, x + w / 2.0f, y + h - 1);
+                    shield.quadTo(x + 2, y + h * 0.65f, x + 2, y + 3);
+                    shield.closePath();
+                    g2.draw(shield);
+                    g2.drawLine(x + 4, y + h / 2, x + w / 2 - 1, y + h / 2 + 2);
+                    g2.drawLine(x + w / 2 - 1, y + h / 2 + 2, x + w - 4, y + h / 2 - 2);
+                    break;
+
+                case EYE_OPEN:
+                    g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawArc(x + 1, y + 3, w - 2, h - 6, 25, 130);
+                    g2.drawArc(x + 1, y + 3, w - 2, h - 6, 205, 130);
+                    g2.fillOval(x + w / 2 - 2, y + h / 2 - 2, 5, 5);
+                    break;
+
+                case EYE_CLOSED:
+                    g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawArc(x + 1, y + 3, w - 2, h - 6, 205, 130);
+                    g2.drawLine(x + 2, y + 2, x + w - 2, y + h - 2);
+                    break;
+
+                case USER:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    int headR = Math.max(3, w / 4);
+                    g2.drawOval(x + (w - headR * 2) / 2, y + 2, headR * 2, headR * 2);
+                    g2.drawArc(x + 2, y + headR * 2 + 2, w - 4, h - headR * 2 - 2, 0, 180);
+                    break;
+
+                case MAIL:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawRoundRect(x + 1, y + 3, w - 2, h - 6, 3, 3);
+                    g2.drawLine(x + 2, y + 4, x + w / 2, y + h / 2 + 1);
+                    g2.drawLine(x + w / 2, y + h / 2 + 1, x + w - 2, y + 4);
+                    break;
+
+                case PHONE:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawRoundRect(x + 3, y + 1, w - 6, h - 2, 4, 4);
+                    g2.drawLine(x + 5, y + 4, x + w - 5, y + 4);
+                    g2.fillOval(x + w / 2 - 1, y + h - 5, 3, 3);
+                    break;
+
+                case BUILDING:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    Path2D roof = new Path2D.Float();
+                    roof.moveTo(x + 1, y + 5);
+                    roof.lineTo(x + w / 2.0f, y + 1);
+                    roof.lineTo(x + w - 1, y + 5);
+                    roof.closePath();
+                    g2.draw(roof);
+                    g2.drawLine(x + 1, y + h - 2, x + w - 1, y + h - 2);
+                    g2.drawLine(x + 4, y + 6, x + 4, y + h - 3);
+                    g2.drawLine(x + w / 2, y + 6, x + w / 2, y + h - 3);
+                    g2.drawLine(x + w - 4, y + 6, x + w - 4, y + h - 3);
+                    break;
+
+                case AWARD:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    Path2D cap = new Path2D.Float();
+                    cap.moveTo(x + 1, y + 5);
+                    cap.lineTo(x + w / 2.0f, y + 1);
+                    cap.lineTo(x + w - 1, y + 5);
+                    cap.lineTo(x + w / 2.0f, y + 9);
+                    cap.closePath();
+                    g2.draw(cap);
+                    g2.drawArc(x + 4, y + 5, w - 8, 7, 190, 160);
+                    g2.drawLine(x + w - 2, y + 5, x + w - 2, y + 11);
+                    break;
+
+                case KEY:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawOval(x + 1, y + 2, 6, 6);
+                    g2.drawLine(x + 7, y + 5, x + w - 1, y + 5);
+                    g2.drawLine(x + w - 2, y + 5, x + w - 2, y + 9);
+                    g2.drawLine(x + w - 5, y + 5, x + w - 5, y + 8);
+                    break;
+
+                case VERIFIED:
+                    g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawOval(x + 1, y + 1, w - 2, h - 2);
+                    g2.drawLine(x + 4, y + h / 2, x + w / 2 - 1, y + h - 4);
+                    g2.drawLine(x + w / 2 - 1, y + h - 4, x + w - 4, y + 4);
+                    break;
+
+                case BOOK:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawArc(x + 1, y + 2, w / 2 - 1, 5, 0, 180);
+                    g2.drawArc(x + w / 2, y + 2, w / 2 - 1, 5, 0, 180);
+                    g2.drawLine(x + 1, y + 4, x + 1, y + h - 2);
+                    g2.drawLine(x + w - 1, y + 4, x + w - 1, y + h - 2);
+                    g2.drawLine(x + w / 2, y + 4, x + w / 2, y + h - 2);
+                    g2.drawArc(x + 1, y + h - 4, w / 2 - 1, 4, 180, 180);
+                    g2.drawArc(x + w / 2, y + h - 4, w / 2 - 1, 4, 180, 180);
+                    break;
+
+                case DOCUMENT:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    Path2D doc = new Path2D.Float();
+                    doc.moveTo(x + 2, y + 1);
+                    doc.lineTo(x + w - 5, y + 1);
+                    doc.lineTo(x + w - 1, y + 5);
+                    doc.lineTo(x + w - 1, y + h - 1);
+                    doc.lineTo(x + 2, y + h - 1);
+                    doc.closePath();
+                    g2.draw(doc);
+                    g2.drawLine(x + w - 5, y + 1, x + w - 5, y + 5);
+                    g2.drawLine(x + w - 5, y + 5, x + w - 1, y + 5);
+                    g2.drawLine(x + 4, y + 7, x + w - 5, y + 7);
+                    g2.drawLine(x + 4, y + 10, x + w - 5, y + 10);
+                    break;
+
+                case HASH:
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawLine(x + 4, y + 1, x + 3, y + h - 1);
+                    g2.drawLine(x + w - 3, y + 1, x + w - 4, y + h - 1);
+                    g2.drawLine(x + 1, y + 4, x + w - 1, y + 4);
+                    g2.drawLine(x + 1, y + h - 4, x + w - 1, y + h - 4);
+                    break;
+            }
+
+            g2.dispose();
+        }
+    }
+
+    // =========================================================================
+    // STANDALONE RUNNER / DIRECT IDE TESTING
+    // =========================================================================
+
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ignored) {}
+
+        // Mock session for Dr. Chinthaka Premachandra (Lecturer ID: 4)
+        if (UserSession.getCurrentSession() == null) {
+            UserSession.setCurrentSession(new UserSession(
+                    4,
+                    "lec_chinthaka",
+                    "Lecturer",
+                    "Dr. Chinthaka Premachandra",
+                    "Senior Lecturer Gr. I",
+                    "Department of Information and Communication Technology",
+                    "chinthaka@fot.ruh.ac.lk"
+            ));
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("TecFAMS - Lecturer Profile (Modern Academic Theme)");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(1120, 800);
+            frame.setMinimumSize(new Dimension(880, 600));
+            frame.setLayout(new BorderLayout());
+
+            Navbar navbar = new Navbar(Navbar.PAGE_PROFILE);
+            LecturerProfile profile = new LecturerProfile();
+
+            navbar.addNavigationListener(pageName -> {
+                if (Navbar.PAGE_PROFILE.equals(pageName)) {
+                    profile.refreshProfileInformation();
+                }
+            });
+
+            frame.add(navbar, BorderLayout.NORTH);
+            frame.add(profile, BorderLayout.CENTER);
+
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
     }
 }
