@@ -12,6 +12,7 @@ public class AdminDashboard extends JFrame {
     private JLabel headerProfileIcon;
     private JLabel headerProfileName;
     private String currentProfilePicture;
+    private DashboardHomePanel dashboardHomePanel;
 
     public AdminDashboard() {
         setTitle("FAMS - Faculty Academic Management System");
@@ -69,7 +70,12 @@ public class AdminDashboard extends JFrame {
             currentProfilePicture = profilePanel.getCurrentAdmin().getProfilePicture();
         }
 
-        addSidebarButton(sidebar, "Dashboard", "src/main/resources/images/admin-icons/dashboard.png", new DashboardHomePanel(), true);
+        String loggedUsername = (profilePanel.getCurrentAdmin() != null && profilePanel.getCurrentAdmin().getUsername() != null)
+                ? profilePanel.getCurrentAdmin().getUsername()
+                : "admin";
+
+        dashboardHomePanel = new DashboardHomePanel(loggedUsername);
+        addSidebarButton(sidebar, "Dashboard", "src/main/resources/images/admin-icons/dashboard.png", dashboardHomePanel, true);
         addSidebarButton(sidebar, "User Management", "src/main/resources/images/admin-icons/users.png", new UserManagementPanel(), false);
         addSidebarButton(sidebar, "Course Management", "src/main/resources/images/admin-icons/courses.png", new CourseManagementPanel(), false);
         addSidebarButton(sidebar, "Notices", "src/main/resources/images/admin-icons/notices.png", new NoticeManagementPanel(), false);
@@ -326,6 +332,9 @@ public class AdminDashboard extends JFrame {
             }
             if (headerProfileIcon != null) {
                 headerProfileIcon.repaint();
+            }
+            if (dashboardHomePanel != null && admin.getUsername() != null) {
+                dashboardHomePanel.setLoggedUsername(admin.getUsername());
             }
         }
     }

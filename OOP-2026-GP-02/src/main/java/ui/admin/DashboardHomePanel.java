@@ -8,10 +8,25 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import main.java.dao.admin.DashboardDAO;
+import main.java.dao.admin.UserDAO;
 
 public class DashboardHomePanel extends JPanel {
 
+    private String username;
+    private JLabel welcomeLabel;
+
     public DashboardHomePanel() {
+        this(null);
+    }
+
+    public DashboardHomePanel(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            main.java.model.admin.Admin a = UserDAO.getAdminProfile(1);
+            this.username = (a != null && a.getUsername() != null) ? a.getUsername() : "admin";
+        } else {
+            this.username = username;
+        }
+
         setLayout(new BorderLayout());
         setBackground(new Color(245, 247, 250));
         setBorder(new EmptyBorder(25, 25, 25, 25));
@@ -19,6 +34,31 @@ public class DashboardHomePanel extends JPanel {
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setOpaque(false);
+
+        // --- Welcome Header Section (At the very top) ---
+        JPanel welcomeHeaderPanel = new JPanel(new BorderLayout());
+        welcomeHeaderPanel.setOpaque(false);
+        welcomeHeaderPanel.setBorder(new EmptyBorder(0, 0, 22, 0));
+
+        JPanel welcomeTextBlock = new JPanel();
+        welcomeTextBlock.setLayout(new BoxLayout(welcomeTextBlock, BoxLayout.Y_AXIS));
+        welcomeTextBlock.setOpaque(false);
+
+        welcomeLabel = new JLabel("Welcome, " + this.username + "!");
+        welcomeLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        welcomeLabel.setForeground(new Color(23, 32, 48));
+
+        String dateStr = new SimpleDateFormat("EEEE, MMMM dd, yyyy").format(new Date());
+        JLabel welcomeSubtitle = new JLabel("Here is an overview of what is happening across your faculty today • " + dateStr);
+        welcomeSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        welcomeSubtitle.setForeground(new Color(120, 130, 140));
+
+        welcomeTextBlock.add(welcomeLabel);
+        welcomeTextBlock.add(Box.createVerticalStrut(4));
+        welcomeTextBlock.add(welcomeSubtitle);
+
+        welcomeHeaderPanel.add(welcomeTextBlock, BorderLayout.WEST);
+        content.add(welcomeHeaderPanel);
 
         Map<String, Integer> stats = DashboardDAO.getDashboardStatistics();
 
@@ -58,6 +98,15 @@ public class DashboardHomePanel extends JPanel {
         content.setBorder(new EmptyBorder(0, 0, 0, 25));
 
         add(content, BorderLayout.NORTH);
+    }
+
+    public void setLoggedUsername(String newUsername) {
+        if (newUsername != null && !newUsername.trim().isEmpty()) {
+            this.username = newUsername;
+            if (welcomeLabel != null) {
+                welcomeLabel.setText("Welcome, " + this.username + "!");
+            }
+        }
     }
 
     private JPanel createMetricCard(String title, String value, String trend, Color iconBgColor, String iconPath) {
