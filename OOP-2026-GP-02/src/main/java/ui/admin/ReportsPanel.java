@@ -243,21 +243,21 @@ public class ReportsPanel extends JPanel {
         kpiPanel.add(createKpiCard("Eligibility Rate", eligibilityRateKpi, "Target: 100%", new Color(246, 234, 255), new Color(130, 60, 220)));
 
         // 2. Filter Bar
-        JPanel filterCard = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
+        JPanel filterCard = new JPanel(new WrapLayout(FlowLayout.LEFT, 10, 8));
         filterCard.setBackground(Color.WHITE);
         filterCard.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(230, 232, 238), 1, true),
-            new EmptyBorder(6, 12, 6, 12)
+            new EmptyBorder(8, 14, 8, 14)
         ));
 
         JLabel searchIcon = new JLabel("Search:");
         searchIcon.setFont(new Font("Segoe UI", Font.BOLD, 12));
         searchIcon.setForeground(new Color(100, 110, 125));
 
-        eligibilitySearch = new JTextField(15);
-        eligibilitySearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        eligibilitySearch = new JTextField(12);
+        eligibilitySearch.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         eligibilitySearch.putClientProperty("JTextField.placeholderText", "Reg No or Name...");
-        eligibilitySearch.setPreferredSize(new Dimension(180, 32));
+        eligibilitySearch.setPreferredSize(new Dimension(145, 32));
 
         JLabel courseLbl = new JLabel("Course:");
         courseLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -265,25 +265,28 @@ public class ReportsPanel extends JPanel {
 
         eligibilityCourseCombo = new JComboBox<>();
         populateCourseCombo(eligibilityCourseCombo);
-        eligibilityCourseCombo.setPreferredSize(new Dimension(240, 32));
+        eligibilityCourseCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        eligibilityCourseCombo.setPreferredSize(new Dimension(175, 32));
 
-        JLabel deptLbl = new JLabel("Department:");
+        JLabel deptLbl = new JLabel("Dept:");
         deptLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         deptLbl.setForeground(new Color(100, 110, 125));
 
         eligibilityDeptCombo = new JComboBox<>();
         populateDepartmentCombo(eligibilityDeptCombo);
-        eligibilityDeptCombo.setPreferredSize(new Dimension(200, 32));
+        eligibilityDeptCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        eligibilityDeptCombo.setPreferredSize(new Dimension(165, 32));
 
         JLabel statusLbl = new JLabel("Status:");
         statusLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         statusLbl.setForeground(new Color(100, 110, 125));
 
         eligibilityStatusCombo = new JComboBox<>(new String[]{"All Statuses", "Eligible", "Not Eligible", "Pending"});
-        eligibilityStatusCombo.setPreferredSize(new Dimension(130, 32));
+        eligibilityStatusCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        eligibilityStatusCombo.setPreferredSize(new Dimension(115, 32));
 
         JButton resetBtn = createStyledButton("Reset", new Color(240, 243, 248), new Color(70, 80, 95), true);
-        resetBtn.setPreferredSize(new Dimension(75, 32));
+        resetBtn.setPreferredSize(new Dimension(68, 32));
         resetBtn.addActionListener(e -> {
             eligibilitySearch.setText("");
             if (eligibilityCourseCombo.getItemCount() > 0) eligibilityCourseCombo.setSelectedIndex(0);
@@ -375,7 +378,7 @@ public class ReportsPanel extends JPanel {
         topWrapper.setOpaque(false);
         topWrapper.add(kpiPanel);
         topWrapper.add(filterCard);
-        topWrapper.add(Box.createVerticalStrut(12));
+        topWrapper.add(Box.createVerticalStrut(18)); // Bottom margin to separate filter bar from table cleanly
 
         panel.add(topWrapper, BorderLayout.NORTH);
         panel.add(tableWrapper, BorderLayout.CENTER);
@@ -466,46 +469,49 @@ public class ReportsPanel extends JPanel {
         kpiPanel.add(createKpiCard("Avg Students / Course", enrollmentAvgKpi, "Classroom capacity ratio", new Color(246, 234, 255), new Color(130, 60, 220)));
 
         // 2. Filter Bar
-        JPanel filterCard = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
+        JPanel filterCard = new JPanel(new WrapLayout(FlowLayout.LEFT, 10, 8));
         filterCard.setBackground(Color.WHITE);
         filterCard.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(230, 232, 238), 1, true),
-            new EmptyBorder(6, 12, 6, 12)
+            new EmptyBorder(8, 14, 8, 14)
         ));
 
         JLabel searchIcon = new JLabel("Search:");
         searchIcon.setFont(new Font("Segoe UI", Font.BOLD, 12));
         searchIcon.setForeground(new Color(100, 110, 125));
 
-        enrollmentSearch = new JTextField(15);
-        enrollmentSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        enrollmentSearch.putClientProperty("JTextField.placeholderText", "Course code or name...");
-        enrollmentSearch.setPreferredSize(new Dimension(190, 32));
+        enrollmentSearch = new JTextField(12);
+        enrollmentSearch.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        enrollmentSearch.putClientProperty("JTextField.placeholderText", "Course code/title...");
+        enrollmentSearch.setPreferredSize(new Dimension(160, 32));
 
-        JLabel deptLbl = new JLabel("Department:");
+        JLabel deptLbl = new JLabel("Dept:");
         deptLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         deptLbl.setForeground(new Color(100, 110, 125));
 
         enrollmentDeptCombo = new JComboBox<>();
         populateDepartmentCombo(enrollmentDeptCombo);
-        enrollmentDeptCombo.setPreferredSize(new Dimension(220, 32));
+        enrollmentDeptCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        enrollmentDeptCombo.setPreferredSize(new Dimension(175, 32));
 
         JLabel yearLbl = new JLabel("Year:");
         yearLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         yearLbl.setForeground(new Color(100, 110, 125));
 
         enrollmentYearCombo = new JComboBox<>(new String[]{"All Years", "Year 1", "Year 2", "Year 3", "Year 4"});
-        enrollmentYearCombo.setPreferredSize(new Dimension(110, 32));
+        enrollmentYearCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        enrollmentYearCombo.setPreferredSize(new Dimension(95, 32));
 
         JLabel semLbl = new JLabel("Semester:");
         semLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         semLbl.setForeground(new Color(100, 110, 125));
 
         enrollmentSemCombo = new JComboBox<>(new String[]{"All Semesters", "Semester 1", "Semester 2"});
-        enrollmentSemCombo.setPreferredSize(new Dimension(125, 32));
+        enrollmentSemCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        enrollmentSemCombo.setPreferredSize(new Dimension(115, 32));
 
         JButton resetBtn = createStyledButton("Reset", new Color(240, 243, 248), new Color(70, 80, 95), true);
-        resetBtn.setPreferredSize(new Dimension(75, 32));
+        resetBtn.setPreferredSize(new Dimension(68, 32));
         resetBtn.addActionListener(e -> {
             enrollmentSearch.setText("");
             if (enrollmentDeptCombo.getItemCount() > 0) enrollmentDeptCombo.setSelectedIndex(0);
@@ -595,7 +601,7 @@ public class ReportsPanel extends JPanel {
         topWrapper.setOpaque(false);
         topWrapper.add(kpiPanel);
         topWrapper.add(filterCard);
-        topWrapper.add(Box.createVerticalStrut(12));
+        topWrapper.add(Box.createVerticalStrut(18)); // Bottom margin to separate filter bar from table cleanly
 
         panel.add(topWrapper, BorderLayout.NORTH);
         panel.add(tableWrapper, BorderLayout.CENTER);
@@ -1332,6 +1338,82 @@ public class ReportsPanel extends JPanel {
 
             panel.add(badge);
             return panel;
+        }
+    }
+
+    // =========================================================================
+    // WRAP LAYOUT (Dynamically recalculates height when components wrap)
+    // =========================================================================
+    public static class WrapLayout extends FlowLayout {
+        public WrapLayout(int align, int hgap, int vgap) {
+            super(align, hgap, vgap);
+        }
+
+        @Override
+        public Dimension preferredLayoutSize(Container target) {
+            return layoutSize(target, true);
+        }
+
+        @Override
+        public Dimension minimumLayoutSize(Container target) {
+            Dimension minimum = layoutSize(target, false);
+            minimum.width -= (getHgap() + 1);
+            return minimum;
+        }
+
+        private Dimension layoutSize(Container target, boolean preferred) {
+            synchronized (target.getTreeLock()) {
+                int targetWidth = target.getSize().width;
+                Container c = target;
+                while (targetWidth == 0 && c.getParent() != null) {
+                    c = c.getParent();
+                    targetWidth = c.getSize().width;
+                }
+                if (targetWidth == 0) {
+                    targetWidth = 1000;
+                }
+
+                int hgap = getHgap();
+                int vgap = getVgap();
+                Insets insets = target.getInsets();
+                int horizontalInsetsAndGap = insets.left + insets.right + (hgap * 2);
+                int maxWidth = targetWidth - horizontalInsetsAndGap;
+
+                Dimension dim = new Dimension(0, 0);
+                int rowWidth = 0;
+                int rowHeight = 0;
+                int nmembers = target.getComponentCount();
+
+                for (int i = 0; i < nmembers; i++) {
+                    Component m = target.getComponent(i);
+                    if (m.isVisible()) {
+                        Dimension d = preferred ? m.getPreferredSize() : m.getMinimumSize();
+                        if ((rowWidth + d.width) > maxWidth && rowWidth > 0) {
+                            addRow(dim, rowWidth, rowHeight);
+                            rowWidth = 0;
+                            rowHeight = 0;
+                        }
+                        if (rowWidth != 0) {
+                            rowWidth += hgap;
+                        }
+                        rowWidth += d.width;
+                        rowHeight = Math.max(rowHeight, d.height);
+                    }
+                }
+                addRow(dim, rowWidth, rowHeight);
+                dim.width += horizontalInsetsAndGap;
+                dim.height += insets.top + insets.bottom + vgap * 2;
+
+                return dim;
+            }
+        }
+
+        private void addRow(Dimension dim, int rowWidth, int rowHeight) {
+            dim.width = Math.max(dim.width, rowWidth);
+            if (dim.height > 0) {
+                dim.height += getVgap();
+            }
+            dim.height += rowHeight;
         }
     }
 }
