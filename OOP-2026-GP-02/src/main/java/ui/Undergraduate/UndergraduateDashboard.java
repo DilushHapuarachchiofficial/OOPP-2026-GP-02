@@ -65,7 +65,6 @@ public class UndergraduateDashboard extends JFrame {
 
         // Header, Left Navigation Sidebar & Center Dashboard Overview
         rootPanel.add(createHeaderPanel(), BorderLayout.NORTH);
-
         
         rootPanel.add(createDashboardOverviewPanel(), BorderLayout.CENTER);
 
@@ -236,9 +235,349 @@ public class UndergraduateDashboard extends JFrame {
         return scroll;
     }
 
-   
+    // ==========================================
+    // 3. 4 SUMMARY METRIC CARDS
+    // ==========================================
+    private JPanel createSummaryCardsRow() {
+        JPanel row = new JPanel(new GridLayout(1, 4, 14, 0));
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        row.setPreferredSize(new Dimension(0, 120));
 
-    
+        // Card 1: Student Profile
+        row.add(createMetricCard(
+                "STUDENT PROFILE",
+                currentStudent.getName() != null ? currentStudent.getName() : "Student",
+                "Reg: " + (currentStudent.getRegistrationNo() != null ? currentStudent.getRegistrationNo() : "N/A"),
+                "Batch: " + (currentStudent.getBatch() != null ? currentStudent.getBatch() : "N/A"),
+                COLOR_MAIN_BLUE
+        ));
+
+        // Card 2: Enrollment Year
+        int yr = currentStudent.getEnrollmentYear();
+        row.add(createMetricCard(
+                "ENROLLMENT YEAR",
+                yr > 0 ? "Enrolled in " + yr : "Enrolled in 2024",
+                currentStudent.getDepartment() != null ? currentStudent.getDepartment() : "Faculty of Technology",
+                "Level II (Semester I)",
+                COLOR_PRIMARY_NAVY
+        ));
+
+        // Card 3: Current GPA
+        GPA gpa = currentStudent.viewGPA();
+        String gpaStr = (gpa != null && (gpa.getSGPA() > 0 || gpa.getCGPA() > 0))
+                ? String.format("SGPA: %.2f | CGPA: %.2f", gpa.getSGPA(), gpa.getCGPA())
+                : "Not available";
+        row.add(createMetricCard(
+                "CURRENT GPA",
+                gpaStr,
+                "Grading: UGC Circular 12-2024",
+                gpa != null && gpa.getCGPA() >= 3.0 ? "Standing: Good" : "Status: Active",
+                new Color(0x7C, 0x3A, 0xED)
+        ));
+
+        // Card 4: Attendance Overview
+        AttendanceSummary att = currentStudent.getAttendanceSummary();
+        boolean eligible = (att != null && att.isEligible());
+        String attStr = (att != null && att.getTotalSessions() > 0)
+                ? String.format("%.1f%%", att.calculatePercentage())
+                : "Not available";
+        String attSub = (att != null && att.getTotalSessions() > 0)
+                ? att.getAttendedSessions() + " / " + att.getTotalSessions() + " sessions"
+                : "Requires TO Entry";
+        row.add(createMetricCard(
+                "ATTENDANCE OVERVIEW",
+                attStr,
+                attSub,
+                eligible ? "Eligible for Exam (>=80%)" : (att != null ? "Below 80% Requirement" : "Requirement: 80%"),
+                eligible ? COLOR_SUCCESS : (att != null ? COLOR_DANGER : COLOR_TEXT_MUTED)
+        ));
+
+        return row;
+    }
+
+    private JPanel createMetricCard(String title, String val, String sub1, String sub2, Color accent) {
+        JPanel card = new JPanel(new GridLayout(4, 1, 0, 3));
+        card.setBackground(COLOR_WHITE);
+        card.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(12, 14, 12, 14)));
+
+        JLabel t = new JLabel(title);
+        t.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        t.setForeground(accent);
+
+        JLabel v = new JLabel(val);
+        v.setFont(new Font("Segoe UI", Font.BOLD, val.length() > 20 ? 12 : 14));
+        v.setForeground(COLOR_TEXT_PRIMARY);
+
+        JLabel s1 = new JLabel(sub1);
+        s1.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        s1.setForeground(COLOR_TEXT_MUTED);
+
+        JLabel s2 = new JLabel(sub2);
+        s2.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        s2.setForeground(accent);
+
+        card.add(t);
+        card.add(v);
+        card.add(s1);
+        card.add(s2);
+        return card;
+    }
+
+    // ==========================================
+    // 4. QUICK ACCESS SHORTCUTS ROW
+    // ==========================================
+    private JPanel createQuickAccessRow() {
+        JPanel wrapper = new JPanel(new BorderLayout(0, 8));
+        wrapper.setOpaque(false);
+
+        JLabel title = new JLabel("Quick Access Shortcuts");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        title.setForeground(COLOR_TEXT_PRIMARY);
+        wrapper.add(title, BorderLayout.NORTH);
+
+        JPanel row = new JPanel(new GridLayout(1, 7, 8, 0));
+        row.setOpaque(false);
+
+        String[][] items = {
+                {"Attendance", "Attendance Records"},
+                {"Medicals", "Medical Details"},
+                {"Courses", "Course Modules"},
+                {"Grades & GPA", "Grades & GPA"},
+                {"Timetable", "Timetable"},
+                {"Lecturer Notes", "Course Materials"},
+                {"Notices", "Notices & Announcements"}
+        };
+
+        for (String[] it : items) {
+            JButton btn = new JButton(it[0]);
+            btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            btn.setForeground(COLOR_PRIMARY_NAVY);
+            btn.setBackground(COLOR_WHITE);
+            btn.setFocusPainted(false);
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btn.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(8, 4, 8, 4)));
+            btn.addActionListener(e -> showModulePlaceholder(it[1]));
+            row.add(btn);
+        }
+
+        wrapper.add(row, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    // ==========================================
+    // 5. TODAY'S LECTURES CARD
+    // ==========================================
+    private JPanel createTodayLecturesCard() {
+        JPanel list = new JPanel();
+        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
+        list.setOpaque(false);
+
+        Timetable tt = currentStudent.viewTimetable();
+        List<Schedule> lectures = (tt != null) ? tt.getTodaySchedules() : new ArrayList<>();
+        if (lectures.isEmpty() && tt != null && !tt.getSchedules().isEmpty()) lectures = tt.getSchedules();
+
+        if (lectures.isEmpty()) {
+            JLabel empty = new JLabel("No lectures scheduled for today.");
+            empty.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            empty.setForeground(COLOR_TEXT_MUTED);
+            list.add(empty);
+        } else {
+            Collections.sort(lectures, Comparator.comparing(Schedule::getStartTime, Comparator.nullsLast(String::compareTo)));
+            for (int i = 0; i < lectures.size(); i++) {
+                list.add(createLectureRowItem(lectures.get(i), i == 0));
+                if (i < lectures.size() - 1) list.add(Box.createVerticalStrut(8));
+            }
+        }
+
+        JLabel badge = new JLabel("Day: " + LocalDate.now().getDayOfWeek());
+        badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        badge.setForeground(COLOR_MAIN_BLUE);
+        return createSectionCard("Today's Lectures", badge, list);
+    }
+
+    private JPanel createLectureRowItem(Schedule s, boolean isUpcoming) {
+        JPanel row = new JPanel(new BorderLayout(12, 0));
+        row.setBackground(isUpcoming ? new Color(0xF4, 0xF8, 0xFF) : COLOR_WHITE);
+        row.setBorder(new CompoundBorder(
+                new LineBorder(isUpcoming ? COLOR_MAIN_BLUE : COLOR_BORDER, 1, true),
+                new EmptyBorder(8, 12, 8, 12)
+        ));
+
+        JPanel timeBox = new JPanel(new GridLayout(2, 1, 0, 2));
+        timeBox.setOpaque(false);
+        timeBox.setPreferredSize(new Dimension(130, 36));
+
+        JLabel timeLbl = new JLabel(s.getStartTime() + " - " + s.getEndTime());
+        timeLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        timeLbl.setForeground(COLOR_PRIMARY_NAVY);
+
+        JLabel typeBadge = new JLabel(s.getSessionType() != null ? s.getSessionType().name() : "THEORY");
+        typeBadge.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        typeBadge.setForeground(s.getSessionType() == SessionType.PRACTICAL ? new Color(0x7C, 0x3A, 0xED) : COLOR_MAIN_BLUE);
+
+        timeBox.add(timeLbl);
+        timeBox.add(typeBadge);
+
+        JPanel info = new JPanel(new GridLayout(2, 1, 0, 2));
+        info.setOpaque(false);
+
+        JLabel courseLbl = new JLabel(s.getCourseCode() + ": " + s.getCourseName());
+        courseLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        courseLbl.setForeground(COLOR_TEXT_PRIMARY);
+
+        JLabel desc = new JLabel("Lecturer: " + (s.getLecturerName() != null ? s.getLecturerName() : "Lecturer") +
+                " | Room: " + (s.getLocation() != null ? s.getLocation() : "TBA"));
+        desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        desc.setForeground(COLOR_TEXT_MUTED);
+
+        info.add(courseLbl);
+        info.add(desc);
+
+        row.add(timeBox, BorderLayout.WEST);
+        row.add(info, BorderLayout.CENTER);
+
+        if (isUpcoming) {
+            JLabel badge = new JLabel("Upcoming");
+            badge.setFont(new Font("Segoe UI", Font.BOLD, 10));
+            badge.setForeground(COLOR_MAIN_BLUE);
+            row.add(badge, BorderLayout.EAST);
+        }
+
+        return row;
+    }
+
+    // ==========================================
+    // 6. LECTURER NOTES CARD
+    // ==========================================
+    private JPanel createLecturerNotesCard() {
+        JButton viewAll = createLinkButton("View All Materials →", e -> showModulePlaceholder("Course Materials"));
+
+        JPanel list = new JPanel();
+        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
+        list.setOpaque(false);
+
+        List<CourseMaterial> materials = extractMaterials();
+        if (materials.isEmpty()) {
+            JLabel empty = new JLabel("No course materials currently available.");
+            empty.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            empty.setForeground(COLOR_TEXT_MUTED);
+            list.add(empty);
+        } else {
+            int count = Math.min(3, materials.size());
+            for (int i = 0; i < count; i++) {
+                list.add(createMaterialRowItem(materials.get(i)));
+                if (i < count - 1) list.add(Box.createVerticalStrut(8));
+            }
+        }
+
+        return createSectionCard("Lecturer Notes & Materials", viewAll, list);
+    }
+
+    private JPanel createMaterialRowItem(CourseMaterial cm) {
+        JPanel row = new JPanel(new BorderLayout(10, 0));
+        row.setBackground(COLOR_WHITE);
+        row.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(8, 12, 8, 12)));
+
+        JPanel info = new JPanel(new GridLayout(2, 1, 0, 2));
+        info.setOpaque(false);
+
+        JLabel tLbl = new JLabel(cm.getTitle());
+        tLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        tLbl.setForeground(COLOR_TEXT_PRIMARY);
+
+        JLabel dLbl = new JLabel(cm.getCourseCode() + " | " + cm.getDescription() + " | " + cm.getUploadedDate());
+        dLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        dLbl.setForeground(COLOR_TEXT_MUTED);
+
+        info.add(tLbl);
+        info.add(dLbl);
+        row.add(info, BorderLayout.CENTER);
+
+        JButton openBtn = new JButton("View / Open");
+        openBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        openBtn.setForeground(COLOR_MAIN_BLUE);
+        openBtn.setBackground(COLOR_LIGHT_BLUE);
+        openBtn.setFocusPainted(false);
+        openBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        openBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_MAIN_BLUE, 1, true), new EmptyBorder(4, 8, 4, 8)));
+        openBtn.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Material: " + cm.getTitle() + "\nPath: " + cm.getFilePath() + "\n\nHosted on TecFAMS Faculty Repository.",
+                "Course Material", JOptionPane.INFORMATION_MESSAGE));
+
+        row.add(openBtn, BorderLayout.EAST);
+        return row;
+    }
+
+    private List<CourseMaterial> extractMaterials() {
+        List<CourseMaterial> all = new ArrayList<>();
+        if (currentStudent.viewCourses() != null) {
+            for (Course c : currentStudent.viewCourses()) {
+                if (c.getMaterials() != null) all.addAll(c.getMaterials());
+            }
+        }
+        return all;
+    }
+
+    // ==========================================
+    // 7. RECENT NOTICES CARD
+    // ==========================================
+    private JPanel createRecentNoticesCard() {
+        JButton viewAll = createLinkButton("View All Notices →", e -> showModulePlaceholder("Notices & Announcements"));
+
+        JPanel list = new JPanel();
+        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
+        list.setOpaque(false);
+
+        List<Notice> notices = currentStudent.viewNotices();
+        if (notices == null || notices.isEmpty()) {
+            JLabel empty = new JLabel("No notices published currently.");
+            empty.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            empty.setForeground(COLOR_TEXT_MUTED);
+            list.add(empty);
+        } else {
+            int count = Math.min(3, notices.size());
+            for (int i = 0; i < count; i++) {
+                list.add(createNoticeRowItem(notices.get(i)));
+                if (i < count - 1) list.add(Box.createVerticalStrut(8));
+            }
+        }
+
+        return createSectionCard("Recent Notices", viewAll, list);
+    }
+
+    private JPanel createNoticeRowItem(Notice n) {
+        JPanel box = new JPanel(new BorderLayout(0, 4));
+        box.setBackground(COLOR_WHITE);
+        box.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(8, 12, 8, 12)));
+
+        JPanel top = new JPanel(new BorderLayout());
+        top.setOpaque(false);
+
+        JLabel t = new JLabel(n.getTitle());
+        t.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        t.setForeground(COLOR_TEXT_PRIMARY);
+
+        JLabel tag = new JLabel("Active");
+        tag.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        tag.setForeground(COLOR_SUCCESS);
+
+        top.add(t, BorderLayout.WEST);
+        top.add(tag, BorderLayout.EAST);
+
+        JLabel desc = new JLabel("<html><body style='width: 240px;'>" + n.getDescription() + "</body></html>");
+        desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        desc.setForeground(COLOR_TEXT_MUTED);
+
+        JLabel date = new JLabel("Published: " + n.getPublishedDate());
+        date.setFont(new Font("Segoe UI", Font.ITALIC, 10));
+        date.setForeground(new Color(0x94, 0xA3, 0xB8));
+
+        box.add(top, BorderLayout.NORTH);
+        box.add(desc, BorderLayout.CENTER);
+        box.add(date, BorderLayout.SOUTH);
+        return box;
+    }
 
     
 
