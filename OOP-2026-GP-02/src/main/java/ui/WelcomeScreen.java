@@ -46,18 +46,18 @@ public class WelcomeScreen extends JFrame {
             }
         };
 
-        // Add a subtle sleek border matching the theme
-        mainPanel.setBorder(BorderFactory.createLineBorder(new Color(25, 80, 150), 1));
+        // Add a subtle sleek border matching the light theme
+        mainPanel.setBorder(BorderFactory.createLineBorder(new Color(195, 215, 240), 1));
 
         // Texts
         JLabel titleLabel = new JLabel("TecFAMS");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 42));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setForeground(new Color(21, 101, 192)); // Signature #1565C0
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         JLabel subtitleLabel = new JLabel("Faculty Academic Management System");
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        subtitleLabel.setForeground(new Color(215, 230, 250));
+        subtitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        subtitleLabel.setForeground(new Color(80, 100, 125)); // Refined slate-blue for clear readability
         subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         JPanel textPanel = new JPanel(new GridLayout(2, 1));
@@ -66,11 +66,11 @@ public class WelcomeScreen extends JFrame {
         textPanel.add(subtitleLabel);
         textPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
-        // Login Button
+        // Login Button (Prominent #1565C0 primary button)
         JButton loginButton = new JButton("Get Started / Login");
         loginButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        loginButton.setForeground(new Color(21, 101, 192)); // #1565C0 theme blue
-        loginButton.setBackground(Color.WHITE);
+        loginButton.setForeground(Color.WHITE);
+        loginButton.setBackground(new Color(21, 101, 192)); // #1565C0 theme blue
         loginButton.setFocusPainted(false);
         loginButton.setBorderPainted(false);
         loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -80,11 +80,11 @@ public class WelcomeScreen extends JFrame {
         loginButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                loginButton.setBackground(new Color(240, 245, 255));
+                loginButton.setBackground(new Color(13, 71, 161)); // #0D47A1 hover
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                loginButton.setBackground(Color.WHITE);
+                loginButton.setBackground(new Color(21, 101, 192));
             }
         });
 
@@ -99,7 +99,7 @@ public class WelcomeScreen extends JFrame {
         // Top right close button (because undecorated frames don't have OS controls)
         JButton closeButton = new JButton("X");
         closeButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        closeButton.setForeground(new Color(255, 255, 255, 150));
+        closeButton.setForeground(new Color(130, 145, 165));
         closeButton.setBackground(new Color(0, 0, 0, 0));
         closeButton.setOpaque(false);
         closeButton.setContentAreaFilled(false);
@@ -114,7 +114,7 @@ public class WelcomeScreen extends JFrame {
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                closeButton.setForeground(new Color(255, 255, 255, 150));
+                closeButton.setForeground(new Color(130, 145, 165));
             }
         });
         closeButton.addActionListener(e -> System.exit(0));
@@ -130,7 +130,7 @@ public class WelcomeScreen extends JFrame {
 
         JLabel versionLabel = new JLabel("v1.0.0 ");
         versionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        versionLabel.setForeground(new Color(150, 180, 200));
+        versionLabel.setForeground(new Color(130, 150, 175));
         versionLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
