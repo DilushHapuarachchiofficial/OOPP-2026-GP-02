@@ -821,8 +821,8 @@ public class TimetableManagementPanel extends JPanel {
         refreshCoursesInForm();
         fieldsGrid.add(createModernFormItem("Subject / Course Code", formCourseCombo));
 
-        // 7. Session Type (Lecture, Practical, Lab, Tutorial, Other)
-        String[] types = {"Lecture", "Practical", "Lab", "Tutorial", "Other"};
+        // 7. Session Type (Theory, Practical, Lecture, Lab, Tutorial, Other)
+        String[] types = {"Theory", "Practical", "Lecture", "Lab", "Tutorial", "Other"};
         formTypeCombo = new JComboBox<>(types);
         styleModernComboBox(formTypeCombo);
         fieldsGrid.add(createModernFormItem("Session Type", formTypeCombo));
@@ -1117,7 +1117,7 @@ public class TimetableManagementPanel extends JPanel {
             formTimeCombo.setSelectedIndex(0);
         }
 
-        formTypeCombo.setSelectedItem("Lecture");
+        formTypeCombo.setSelectedItem("Theory");
         formHallCombo.setSelectedItem("LT 1");
 
         // In-place switch
@@ -1234,14 +1234,28 @@ public class TimetableManagementPanel extends JPanel {
         if (editingEntryId == null) {
             // Create New Entry in Database
             int targetTtId = TimetableDAO.getOrCreateTimetable(deptId, year, sem);
+            if (targetTtId <= 0) {
+                JOptionPane.showMessageDialog(this, "Failed to initialize timetable for the selected Department and Level.", "Database Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             boolean success = TimetableDAO.addEntry(targetTtId, selCourse.id, day, startSql, endSql, hall, type);
             if (success) {
                 JOptionPane.showMessageDialog(this, "Timetable entry created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
-                // Ensure newly added entry is visible by matching filter if needed
+                // Ensure newly added entry is visible by matching filters if needed
+                DepartmentItem currentDept = (DepartmentItem) deptCombo.getSelectedItem();
+                if (currentDept != null && currentDept.id > 0 && currentDept.id != deptId) {
+                    deptCombo.setSelectedIndex(0); // All Departments
+                }
+
                 LevelItem currentLevel = (LevelItem) levelCombo.getSelectedItem();
                 if (currentLevel != null && currentLevel.level > 0 && currentLevel.level != year) {
                     levelCombo.setSelectedIndex(0); // All Levels
+                }
+
+                SemesterItem currentSem = (SemesterItem) semCombo.getSelectedItem();
+                if (currentSem != null && currentSem.semester > 0 && currentSem.semester != sem) {
+                    semCombo.setSelectedIndex(0); // All Semesters
                 }
 
                 loadTimetableForSelectedFilters();
@@ -1285,13 +1299,22 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     private String formatSqlTime(String t) {
-        if (t == null) return "08:00:00";
+        if (t == null || t.trim().isEmpty()) return "08:00:00";
         t = t.trim();
-        if (!t.contains(":")) return String.format("%02d:00:00", Integer.parseInt(t));
-        String[] parts = t.split(":");
-        int h = Integer.parseInt(parts[0].trim());
-        int m = parts.length > 1 ? Integer.parseInt(parts[1].trim()) : 0;
-        return String.format("%02d:%02d:00", h, m);
+        t = t.replaceAll("(?i)(am|pm)", "").trim();
+        t = t.replace('.', ':');
+        try {
+            if (!t.contains(":")) {
+                int h = Integer.parseInt(t);
+                return String.format("%02d:00:00", h);
+            }
+            String[] parts = t.split(":");
+            int h = Integer.parseInt(parts[0].trim());
+            int m = parts.length > 1 ? Integer.parseInt(parts[1].trim()) : 0;
+            return String.format("%02d:%02d:00", h, m);
+        } catch (Exception e) {
+            return "08:00:00";
+        }
     }
 
     private void stylePillComboBox(JComboBox<?> box, int width) {

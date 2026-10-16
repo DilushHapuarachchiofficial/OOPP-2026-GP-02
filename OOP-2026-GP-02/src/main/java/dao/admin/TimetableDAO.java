@@ -8,6 +8,19 @@ import java.util.List;
 
 public class TimetableDAO {
 
+    static {
+        ensureSchemaCompatibility();
+    }
+
+    public static void ensureSchemaCompatibility() {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("ALTER TABLE timetable_entries MODIFY COLUMN session_type VARCHAR(50) NOT NULL DEFAULT 'Theory'");
+        } catch (Exception e) {
+            // Silently ignore if already migrated or insufficient privileges
+        }
+    }
+
     public static List<Timetable> getAllTimetables() {
         List<Timetable> timetables = new ArrayList<>();
         String query = "SELECT t.*, d.department_name FROM timetables t " +
@@ -232,6 +245,11 @@ public class TimetableDAO {
 
     public static boolean addEntry(int timetableId, int courseId, String dayOfWeek, 
                                    String startTime, String endTime, String hall, String sessionType) {
+        if (timetableId <= 0) {
+            System.err.println("Cannot add timetable entry: Invalid timetableId " + timetableId);
+            return false;
+        }
+        String effectiveType = (sessionType != null && !sessionType.trim().isEmpty()) ? sessionType.trim() : "Theory";
         String query = "INSERT INTO timetable_entries (timetable_id, course_id, day_of_week, start_time, end_time, hall, session_type) " +
                        "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -243,17 +261,35 @@ public class TimetableDAO {
             stmt.setString(4, startTime);
             stmt.setString(5, endTime);
             stmt.setString(6, hall);
-            stmt.setString(7, sessionType);
+            stmt.setString(7, effectiveType);
             
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            // Fallback retry with normalized sessionType (in case DB schema has strict enum('Theory','Practical'))
+            String normalized = normalizeSessionType(effectiveType);
+            if (!normalized.equalsIgnoreCase(effectiveType)) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(query)) {
+                    stmt.setInt(1, timetableId);
+                    stmt.setInt(2, courseId);
+                    stmt.setString(3, dayOfWeek);
+                    stmt.setString(4, startTime);
+                    stmt.setString(5, endTime);
+                    stmt.setString(6, hall);
+                    stmt.setString(7, normalized);
+                    return stmt.executeUpdate() > 0;
+                } catch (SQLException ex2) {
+                    ex2.printStackTrace();
+                }
+            }
             return false;
         }
     }
 
     public static boolean updateEntry(int entryId, int courseId, String dayOfWeek, 
                                       String startTime, String endTime, String hall, String sessionType) {
+        String effectiveType = (sessionType != null && !sessionType.trim().isEmpty()) ? sessionType.trim() : "Theory";
         String query = "UPDATE timetable_entries SET course_id = ?, day_of_week = ?, start_time = ?, end_time = ?, hall = ?, session_type = ? " +
                        "WHERE entry_id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -264,14 +300,40 @@ public class TimetableDAO {
             stmt.setString(3, startTime);
             stmt.setString(4, endTime);
             stmt.setString(5, hall);
-            stmt.setString(6, sessionType);
+            stmt.setString(6, effectiveType);
             stmt.setInt(7, entryId);
             
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            // Fallback retry with normalized sessionType
+            String normalized = normalizeSessionType(effectiveType);
+            if (!normalized.equalsIgnoreCase(effectiveType)) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(query)) {
+                    stmt.setInt(1, courseId);
+                    stmt.setString(2, dayOfWeek);
+                    stmt.setString(3, startTime);
+                    stmt.setString(4, endTime);
+                    stmt.setString(5, hall);
+                    stmt.setString(6, normalized);
+                    stmt.setInt(7, entryId);
+                    return stmt.executeUpdate() > 0;
+                } catch (SQLException ex2) {
+                    ex2.printStackTrace();
+                }
+            }
             return false;
         }
+    }
+
+    public static String normalizeSessionType(String type) {
+        if (type == null) return "Theory";
+        String t = type.trim().toLowerCase();
+        if (t.contains("practical") || t.contains("lab")) {
+            return "Practical";
+        }
+        return "Theory";
     }
 
     public static boolean deleteEntry(int entryId) {
