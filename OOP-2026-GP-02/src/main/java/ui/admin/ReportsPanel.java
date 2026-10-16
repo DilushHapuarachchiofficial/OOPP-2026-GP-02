@@ -131,7 +131,7 @@ public class ReportsPanel extends JPanel {
             refreshAllReports();
         });
 
-        JButton exportBtn = createStyledButton(" Export CSV", new Color(11, 79, 156), Color.WHITE, false);
+        JButton exportBtn = createStyledButton(" Export CSV", new Color(21, 101, 192), Color.WHITE, false);
         exportBtn.setPreferredSize(new Dimension(135, 36));
         exportBtn.addActionListener(e -> exportActiveReportToCSV());
 
@@ -210,7 +210,7 @@ public class ReportsPanel extends JPanel {
 
     private void updateTabButtonStyles(JButton btn, boolean active) {
         if (active) {
-            btn.setBackground(new Color(11, 79, 156)); // Project primary theme color
+            btn.setBackground(new Color(21, 101, 192)); // Project primary theme color
             btn.setForeground(Color.WHITE);
         } else {
             btn.setBackground(Color.WHITE);
@@ -285,7 +285,7 @@ public class ReportsPanel extends JPanel {
         eligibilityStatusCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         eligibilityStatusCombo.setPreferredSize(new Dimension(115, 32));
 
-        JButton resetBtn = createStyledButton("Reset", new Color(240, 243, 248), new Color(11, 79, 156), true);
+        JButton resetBtn = createStyledButton("Reset", new Color(240, 243, 248), new Color(21, 101, 192), true);
         resetBtn.setPreferredSize(new Dimension(68, 32));
         resetBtn.addActionListener(e -> {
             eligibilitySearch.setText("");
@@ -510,7 +510,7 @@ public class ReportsPanel extends JPanel {
         enrollmentSemCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         enrollmentSemCombo.setPreferredSize(new Dimension(115, 32));
 
-        JButton resetBtn = createStyledButton("Reset", new Color(240, 243, 248), new Color(11, 79, 156), true);
+        JButton resetBtn = createStyledButton("Reset", new Color(240, 243, 248), new Color(21, 101, 192), true);
         resetBtn.setPreferredSize(new Dimension(68, 32));
         resetBtn.addActionListener(e -> {
             enrollmentSearch.setText("");
@@ -755,7 +755,7 @@ public class ReportsPanel extends JPanel {
         staffRoleCombo = new JComboBox<>(new String[]{"All Staff Roles", "Lecturer", "Technical Officer"});
         staffRoleCombo.setPreferredSize(new Dimension(140, 30));
 
-        JButton staffResetBtn = createStyledButton("Reset", new Color(240, 243, 248), new Color(11, 79, 156), true);
+        JButton staffResetBtn = createStyledButton("Reset", new Color(240, 243, 248), new Color(21, 101, 192), true);
         staffResetBtn.setPreferredSize(new Dimension(65, 30));
         staffResetBtn.addActionListener(e -> {
             staffSearch.setText("");

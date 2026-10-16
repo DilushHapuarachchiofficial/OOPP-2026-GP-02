@@ -165,7 +165,7 @@ public class TimetableManagementPanel extends JPanel {
         JButton createBtn = new JButton("+ Create Timetable");
         createBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         createBtn.setForeground(Color.WHITE);
-        createBtn.setBackground(new Color(11, 79, 156));
+        createBtn.setBackground(new Color(21, 101, 192));
         createBtn.setFocusPainted(false);
         createBtn.setBorderPainted(false);
         createBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -174,11 +174,11 @@ public class TimetableManagementPanel extends JPanel {
         createBtn.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                createBtn.setBackground(new Color(8, 61, 122));
+                createBtn.setBackground(new Color(13, 71, 161));
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                createBtn.setBackground(new Color(11, 79, 156));
+                createBtn.setBackground(new Color(21, 101, 192));
             }
         });
         createBtn.addActionListener(e -> openCreateForm(null, null));
@@ -541,7 +541,7 @@ public class TimetableManagementPanel extends JPanel {
             @Override
             public void mouseEntered(MouseEvent e) {
                 btn.setBackground(new Color(237, 242, 247));
-                btn.setForeground(new Color(11, 79, 156));
+                btn.setForeground(new Color(21, 101, 192));
             }
             @Override
             public void mouseExited(MouseEvent e) {
@@ -720,7 +720,7 @@ public class TimetableManagementPanel extends JPanel {
 
         JLabel badgeLabel = new JLabel("  SCHEDULE CONFIGURATION  ");
         badgeLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        badgeLabel.setForeground(new Color(11, 79, 156));
+        badgeLabel.setForeground(new Color(21, 101, 192));
         badgeLabel.setBackground(new Color(239, 246, 255)); // Blue 50
         badgeLabel.setOpaque(true);
         badgeLabel.setBorder(BorderFactory.createCompoundBorder(
@@ -895,7 +895,7 @@ public class TimetableManagementPanel extends JPanel {
         formSaveBtn = new JButton("Save Timetable Entry");
         formSaveBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         formSaveBtn.setForeground(Color.WHITE);
-        formSaveBtn.setBackground(new Color(11, 79, 156));
+        formSaveBtn.setBackground(new Color(21, 101, 192));
         formSaveBtn.setFocusPainted(false);
         formSaveBtn.setBorderPainted(false);
         formSaveBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -904,11 +904,11 @@ public class TimetableManagementPanel extends JPanel {
         formSaveBtn.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                formSaveBtn.setBackground(new Color(8, 61, 122));
+                formSaveBtn.setBackground(new Color(13, 71, 161));
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                formSaveBtn.setBackground(new Color(11, 79, 156));
+                formSaveBtn.setBackground(new Color(21, 101, 192));
             }
         });
         formSaveBtn.addActionListener(e -> handleSaveAction());
@@ -1034,7 +1034,7 @@ public class TimetableManagementPanel extends JPanel {
             @Override
             public void focusGained(FocusEvent e) {
                 box.setBorder(BorderFactory.createCompoundBorder(
-                    new RoundedBorder(new Color(11, 79, 156), 10, 1),
+                    new RoundedBorder(new Color(21, 101, 192), 10, 1),
                     new EmptyBorder(4, 12, 4, 6)
                 ));
             }

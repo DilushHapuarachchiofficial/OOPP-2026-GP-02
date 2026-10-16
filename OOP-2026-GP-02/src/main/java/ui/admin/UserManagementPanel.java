@@ -83,14 +83,14 @@ public class UserManagementPanel extends JPanel {
         JButton addUserBtn = new JButton("  + Add User...  ");
         addUserBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         addUserBtn.setForeground(Color.WHITE);
-        addUserBtn.setBackground(new Color(11, 79, 156));
+        addUserBtn.setBackground(new Color(21, 101, 192));
         addUserBtn.setFocusPainted(false);
         addUserBtn.setBorderPainted(false);
         addUserBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         addUserBtn.setPreferredSize(new Dimension(130, 36));
         addUserBtn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent e) { addUserBtn.setBackground(new Color(8, 61, 122)); }
-            public void mouseExited(java.awt.event.MouseEvent e) { addUserBtn.setBackground(new Color(11, 79, 156)); }
+            public void mouseEntered(java.awt.event.MouseEvent e) { addUserBtn.setBackground(new Color(13, 71, 161)); }
+            public void mouseExited(java.awt.event.MouseEvent e) { addUserBtn.setBackground(new Color(21, 101, 192)); }
         });
         
         addUserBtn.addActionListener(e -> openFormForAdd());
@@ -307,7 +307,7 @@ public class UserManagementPanel extends JPanel {
         
         JButton browseBtn = new JButton("Browse...");
         browseBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        browseBtn.setBackground(new Color(11, 79, 156));
+        browseBtn.setBackground(new Color(21, 101, 192));
         browseBtn.setForeground(Color.WHITE);
         browseBtn.setFocusPainted(false);
         browseBtn.setBorderPainted(false);
@@ -385,7 +385,7 @@ public class UserManagementPanel extends JPanel {
         box.add(dynamicPanel);
         
         saveBtn = new JButton("Save User");
-        saveBtn.setBackground(new Color(11, 79, 156));
+        saveBtn.setBackground(new Color(21, 101, 192));
         saveBtn.setForeground(Color.WHITE);
         saveBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         saveBtn.setFocusPainted(false);
@@ -393,8 +393,8 @@ public class UserManagementPanel extends JPanel {
         saveBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         saveBtn.setAlignmentX(Component.RIGHT_ALIGNMENT);
         saveBtn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(8, 61, 122)); }
-            public void mouseExited(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(11, 79, 156)); }
+            public void mouseEntered(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(13, 71, 161)); }
+            public void mouseExited(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(21, 101, 192)); }
         });
         
         saveBtn.addActionListener(e -> saveUser());

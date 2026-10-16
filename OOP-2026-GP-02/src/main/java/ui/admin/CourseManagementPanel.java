@@ -70,14 +70,14 @@ public class CourseManagementPanel extends JPanel {
         JButton addCourseBtn = new JButton("  + Add Course  ");
         addCourseBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         addCourseBtn.setForeground(Color.WHITE);
-        addCourseBtn.setBackground(new Color(11, 79, 156));
+        addCourseBtn.setBackground(new Color(21, 101, 192));
         addCourseBtn.setFocusPainted(false);
         addCourseBtn.setBorderPainted(false);
         addCourseBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         addCourseBtn.setPreferredSize(new Dimension(130, 36));
         addCourseBtn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent e) { addCourseBtn.setBackground(new Color(8, 61, 122)); }
-            public void mouseExited(java.awt.event.MouseEvent e) { addCourseBtn.setBackground(new Color(11, 79, 156)); }
+            public void mouseEntered(java.awt.event.MouseEvent e) { addCourseBtn.setBackground(new Color(13, 71, 161)); }
+            public void mouseExited(java.awt.event.MouseEvent e) { addCourseBtn.setBackground(new Color(21, 101, 192)); }
         });
         addCourseBtn.addActionListener(e -> {
             clearForm();
@@ -262,7 +262,7 @@ public class CourseManagementPanel extends JPanel {
         box.add(Box.createVerticalStrut(35));
         
         JButton saveBtn = new JButton("Save Course");
-        saveBtn.setBackground(new Color(11, 79, 156)); // #0B4F9C Project primary theme color
+        saveBtn.setBackground(new Color(21, 101, 192)); // #1565C0 Project primary theme color
         saveBtn.setForeground(Color.WHITE);
         saveBtn.setFont(new Font("Segoe UI", Font.BOLD, 15));
         saveBtn.setFocusPainted(false);
@@ -271,8 +271,8 @@ public class CourseManagementPanel extends JPanel {
         saveBtn.setPreferredSize(new Dimension(150, 40));
         saveBtn.setAlignmentX(Component.RIGHT_ALIGNMENT);
         saveBtn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(8, 61, 122)); }
-            public void mouseExited(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(11, 79, 156)); }
+            public void mouseEntered(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(13, 71, 161)); }
+            public void mouseExited(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(21, 101, 192)); }
         });
         
         saveBtn.addActionListener(e -> saveCourse());

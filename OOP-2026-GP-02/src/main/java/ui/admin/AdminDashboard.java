@@ -324,7 +324,7 @@ public class AdminDashboard extends JFrame {
     }
 
     private void setActiveButtonStyle(JButton btn) {
-        btn.setBackground(new Color(11, 79, 156)); // #0B4F9C Primary theme color
+        btn.setBackground(new Color(21, 101, 192)); // #1565C0 Primary theme color
         btn.setForeground(Color.WHITE);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
     }
