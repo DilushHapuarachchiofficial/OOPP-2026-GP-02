@@ -15,26 +15,6 @@ import java.util.List;
 /**
  * Lecturer.java
  * TecFAMS – Faculty of Technology Academic Management System
- * University of Ruhuna
- *
- * Domain Entity & Logic Model for Lecturer.
- * Extends {@link User} as specified in the TecFAMS Class Diagram.
- *
- * Implements strict Object-Oriented Programming (OOP) encapsulation:
- * - All attributes are declared private.
- * - Comprehensive getters and setters provided for all fields.
- * - Constructor chaining via super() to inherit User identity and profile attributes.
- * - Fully implements all operations declared in the class diagram:
- *     + updateProfile() : void
- *     + addCourseMaterial(course : Course, material : CourseMaterial) : void
- *     + modifyCourseMaterial(material : CourseMaterial) : void
- *     + uploadMarks(mark : Mark) : void
- *     + viewStudentDetails(student : Undergraduate) : void
- *     + viewEligibility(student : Undergraduate) : Eligibility
- *     + viewMarks(student : Undergraduate) : void
- *     + viewAttendance(student : Undergraduate) : void
- *     + viewMedicalRecords(student : Undergraduate) : void
- *     + viewNotices() : List
  */
 public class Lecturer extends User {
 
