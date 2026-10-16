@@ -12,7 +12,7 @@ import java.io.InputStream;
 
 public class WelcomeScreen extends JFrame {
     public WelcomeScreen() {
-        setTitle("Tech-FAMS");
+        setTitle("TecFAMS");
         setSize(600, 250);
         setResizable(false);
         setUndecorated(true); // Modern borderless splash screen look
@@ -46,8 +46,8 @@ public class WelcomeScreen extends JFrame {
             }
         };
 
-        // Add a subtle border to the undecorated frame
-        mainPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 1));
+        // Add a subtle sleek border matching the theme
+        mainPanel.setBorder(BorderFactory.createLineBorder(new Color(25, 80, 150), 1));
 
         // Texts
         JLabel titleLabel = new JLabel("TecFAMS");
@@ -57,7 +57,7 @@ public class WelcomeScreen extends JFrame {
 
         JLabel subtitleLabel = new JLabel("Faculty Academic Management System");
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        subtitleLabel.setForeground(new Color(220, 220, 220));
+        subtitleLabel.setForeground(new Color(215, 230, 250));
         subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         JPanel textPanel = new JPanel(new GridLayout(2, 1));
@@ -68,8 +68,8 @@ public class WelcomeScreen extends JFrame {
 
         // Login Button
         JButton loginButton = new JButton("Get Started / Login");
-        //loginButton.setFont(StyleUtils.BOLD_FONT);
-        loginButton.setForeground(new Color(15, 32, 39));
+        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        loginButton.setForeground(new Color(21, 101, 192)); // #1565C0 theme blue
         loginButton.setBackground(Color.WHITE);
         loginButton.setFocusPainted(false);
         loginButton.setBorderPainted(false);
@@ -80,7 +80,7 @@ public class WelcomeScreen extends JFrame {
         loginButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                loginButton.setBackground(new Color(230, 230, 230));
+                loginButton.setBackground(new Color(240, 245, 255));
             }
             @Override
             public void mouseExited(MouseEvent e) {
