@@ -65,7 +65,8 @@ public class UndergraduateDashboard extends JFrame {
 
         // Header, Left Navigation Sidebar & Center Dashboard Overview
         rootPanel.add(createHeaderPanel(), BorderLayout.NORTH);
-        
+        navigationPanel = new UndergraduateNavigation(this, currentStudent);
+        //rootPanel.add(navigationPanel, BorderLayout.WEST);
         rootPanel.add(createDashboardOverviewPanel(), BorderLayout.CENTER);
 
         setContentPane(rootPanel);
@@ -579,7 +580,147 @@ public class UndergraduateDashboard extends JFrame {
         return box;
     }
 
-    
+    // ==========================================
+    // 8. ACADEMIC ASSISTANCE CARD
+    // ==========================================
+    private JPanel createAcademicSupportCard() {
+        JPanel card = new JPanel(new BorderLayout(0, 6));
+        card.setBackground(COLOR_LIGHT_BLUE);
+        card.setBorder(new CompoundBorder(new LineBorder(COLOR_MAIN_BLUE, 1, true), new EmptyBorder(12, 16, 12, 16)));
+
+        JLabel title = new JLabel("Academic Assistance");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        title.setForeground(COLOR_PRIMARY_NAVY);
+
+        JLabel desc = new JLabel("<html>For inquiries, contact your Technical Officer or Dean's Office.<br><b>Email:</b> tech-dean@fot.ruh.ac.lk<br><b>Desk:</b> Admin Block B, Level 1</html>");
+        desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        desc.setForeground(COLOR_TEXT_PRIMARY);
+
+        card.add(title, BorderLayout.NORTH);
+        card.add(desc, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JPanel createSectionCard(String titleText, JComponent headerRight, JComponent content) {
+        JPanel card = new JPanel(new BorderLayout(0, 12));
+        card.setBackground(COLOR_WHITE);
+        card.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(14, 18, 14, 18)));
+
+        JPanel head = new JPanel(new BorderLayout());
+        head.setOpaque(false);
+
+        JLabel title = new JLabel(titleText);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        title.setForeground(COLOR_PRIMARY_NAVY);
+
+        head.add(title, BorderLayout.WEST);
+        if (headerRight != null) head.add(headerRight, BorderLayout.EAST);
+
+        card.add(head, BorderLayout.NORTH);
+        if (content != null) card.add(content, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JButton createLinkButton(String text, ActionListener al) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        btn.setForeground(COLOR_MAIN_BLUE);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(al);
+        return btn;
+    }
+
+    // ==========================================
+    // 9. MODULE ACTIONS & HELPERS
+    // ==========================================
+    public void showModulePlaceholder(String moduleName) {
+        JOptionPane.showMessageDialog(
+                this,
+                moduleName + " UI will open in a separate window.\n(Currently under development by group members)",
+                "TecFAMS - " + moduleName,
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    public void showDashboardView() {
+        if (navigationPanel != null) {
+            navigationPanel.highlightButton("DASHBOARD");
+        }
+    }
+
+    private JLabel createAvatarIcon(int size, String name) {
+        JLabel avatar = new JLabel();
+        avatar.setPreferredSize(new Dimension(size, size));
+
+        String initials = "ST";
+        if (name != null && !name.trim().isEmpty()) {
+            String[] parts = name.trim().split("\\s+");
+            if (parts.length >= 2) initials = ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+            else if (parts[0].length() >= 2) initials = parts[0].substring(0, 2).toUpperCase();
+        }
+        final String text = initials;
+
+        avatar.setIcon(new Icon() {
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(COLOR_PRIMARY_NAVY);
+                g2.fillOval(x, y, size, size);
+                g2.setColor(COLOR_WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, size / 2));
+                FontMetrics fm = g2.getFontMetrics();
+                int tx = x + (size - fm.stringWidth(text)) / 2;
+                int ty = y + ((size - fm.getHeight()) / 2) + fm.getAscent();
+                g2.drawString(text, tx, ty);
+                g2.dispose();
+            }
+            @Override public int getIconWidth() { return size; }
+            @Override public int getIconHeight() { return size; }
+        });
+        return avatar;
+    }
+
+    public Undergraduate getCurrentStudent() { return currentStudent; }
+    public UndergraduateNavigation getNavigationPanel() { return navigationPanel; }
+
+    // ==========================================
+    // 10. PREVIEW DATA & ENTRY POINT
+    // ==========================================
+    private static Undergraduate createDefaultTestStudent() {
+        Undergraduate student = new Undergraduate(
+                "USR-1085", "tg2085", "", "H.D.W.B. Hapuarachchi",
+                "tg2085@fot.ruh.ac.lk", "+94 77 123 4567", "",
+                "STU-2085", "TG/2024/2085", "2023/2024",
+                "Department of Information and Communication Technology", 2024
+        );
+
+        student.setGpa(new GPA(3.65, 3.58));
+        student.setAttendanceSummary(new AttendanceSummary(30, 26, 2));
+
+        Timetable tt = new Timetable(1, "Semester I", "2026");
+        String today = LocalDate.now().getDayOfWeek().toString();
+        tt.addSchedule(new Schedule(1, today, "08:30 AM", "10:30 AM", "Lab 02, Tech Building", SessionType.PRACTICAL, "ICT2132", "OOP Practicum", "Dr. K. A. Perera"));
+        tt.addSchedule(new Schedule(2, today, "10:45 AM", "12:45 PM", "Lecture Hall 01", SessionType.THEORY, "ICT2113", "Data Structures", "Prof. S. R. Fernando"));
+        tt.addSchedule(new Schedule(3, today, "01:30 PM", "03:30 PM", "Lab 04, Tech Complex", SessionType.PRACTICAL, "ICT2122", "Database Systems", "Dr. M. Silva"));
+        student.setTimetable(tt);
+
+        Course c1 = new Course(1, "ICT2132", "OOP Practicum", 2, "DICT", "Java OOP principles and GUI.");
+        c1.addMaterial(new CourseMaterial(1, "ICT2132", "Lecture 05 - Java Swing GUI", "Swing GUI layout design.", "materials/swing.pdf", "2026-10-12"));
+        c1.addMaterial(new CourseMaterial(2, "ICT2132", "Lab Sheet 06 - JDBC & DAO", "PreparedStatement connectivity.", "materials/jdbc.pdf", "2026-10-14"));
+        List<Course> cList = new ArrayList<>();
+        cList.add(c1);
+        student.setCourses(cList);
+
+        List<Notice> notices = new ArrayList<>();
+        notices.add(new Notice(1, "Mid-Semester Examination Schedule Released", "Level II Semester I exam timetable published.", "2026-10-14", "2026-10-30"));
+        notices.add(new Notice(2, "Submission of Medical Certificates for Level II", "All medical certificates must be certified by UMO.", "2026-10-12", "2026-10-25"));
+        student.setNotices(notices);
+
+        return student;
+    }
 
     public static void main(String[] args) {
         System.setProperty("awt.useSystemAAFontSettings", "on");
