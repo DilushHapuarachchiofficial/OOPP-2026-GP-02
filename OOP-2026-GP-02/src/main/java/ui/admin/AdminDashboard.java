@@ -15,7 +15,7 @@ public class AdminDashboard extends JFrame {
     private DashboardHomePanel dashboardHomePanel;
 
     public AdminDashboard() {
-        setTitle("FAMS - Faculty Academic Management System");
+        setTitle("TecFAMS - Faculty Academic Management System");
         setSize(1280, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -25,10 +25,11 @@ public class AdminDashboard extends JFrame {
     private void initUI() {
         setLayout(new BorderLayout());
 
-        // 1. Sidebar
+        // 1. Sidebar (Matte Light-Black Theme)
         JPanel sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setBackground(new Color(23, 32, 48)); // Dark blue from image
+        sidebar.setBackground(new Color(28, 29, 33)); // Matte light-black / charcoal (#1C1D21)
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(45, 47, 53)));
         sidebar.setPreferredSize(new Dimension(250, getHeight()));
 
         // Logo section
@@ -41,15 +42,15 @@ public class AdminDashboard extends JFrame {
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setOpaque(false);
-        JLabel title1 = new JLabel("FAMS");
+        JLabel title1 = new JLabel("TecFAMS");
         title1.setFont(new Font("Segoe UI", Font.BOLD, 22));
         title1.setForeground(Color.WHITE);
         JLabel title2 = new JLabel("Faculty Academic");
         title2.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        title2.setForeground(new Color(180, 190, 210));
+        title2.setForeground(new Color(156, 163, 175));
         JLabel title3 = new JLabel("Management System");
         title3.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        title3.setForeground(new Color(180, 190, 210));
+        title3.setForeground(new Color(156, 163, 175));
         titlePanel.add(title1);
         titlePanel.add(title2);
         titlePanel.add(title3);
@@ -289,7 +290,7 @@ public class AdminDashboard extends JFrame {
         btn.setIcon(createScaledIcon(iconPath, 20, 20));
 
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        btn.setForeground(new Color(200, 210, 220));
+        btn.setForeground(new Color(205, 210, 218));
         btn.setHorizontalAlignment(SwingConstants.LEFT);
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
@@ -299,18 +300,38 @@ public class AdminDashboard extends JFrame {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setBorder(new EmptyBorder(12, 20, 12, 20));
         btn.setIconTextGap(15);
+
+        // Soft matte hover effect
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                if (btn != activeButton) {
+                    btn.setBackground(new Color(255, 255, 255, 16));
+                    btn.repaint();
+                }
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                if (btn != activeButton) {
+                    btn.setBackground(new Color(0, 0, 0, 0));
+                    btn.repaint();
+                }
+            }
+        });
+
         return btn;
     }
 
     private void setActiveButtonStyle(JButton btn) {
-        btn.setBackground(new Color(30, 100, 220)); // Blue background
+        btn.setBackground(new Color(11, 79, 156)); // #0B4F9C Primary theme color
         btn.setForeground(Color.WHITE);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
     }
 
     private void setInactiveButtonStyle(JButton btn) {
         btn.setBackground(new Color(0, 0, 0, 0)); // Fully transparent
-        btn.setForeground(new Color(200, 210, 220));
+        btn.setForeground(new Color(205, 210, 218));
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
     }
 

@@ -68,11 +68,15 @@ public class NoticeManagementPanel extends JPanel {
         JButton addNoticeBtn = new JButton("  + Publish Notice  ");
         addNoticeBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         addNoticeBtn.setForeground(Color.WHITE);
-        addNoticeBtn.setBackground(new Color(30, 100, 220));
+        addNoticeBtn.setBackground(new Color(11, 79, 156));
         addNoticeBtn.setFocusPainted(false);
         addNoticeBtn.setBorderPainted(false);
         addNoticeBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         addNoticeBtn.setPreferredSize(new Dimension(150, 36));
+        addNoticeBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) { addNoticeBtn.setBackground(new Color(8, 61, 122)); }
+            public void mouseExited(java.awt.event.MouseEvent e) { addNoticeBtn.setBackground(new Color(11, 79, 156)); }
+        });
         addNoticeBtn.addActionListener(e -> {
             clearForm();
             cardLayout.show(this, "Add");
@@ -241,7 +245,12 @@ public class NoticeManagementPanel extends JPanel {
         attachmentField.setFont(fieldFont);
         
         JButton browseBtn = new JButton("Browse...");
-        browseBtn.setBackground(new Color(230, 230, 230));
+        browseBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        browseBtn.setBackground(new Color(11, 79, 156));
+        browseBtn.setForeground(Color.WHITE);
+        browseBtn.setFocusPainted(false);
+        browseBtn.setBorderPainted(false);
+        browseBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         browseBtn.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
             if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -296,12 +305,17 @@ public class NoticeManagementPanel extends JPanel {
         
         // Save Button
         JButton saveBtn = new JButton("Publish Notice");
-        saveBtn.setBackground(new Color(41, 128, 185));
+        saveBtn.setBackground(new Color(11, 79, 156));
         saveBtn.setForeground(Color.WHITE);
         saveBtn.setFont(new Font("Segoe UI", Font.BOLD, 15));
         saveBtn.setPreferredSize(new Dimension(180, 42));
         saveBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         saveBtn.setFocusPainted(false);
+        saveBtn.setBorderPainted(false);
+        saveBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(8, 61, 122)); }
+            public void mouseExited(java.awt.event.MouseEvent e) { saveBtn.setBackground(new Color(11, 79, 156)); }
+        });
         saveBtn.addActionListener(e -> saveNotice());
         
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -371,7 +385,7 @@ public class NoticeManagementPanel extends JPanel {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setMargin(new Insets(4, 12, 4, 12));
         if (active) {
-            btn.setBackground(new Color(30, 100, 220));
+            btn.setBackground(new Color(11, 79, 156));
             btn.setForeground(Color.WHITE);
         } else {
             btn.setBackground(Color.WHITE);

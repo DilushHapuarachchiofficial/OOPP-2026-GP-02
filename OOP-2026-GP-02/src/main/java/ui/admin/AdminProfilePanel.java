@@ -213,7 +213,7 @@ public class AdminProfilePanel extends JPanel {
         // Small text link to upload/change photo
         JButton uploadPhotoBtn = new JButton("Change Photo");
         uploadPhotoBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        uploadPhotoBtn.setForeground(new Color(24, 119, 242));
+        uploadPhotoBtn.setForeground(new Color(11, 79, 156));
         uploadPhotoBtn.setContentAreaFilled(false);
         uploadPhotoBtn.setBorderPainted(false);
         uploadPhotoBtn.setFocusPainted(false);
@@ -419,7 +419,7 @@ public class AdminProfilePanel extends JPanel {
 
         JLabel textLabel = new JLabel(title);
         textLabel.setFont(new Font("Segoe UI", active ? Font.BOLD : Font.PLAIN, 14));
-        textLabel.setForeground(active ? new Color(24, 119, 242) : new Color(100, 115, 130));
+        textLabel.setForeground(active ? new Color(11, 79, 156) : new Color(100, 115, 130));
 
         nav.add(iconLabel);
         nav.add(textLabel);
@@ -448,7 +448,7 @@ public class AdminProfilePanel extends JPanel {
                 JLabel l = (JLabel) c;
                 if (!l.getText().isEmpty()) {
                     l.setFont(new Font("Segoe UI", isPersonalInfoTab ? Font.BOLD : Font.PLAIN, 14));
-                    l.setForeground(isPersonalInfoTab ? new Color(24, 119, 242) : new Color(100, 115, 130));
+                    l.setForeground(isPersonalInfoTab ? new Color(11, 79, 156) : new Color(100, 115, 130));
                 }
             }
         }
@@ -457,7 +457,7 @@ public class AdminProfilePanel extends JPanel {
                 JLabel l = (JLabel) c;
                 if (!l.getText().isEmpty()) {
                     l.setFont(new Font("Segoe UI", !isPersonalInfoTab ? Font.BOLD : Font.PLAIN, 14));
-                    l.setForeground(!isPersonalInfoTab ? new Color(24, 119, 242) : new Color(100, 115, 130));
+                    l.setForeground(!isPersonalInfoTab ? new Color(11, 79, 156) : new Color(100, 115, 130));
                 }
             }
         }
@@ -641,7 +641,7 @@ public class AdminProfilePanel extends JPanel {
     private void stylePrimaryButton(JButton btn) {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btn.setForeground(Color.WHITE);
-        btn.setBackground(new Color(24, 119, 242));
+        btn.setBackground(new Color(11, 79, 156));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -650,11 +650,11 @@ public class AdminProfilePanel extends JPanel {
         btn.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                btn.setBackground(new Color(13, 98, 220));
+                btn.setBackground(new Color(8, 61, 122));
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                btn.setBackground(new Color(24, 119, 242));
+                btn.setBackground(new Color(11, 79, 156));
             }
         });
     }

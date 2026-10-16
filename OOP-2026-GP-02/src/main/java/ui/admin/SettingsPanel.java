@@ -96,7 +96,7 @@ public class SettingsPanel extends JPanel {
         resetDefaultsBtn.setPreferredSize(new Dimension(140, 36));
         resetDefaultsBtn.addActionListener(e -> resetCurrentCategoryDefaults());
 
-        JButton saveBtn = createStyledButton("💾 Save Changes", new Color(30, 100, 220), Color.WHITE, false);
+        JButton saveBtn = createStyledButton("💾 Save Changes", new Color(11, 79, 156), Color.WHITE, false);
         saveBtn.setPreferredSize(new Dimension(150, 36));
         saveBtn.addActionListener(e -> saveSettingsToDatabase());
 
@@ -185,7 +185,7 @@ public class SettingsPanel extends JPanel {
 
     private void updateTabButtonStyles(JButton btn, boolean active) {
         if (active) {
-            btn.setBackground(new Color(23, 32, 48)); // Brand Navy
+            btn.setBackground(new Color(11, 79, 156)); // Project primary theme color
             btn.setForeground(Color.WHITE);
         } else {
             btn.setBackground(Color.WHITE);
@@ -392,7 +392,7 @@ public class SettingsPanel extends JPanel {
         dbStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         dbStatusLabel.setForeground(new Color(22, 163, 74));
 
-        JButton testConnBtn = createStyledButton("⚡ Test Connection", new Color(230, 238, 255), new Color(30, 100, 220), true);
+        JButton testConnBtn = createStyledButton("⚡ Test Connection", new Color(230, 238, 255), new Color(11, 79, 156), true);
         testConnBtn.setPreferredSize(new Dimension(150, 30));
         testConnBtn.addActionListener(e -> testDatabaseConnection());
 
@@ -403,7 +403,7 @@ public class SettingsPanel extends JPanel {
         JPanel backupActionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
         backupActionPanel.setOpaque(false);
 
-        JButton backupBtn = createStyledButton("📥 Backup Database Now (.sql)", new Color(16, 124, 65), Color.WHITE, false);
+        JButton backupBtn = createStyledButton("📥 Backup Database Now (.sql)", new Color(11, 79, 156), Color.WHITE, false);
         backupBtn.setPreferredSize(new Dimension(240, 38));
         backupBtn.addActionListener(e -> performDatabaseBackup());
 
