@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateDashboard.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,7 +41,7 @@
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "b__Undergraduate__version1",
+    "git-widget-placeholder": "b__Undergraduate__version2",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "D:/group project/OOP Mini project/OOPP-2026-GP-02/OOP-2026-GP-02",
