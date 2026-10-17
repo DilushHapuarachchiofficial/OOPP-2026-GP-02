@@ -270,5 +270,93 @@ public class UndergraduateNavigation extends JPanel {
      * @param color    Rendering color.
      * @return Custom painted Icon.
      */
-   
+    private static Icon createNavIcon(String iconType, Color color) {
+        return new Icon() {
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+
+                switch (iconType) {
+                    case "DASHBOARD":
+                        // 2x2 grid tile squares
+                        g2.fillRoundRect(x + 1, y + 1, 6, 6, 2, 2);
+                        g2.fillRoundRect(x + 9, y + 1, 6, 6, 2, 2);
+                        g2.fillRoundRect(x + 1, y + 9, 6, 6, 2, 2);
+                        g2.fillRoundRect(x + 9, y + 9, 6, 6, 2, 2);
+                        break;
+                    case "PROFILE":
+                        // Person silhouette (head and shoulders)
+                        g2.fillOval(x + 5, y + 1, 6, 6);
+                        g2.fillArc(x + 1, y + 8, 14, 10, 0, 180);
+                        break;
+                    case "ATTENDANCE":
+                        // Calendar with header bar and dots
+                        g2.drawRoundRect(x + 1, y + 3, 14, 12, 2, 2);
+                        g2.fillRect(x + 1, y + 3, 14, 4);
+                        g2.fillRect(x + 4, y + 1, 2, 3);
+                        g2.fillRect(x + 10, y + 1, 2, 3);
+                        g2.fillRect(x + 4, y + 9, 2, 2);
+                        g2.fillRect(x + 7, y + 9, 2, 2);
+                        g2.fillRect(x + 10, y + 9, 2, 2);
+                        break;
+                    case "MEDICAL":
+                        // First aid medical cross
+                        g2.fillRect(x + 6, y + 2, 4, 12);
+                        g2.fillRect(x + 2, y + 6, 12, 4);
+                        break;
+                    case "COURSES":
+                        // Book
+                        g2.drawRoundRect(x + 2, y + 2, 12, 12, 2, 2);
+                        g2.drawLine(x + 8, y + 2, x + 8, y + 14);
+                        g2.drawLine(x + 4, y + 5, x + 6, y + 5);
+                        g2.drawLine(x + 10, y + 5, x + 12, y + 5);
+                        break;
+                    case "GRADES":
+                        // 3-column bar chart
+                        g2.fillRect(x + 2, y + 9, 3, 5);
+                        g2.fillRect(x + 6, y + 5, 3, 9);
+                        g2.fillRect(x + 10, y + 2, 3, 12);
+                        break;
+                    case "TIMETABLE":
+                        // Clock dial with hands
+                        g2.drawOval(x + 1, y + 1, 14, 14);
+                        g2.drawLine(x + 8, y + 8, x + 8, y + 4);
+                        g2.drawLine(x + 8, y + 8, x + 12, y + 8);
+                        break;
+                    case "MATERIALS":
+                        // Document page with lines
+                        g2.drawRoundRect(x + 2, y + 1, 11, 14, 2, 2);
+                        g2.drawLine(x + 5, y + 5, x + 10, y + 5);
+                        g2.drawLine(x + 5, y + 8, x + 10, y + 8);
+                        g2.drawLine(x + 5, y + 11, x + 9, y + 11);
+                        break;
+                    case "NOTICES":
+                        // Bell
+                        g2.fillArc(x + 3, y + 3, 10, 10, 0, 180);
+                        g2.fillRect(x + 2, y + 8, 12, 3);
+                        g2.fillOval(x + 6, y + 12, 4, 3);
+                        break;
+                    case "LOGOUT":
+                        // Doorway and exit arrow
+                        g2.drawRect(x + 1, y + 2, 7, 12);
+                        g2.drawLine(x + 7, y + 8, x + 14, y + 8);
+                        g2.drawLine(x + 12, y + 6, x + 14, y + 8);
+                        g2.drawLine(x + 12, y + 10, x + 14, y + 8);
+                        break;
+                    default:
+                        g2.fillOval(x + 5, y + 5, 6, 6);
+                        break;
+                }
+                g2.dispose();
+            }
+
+            @Override
+            public int getIconWidth() { return 16; }
+
+            @Override
+            public int getIconHeight() { return 16; }
+        };
+    }
 }
