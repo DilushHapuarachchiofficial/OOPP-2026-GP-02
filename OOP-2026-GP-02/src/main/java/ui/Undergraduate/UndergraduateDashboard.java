@@ -66,7 +66,7 @@ public class UndergraduateDashboard extends JFrame {
         // Header, Left Navigation Sidebar & Center Dashboard Overview
         rootPanel.add(createHeaderPanel(), BorderLayout.NORTH);
         navigationPanel = new UndergraduateNavigation(this, currentStudent);
-        //rootPanel.add(navigationPanel, BorderLayout.WEST);
+        rootPanel.add(navigationPanel, BorderLayout.WEST);
         rootPanel.add(createDashboardOverviewPanel(), BorderLayout.CENTER);
 
         setContentPane(rootPanel);
