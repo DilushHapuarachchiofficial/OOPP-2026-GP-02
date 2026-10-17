@@ -62,28 +62,13 @@ public class UndergraduateNavigation extends JPanel {
      */
     private void initializeNavigation() {
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(0, 46));
+        setPreferredSize(new Dimension(0, 56));
         setBackground(COLOR_PRIMARY_NAVY);
 
-        // Left Section: Section Title & Separator
-        JPanel leftBrand = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 13));
-        leftBrand.setOpaque(false);
-
-        JLabel menuTitle = new JLabel("ACADEMIC MENU");
-        menuTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        menuTitle.setForeground(COLOR_TITLE_MUTED);
-        leftBrand.add(menuTitle);
-
-        JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
-        sep.setPreferredSize(new Dimension(1, 20));
-        sep.setForeground(new Color(0x23, 0x4D, 0x87));
-        leftBrand.add(sep);
-
-        add(leftBrand, BorderLayout.WEST);
-
-        // Center: Horizontal Navigation Buttons
-        JPanel navList = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 6));
+        // Center: Horizontal Navigation Buttons (starting from left)
+        JPanel navList = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 9));
         navList.setOpaque(false);
+        navList.setBorder(new EmptyBorder(0, 16, 0, 8));
 
         // 1. Dashboard (Active main view)
         dashboardBtn = createSidebarItem("Dashboard", "DASHBOARD", true);
@@ -109,7 +94,7 @@ public class UndergraduateNavigation extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
 
         // Right Section: Logout Button
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 6));
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 18, 9));
         rightPanel.setOpaque(false);
         JButton logoutBtn = createLogoutButton();
         rightPanel.add(logoutBtn);
@@ -128,19 +113,29 @@ public class UndergraduateNavigation extends JPanel {
      * @return Configured JButton.
      */
     private JButton createSidebarItem(String title, String moduleKey, boolean isDashboard) {
-        JButton btn = new JButton(title);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JButton btn = new JButton(title) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         btn.setForeground(COLOR_TEXT_MUTED);
         btn.setBackground(COLOR_PRIMARY_NAVY);
         btn.setHorizontalAlignment(SwingConstants.CENTER);
         btn.setIcon(createNavIcon(moduleKey, COLOR_TEXT_MUTED));
-        btn.setIconTextGap(7);
+        btn.setIconTextGap(8);
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
-        btn.setOpaque(true);
-        btn.setPreferredSize(new Dimension(btn.getPreferredSize().width + 20, 32));
-        btn.setBorder(new EmptyBorder(5, 10, 5, 10));
+        btn.setOpaque(false);
+        btn.setPreferredSize(new Dimension(btn.getPreferredSize().width + 24, 38));
+        btn.setBorder(new EmptyBorder(8, 14, 8, 14));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new MouseAdapter() {
@@ -150,6 +145,7 @@ public class UndergraduateNavigation extends JPanel {
                     btn.setBackground(COLOR_HOVER_NAVY);
                     btn.setForeground(COLOR_WHITE);
                     btn.setIcon(createNavIcon(moduleKey, COLOR_WHITE));
+                    btn.repaint();
                 }
             }
 
@@ -159,6 +155,7 @@ public class UndergraduateNavigation extends JPanel {
                     btn.setBackground(COLOR_PRIMARY_NAVY);
                     btn.setForeground(COLOR_TEXT_MUTED);
                     btn.setIcon(createNavIcon(moduleKey, COLOR_TEXT_MUTED));
+                    btn.repaint();
                 }
             }
         });
@@ -186,30 +183,42 @@ public class UndergraduateNavigation extends JPanel {
      * @return Configured logout JButton.
      */
     private JButton createLogoutButton() {
-        JButton btn = new JButton("Logout");
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        JButton btn = new JButton("Logout") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btn.setForeground(COLOR_LOGOUT_RED);
         btn.setBackground(COLOR_PRIMARY_NAVY);
         btn.setHorizontalAlignment(SwingConstants.CENTER);
         btn.setIcon(createNavIcon("LOGOUT", COLOR_LOGOUT_RED));
-        btn.setIconTextGap(7);
+        btn.setIconTextGap(8);
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
-        btn.setOpaque(true);
-        btn.setPreferredSize(new Dimension(btn.getPreferredSize().width + 16, 32));
-        btn.setBorder(new EmptyBorder(5, 10, 5, 10));
+        btn.setOpaque(false);
+        btn.setPreferredSize(new Dimension(btn.getPreferredSize().width + 22, 38));
+        btn.setBorder(new EmptyBorder(8, 14, 8, 14));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                btn.setBackground(new Color(0x2B, 0x1E, 0x36));
+                btn.setBackground(new Color(0x3B, 0x1E, 0x2A));
+                btn.repaint();
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 btn.setBackground(COLOR_PRIMARY_NAVY);
+                btn.repaint();
             }
         });
 
@@ -245,16 +254,18 @@ public class UndergraduateNavigation extends JPanel {
             JButton b = entry.getValue();
             b.setBackground(COLOR_PRIMARY_NAVY);
             b.setForeground(COLOR_TEXT_MUTED);
-            b.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            b.setFont(new Font("Segoe UI", Font.PLAIN, 13));
             b.setIcon(createNavIcon(entry.getKey(), COLOR_TEXT_MUTED));
+            b.repaint();
         }
 
         JButton selected = navButtons.get(moduleKey);
         if (selected != null) {
             selected.setBackground(COLOR_MAIN_BLUE);
             selected.setForeground(COLOR_WHITE);
-            selected.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            selected.setFont(new Font("Segoe UI", Font.BOLD, 13));
             selected.setIcon(createNavIcon(moduleKey, COLOR_WHITE));
+            selected.repaint();
         }
     }
 
