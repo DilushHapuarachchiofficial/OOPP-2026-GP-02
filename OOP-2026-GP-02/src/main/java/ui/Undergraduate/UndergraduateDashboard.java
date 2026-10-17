@@ -9,6 +9,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -136,20 +138,64 @@ public class UndergraduateDashboard extends JFrame {
         dateBadge.setForeground(COLOR_TEXT_MUTED);
         dateBadge.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(5, 10, 5, 10)));
 
-        JPanel nameBox = new JPanel(new GridLayout(2, 1, 0, 2));
+        JPanel nameBox = new JPanel(new GridLayout(3, 1, 0, 1));
         nameBox.setOpaque(false);
         JLabel nameLbl = new JLabel(currentStudent.getName() != null ? currentStudent.getName() : "Student");
         nameLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
         nameLbl.setForeground(COLOR_TEXT_PRIMARY);
+
         JLabel roleLbl = new JLabel("Undergraduate");
         roleLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
         roleLbl.setForeground(COLOR_MAIN_BLUE);
+
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        logoutBtn.setForeground(new Color(0xDC, 0x26, 0x26));
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.setHorizontalAlignment(SwingConstants.LEFT);
+        logoutBtn.setBorder(new EmptyBorder(0, 0, 0, 0));
+        logoutBtn.setContentAreaFilled(false);
+        logoutBtn.setBorderPainted(false);
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setOpaque(false);
+        logoutBtn.setIcon(createSmallLogoutIcon(new Color(0xDC, 0x26, 0x26)));
+        logoutBtn.setIconTextGap(4);
+
+        logoutBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                logoutBtn.setForeground(new Color(0x99, 0x1B, 0x1B));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                logoutBtn.setForeground(new Color(0xDC, 0x26, 0x26));
+            }
+        });
+
+        logoutBtn.addActionListener(e -> {
+            int choice = JOptionPane.showConfirmDialog(
+                    this,
+                    "Are you sure you want to log out of TecFAMS?",
+                    "Confirm Logout",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE
+            );
+            if (choice == JOptionPane.YES_OPTION) {
+                if (currentStudent != null) {
+                    currentStudent.logout();
+                }
+                this.dispose();
+            }
+        });
+
         nameBox.add(nameLbl);
         nameBox.add(roleLbl);
+        nameBox.add(logoutBtn);
 
         rightProfile.add(dateBadge);
         rightProfile.add(nameBox);
-        rightProfile.add(createAvatarIcon(36, currentStudent.getName()));
+        rightProfile.add(createAvatarIcon(40, currentStudent.getName()));
 
         header.add(leftBrand, BorderLayout.WEST);
         header.add(rightProfile, BorderLayout.EAST);
@@ -686,6 +732,27 @@ public class UndergraduateDashboard extends JFrame {
             @Override public int getIconHeight() { return size; }
         });
         return avatar;
+    }
+
+    private Icon createSmallLogoutIcon(Color color) {
+        return new Icon() {
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+                // Door outline
+                g2.drawRect(x + 1, y + 1, 5, 9);
+                // Exit arrow
+                g2.drawLine(x + 4, y + 5, x + 9, y + 5);
+                g2.drawLine(x + 7, y + 3, x + 9, y + 5);
+                g2.drawLine(x + 7, y + 7, x + 9, y + 5);
+                g2.dispose();
+            }
+
+            @Override public int getIconWidth() { return 11; }
+            @Override public int getIconHeight() { return 11; }
+        };
     }
 
     public Undergraduate getCurrentStudent() { return currentStudent; }

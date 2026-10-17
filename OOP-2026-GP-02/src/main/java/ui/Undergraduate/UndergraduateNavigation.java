@@ -90,15 +90,8 @@ public class UndergraduateNavigation extends JPanel {
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-        scrollPane.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 2));
+        scrollPane.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 0));
         add(scrollPane, BorderLayout.CENTER);
-
-        // Right Section: Logout Button
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 18, 9));
-        rightPanel.setOpaque(false);
-        JButton logoutBtn = createLogoutButton();
-        rightPanel.add(logoutBtn);
-        add(rightPanel, BorderLayout.EAST);
 
         // Initial highlight on Dashboard
         highlightButton("DASHBOARD");
@@ -174,72 +167,6 @@ public class UndergraduateNavigation extends JPanel {
         });
 
         navButtons.put(moduleKey, btn);
-        return btn;
-    }
-
-    /**
-     * Creates the styled logout button with confirmation dialog.
-     *
-     * @return Configured logout JButton.
-     */
-    private JButton createLogoutButton() {
-        JButton btn = new JButton("Logout") {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getBackground());
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setForeground(COLOR_LOGOUT_RED);
-        btn.setBackground(COLOR_PRIMARY_NAVY);
-        btn.setHorizontalAlignment(SwingConstants.CENTER);
-        btn.setIcon(createNavIcon("LOGOUT", COLOR_LOGOUT_RED));
-        btn.setIconTextGap(8);
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setOpaque(false);
-        btn.setPreferredSize(new Dimension(btn.getPreferredSize().width + 22, 38));
-        btn.setBorder(new EmptyBorder(8, 14, 8, 14));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        btn.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                btn.setBackground(new Color(0x3B, 0x1E, 0x2A));
-                btn.repaint();
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                btn.setBackground(COLOR_PRIMARY_NAVY);
-                btn.repaint();
-            }
-        });
-
-        btn.addActionListener(e -> {
-            int choice = JOptionPane.showConfirmDialog(
-                    this,
-                    "Are you sure you want to log out of TecFAMS?",
-                    "Confirm Logout",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE
-            );
-            if (choice == JOptionPane.YES_OPTION) {
-                if (currentStudent != null) {
-                    currentStudent.logout();
-                }
-                if (parentDashboard != null) {
-                    parentDashboard.dispose();
-                }
-            }
-        });
-
         return btn;
     }
 
