@@ -63,10 +63,15 @@ public class UndergraduateDashboard extends JFrame {
         JPanel rootPanel = new JPanel(new BorderLayout());
         rootPanel.setBackground(COLOR_BG);
 
-        // Header, Left Navigation Sidebar & Center Dashboard Overview
-        rootPanel.add(createHeaderPanel(), BorderLayout.NORTH);
+        // Header & Horizontal Academic Menu Bar directly below TecFAMS header
+        JPanel topContainer = new JPanel();
+        topContainer.setLayout(new BoxLayout(topContainer, BoxLayout.Y_AXIS));
+        topContainer.add(createHeaderPanel());
+
         navigationPanel = new UndergraduateNavigation(this, currentStudent);
-        rootPanel.add(navigationPanel, BorderLayout.WEST);
+        topContainer.add(navigationPanel);
+
+        rootPanel.add(topContainer, BorderLayout.NORTH);
         rootPanel.add(createDashboardOverviewPanel(), BorderLayout.CENTER);
 
         setContentPane(rootPanel);

@@ -58,75 +58,69 @@ public class UndergraduateNavigation extends JPanel {
     }
 
     /**
-     * Initializes the sidebar navigation layout, buttons, and footer.
+     * Initializes the top horizontal navigation layout, buttons, and logout button.
      */
     private void initializeNavigation() {
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(240, 0));
+        setPreferredSize(new Dimension(0, 46));
         setBackground(COLOR_PRIMARY_NAVY);
 
-        JPanel navList = new JPanel();
-        navList.setLayout(new BoxLayout(navList, BoxLayout.Y_AXIS));
-        navList.setOpaque(false);
-        navList.setBorder(new EmptyBorder(16, 12, 16, 12));
+        // Left Section: Section Title & Separator
+        JPanel leftBrand = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 13));
+        leftBrand.setOpaque(false);
 
-        // Section Title
         JLabel menuTitle = new JLabel("ACADEMIC MENU");
         menuTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
         menuTitle.setForeground(COLOR_TITLE_MUTED);
-        menuTitle.setBorder(new EmptyBorder(8, 12, 10, 12));
-        navList.add(menuTitle);
+        leftBrand.add(menuTitle);
+
+        JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
+        sep.setPreferredSize(new Dimension(1, 20));
+        sep.setForeground(new Color(0x23, 0x4D, 0x87));
+        leftBrand.add(sep);
+
+        add(leftBrand, BorderLayout.WEST);
+
+        // Center: Horizontal Navigation Buttons
+        JPanel navList = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 6));
+        navList.setOpaque(false);
 
         // 1. Dashboard (Active main view)
         dashboardBtn = createSidebarItem("Dashboard", "DASHBOARD", true);
         navList.add(dashboardBtn);
-        navList.add(Box.createVerticalStrut(4));
 
         // 2-9. Other Academic Modules (Open separate UI / show message)
         navList.add(createSidebarItem("My Profile", "PROFILE", false));
-        navList.add(Box.createVerticalStrut(4));
-
         navList.add(createSidebarItem("Attendance", "ATTENDANCE", false));
-        navList.add(Box.createVerticalStrut(4));
-
         navList.add(createSidebarItem("Medical Details", "MEDICAL", false));
-        navList.add(Box.createVerticalStrut(4));
-
         navList.add(createSidebarItem("Course Details", "COURSES", false));
-        navList.add(Box.createVerticalStrut(4));
-
         navList.add(createSidebarItem("Grades & GPA", "GRADES", false));
-        navList.add(Box.createVerticalStrut(4));
-
         navList.add(createSidebarItem("Timetable", "TIMETABLE", false));
-        navList.add(Box.createVerticalStrut(4));
-
         navList.add(createSidebarItem("Lecturer Notes", "MATERIALS", false));
-        navList.add(Box.createVerticalStrut(4));
-
         navList.add(createSidebarItem("Notices", "NOTICES", false));
-        navList.add(Box.createVerticalGlue());
 
-        // Logout Button at bottom
+        JScrollPane scrollPane = new JScrollPane(navList);
+        scrollPane.setBorder(null);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        scrollPane.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 2));
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Right Section: Logout Button
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 6));
+        rightPanel.setOpaque(false);
         JButton logoutBtn = createLogoutButton();
-        navList.add(logoutBtn);
-
-        add(navList, BorderLayout.CENTER);
-
-        // Footer Info
-        JLabel facultyFooter = new JLabel("Faculty of Technology");
-        facultyFooter.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        facultyFooter.setForeground(COLOR_FOOTER_MUTED);
-        facultyFooter.setHorizontalAlignment(SwingConstants.CENTER);
-        facultyFooter.setBorder(new EmptyBorder(0, 0, 14, 0));
-        add(facultyFooter, BorderLayout.SOUTH);
+        rightPanel.add(logoutBtn);
+        add(rightPanel, BorderLayout.EAST);
 
         // Initial highlight on Dashboard
         highlightButton("DASHBOARD");
     }
 
     /**
-     * Creates a styled sidebar navigation button with custom vector icon.
+     * Creates a styled navigation button with custom vector icon for horizontal bar.
      *
      * @param title       Display title text.
      * @param moduleKey   Identifier for icon and button mapping.
@@ -135,19 +129,18 @@ public class UndergraduateNavigation extends JPanel {
      */
     private JButton createSidebarItem(String title, String moduleKey, boolean isDashboard) {
         JButton btn = new JButton(title);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btn.setForeground(COLOR_TEXT_MUTED);
         btn.setBackground(COLOR_PRIMARY_NAVY);
-        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setHorizontalAlignment(SwingConstants.CENTER);
         btn.setIcon(createNavIcon(moduleKey, COLOR_TEXT_MUTED));
-        btn.setIconTextGap(12);
+        btn.setIconTextGap(7);
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
         btn.setOpaque(true);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        btn.setPreferredSize(new Dimension(216, 40));
-        btn.setBorder(new EmptyBorder(8, 14, 8, 14));
+        btn.setPreferredSize(new Dimension(btn.getPreferredSize().width + 20, 32));
+        btn.setBorder(new EmptyBorder(5, 10, 5, 10));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new MouseAdapter() {
@@ -177,7 +170,6 @@ public class UndergraduateNavigation extends JPanel {
                     parentDashboard.showDashboardView();
                 }
             } else {
-                // As requested, clicking separate modules shows an informative message dialog
                 if (parentDashboard != null) {
                     parentDashboard.showModulePlaceholder(title);
                 }
@@ -195,19 +187,31 @@ public class UndergraduateNavigation extends JPanel {
      */
     private JButton createLogoutButton() {
         JButton btn = new JButton("Logout");
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setForeground(COLOR_LOGOUT_RED);
         btn.setBackground(COLOR_PRIMARY_NAVY);
-        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setHorizontalAlignment(SwingConstants.CENTER);
         btn.setIcon(createNavIcon("LOGOUT", COLOR_LOGOUT_RED));
-        btn.setIconTextGap(12);
+        btn.setIconTextGap(7);
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
         btn.setOpaque(true);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        btn.setPreferredSize(new Dimension(216, 40));
-        btn.setBorder(new EmptyBorder(8, 14, 8, 14));
+        btn.setPreferredSize(new Dimension(btn.getPreferredSize().width + 16, 32));
+        btn.setBorder(new EmptyBorder(5, 10, 5, 10));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(new Color(0x2B, 0x1E, 0x36));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(COLOR_PRIMARY_NAVY);
+            }
+        });
 
         btn.addActionListener(e -> {
             int choice = JOptionPane.showConfirmDialog(
@@ -231,7 +235,7 @@ public class UndergraduateNavigation extends JPanel {
     }
 
     /**
-     * Highlights the sidebar button corresponding to the specified key,
+     * Highlights the navigation button corresponding to the specified key,
      * resetting all other buttons to standard styling.
      *
      * @param moduleKey The module identifier (e.g. "DASHBOARD").
@@ -241,7 +245,7 @@ public class UndergraduateNavigation extends JPanel {
             JButton b = entry.getValue();
             b.setBackground(COLOR_PRIMARY_NAVY);
             b.setForeground(COLOR_TEXT_MUTED);
-            b.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            b.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             b.setIcon(createNavIcon(entry.getKey(), COLOR_TEXT_MUTED));
         }
 
@@ -249,7 +253,7 @@ public class UndergraduateNavigation extends JPanel {
         if (selected != null) {
             selected.setBackground(COLOR_MAIN_BLUE);
             selected.setForeground(COLOR_WHITE);
-            selected.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            selected.setFont(new Font("Segoe UI", Font.BOLD, 12));
             selected.setIcon(createNavIcon(moduleKey, COLOR_WHITE));
         }
     }
