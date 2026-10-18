@@ -406,4 +406,200 @@ public class TechnicalOfficerDashboard extends JFrame {
         return card;
     }
 
+
+    private JPanel createSectionHeading(String title, String subtitle) {
+        JPanel p = new JPanel(new GridLayout(2, 1, 0, 2));
+        p.setOpaque(false);
+
+        JLabel t = new JLabel(title);
+        t.setFont(FONT_HEADER_MEDIUM);
+        t.setForeground(PRIMARY_NAVY);
+
+        JLabel s = new JLabel(subtitle);
+        s.setFont(FONT_SMALL);
+        s.setForeground(TEXT_SECONDARY);
+
+        p.add(t);
+        p.add(s);
+        return p;
+    }
+
+    public void openSectionAction(String title, String message) {
+        JOptionPane.showMessageDialog(
+                this,
+                message,
+                title + " - TecFAMS",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    /**
+     * Profile dialog adhering to SRS FR-04:
+     * "The system shall allow technical officers to update their profiles except username and password."
+     */
+    public void showProfileDialog() {
+        JDialog dialog = new JDialog(this, "My Profile - Technical Officer", true);
+        dialog.setSize(480, 420);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel form = new JPanel(new GridLayout(6, 2, 10, 14));
+        form.setBorder(new EmptyBorder(20, 24, 20, 24));
+        form.setBackground(WHITE);
+
+        JTextField idField = new JTextField(currentOfficer.getOfficerId());
+        idField.setEditable(false);
+        idField.setBackground(Color.decode("#F1F5F9"));
+
+        JTextField userField = new JTextField(currentOfficer.getUsername() + " 🔒 (Fixed)");
+        userField.setEditable(false);
+        userField.setBackground(Color.decode("#F1F5F9"));
+        userField.setToolTipText("Username cannot be modified as per university security policy");
+
+        JTextField nameField = new JTextField(currentOfficer.getName());
+        JTextField emailField = new JTextField(currentOfficer.getEmail());
+        JTextField phoneField = new JTextField(currentOfficer.getPhone());
+
+        JTextField deptField = new JTextField(currentOfficer.getDepartment());
+        deptField.setEditable(false);
+        deptField.setBackground(Color.decode("#F1F5F9"));
+
+        form.add(new JLabel("Officer ID:")); form.add(idField);
+        form.add(new JLabel("Username (Fixed):")); form.add(userField);
+        form.add(new JLabel("Full Name:")); form.add(nameField);
+        form.add(new JLabel("Official Email:")); form.add(emailField);
+        form.add(new JLabel("Contact Phone:")); form.add(phoneField);
+        form.add(new JLabel("Department:")); form.add(deptField);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
+        btnPanel.setBackground(BG_COLOR);
+
+        JButton saveBtn = createPrimaryButton("Save Profile Changes");
+        JButton cancelBtn = createSecondaryButton("Cancel");
+
+        saveBtn.addActionListener(e -> {
+            String newName = nameField.getText().trim();
+            String newEmail = emailField.getText().trim();
+            String newPhone = phoneField.getText().trim();
+
+            if (newName.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Name cannot be left empty.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (!newEmail.contains("@") || !newEmail.contains(".")) {
+                JOptionPane.showMessageDialog(dialog, "Please enter a valid email address.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (newPhone.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Contact phone number is required.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            dao.updateProfile(newName, newEmail, newPhone);
+            headerWelcomeLabel.setText("Welcome back, " + newName + "!");
+            JOptionPane.showMessageDialog(dialog, "Profile contact information updated successfully!", "Saved", JOptionPane.INFORMATION_MESSAGE);
+            dialog.dispose();
+        });
+
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        btnPanel.add(cancelBtn);
+        btnPanel.add(saveBtn);
+
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.add(btnPanel, BorderLayout.SOUTH);
+        dialog.setVisible(true);
+    }
+
+    public void handleLogout() {
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to log out of the Technical Officer Dashboard?",
+                "Confirm Logout - TecFAMS",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (choice == JOptionPane.YES_OPTION) {
+            dispose();
+            JOptionPane.showMessageDialog(null, "You have successfully logged out of TecFAMS.", "Logged Out", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    // --- Styling Utilities ---
+
+    public static JPanel createCardPanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(WHITE);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(16, 16, 16, 16)
+        ));
+        return panel;
+    }
+
+    public static JButton createPrimaryButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(FONT_MEDIUM);
+        button.setForeground(WHITE);
+        button.setBackground(MAIN_BLUE);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(new EmptyBorder(8, 16, 8, 16));
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(Color.decode("#1D4ED8"));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(MAIN_BLUE);
+            }
+        });
+        return button;
+    }
+
+    public static JButton createSecondaryButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(FONT_MEDIUM);
+        button.setForeground(TEXT_MAIN);
+        button.setBackground(WHITE);
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(7, 15, 7, 15)
+        ));
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(LIGHT_BLUE);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(WHITE);
+            }
+        });
+        return button;
+    }
+
+
+    /**
+     * Standalone main method to run and preview the Technical Officer Dashboard.
+     */
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ignored) {
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            TechnicalOfficerDashboard dashboard = new TechnicalOfficerDashboard();
+            dashboard.setVisible(true);
+        });
+    }
 }
