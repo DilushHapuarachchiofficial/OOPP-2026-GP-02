@@ -1290,11 +1290,9 @@ public class LecturerDashboard extends JPanel {
             StudentDetailsEligibility eligibility = new StudentDetailsEligibility(navbar, cardLayout, contentPanel);
             contentPanel.add(eligibility, Navbar.PAGE_ELIGIBILITY);
 
-            contentPanel.add(createModulePlaceholder(
-                    "Marks Management",
-                    "Enter, calculate, and publish continuous assessment and end-of-semester exam marks.",
-                    navbar, cardLayout, contentPanel
-            ), Navbar.PAGE_MARKS);
+            // 4. Live Marks Management Module
+            LecturerMarksManagement marksManagement = new LecturerMarksManagement(navbar, cardLayout, contentPanel);
+            contentPanel.add(marksManagement, Navbar.PAGE_MARKS);
 
             LecturerProfile profile = new LecturerProfile(navbar, cardLayout, contentPanel);
             contentPanel.add(profile, Navbar.PAGE_PROFILE);
@@ -1308,6 +1306,8 @@ public class LecturerDashboard extends JPanel {
                     materials.refreshMaterials();
                 } else if (Navbar.PAGE_ELIGIBILITY.equals(pageName)) {
                     eligibility.refreshData();
+                } else if (Navbar.PAGE_MARKS.equals(pageName)) {
+                    marksManagement.refreshAllData();
                 } else if (Navbar.PAGE_PROFILE.equals(pageName)) {
                     profile.loadLecturerProfile();
                 }

@@ -212,18 +212,30 @@ public class Lecturer extends User {
 
     /**
      * + uploadMarks(mark : Mark) : void
-     * Saves or updates assessment marks in the database.
+     * Saves or updates assessment marks in the database according to TecFAMS class diagram.
      */
     public void uploadMarks(Mark mark) {
         if (mark == null) return;
-        String sql = "INSERT INTO marks (component_id, student_id, marks_obtained, entered_by, recorded_at) " +
-                     "VALUES (?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE marks_obtained = VALUES(marks_obtained)";
+        int compId = mark.getComponentId() > 0 ? mark.getComponentId() : mark.getMarkId();
+        uploadMarks(mark.getStudentId(), compId, mark.getMarks());
+    }
+
+    /**
+     * Overloaded helper: Uploads/saves a student's mark for a specific assessment component.
+     * Automatically updates student's marks using correct tecfams_db schema (uploaded_by, uploaded_date).
+     */
+    public void uploadMarks(int studentId, int componentId, double marks) {
+        String sql = "INSERT INTO marks (component_id, student_id, marks_obtained, uploaded_by, uploaded_date) " +
+                     "VALUES (?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE " +
+                     "    marks_obtained = VALUES(marks_obtained), " +
+                     "    uploaded_by = VALUES(uploaded_by), " +
+                     "    uploaded_date = NOW()";
         try (Connection conn = main.java.dao.DBConnection.getConnection()) {
             if (conn != null) {
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                    pstmt.setInt(1, mark.getMarkId());
-                    pstmt.setInt(2, mark.getStudentId());
-                    pstmt.setDouble(3, mark.getMarks());
+                    pstmt.setInt(1, componentId);
+                    pstmt.setInt(2, studentId);
+                    pstmt.setDouble(3, MarksCalculationService.round2(marks));
                     pstmt.setInt(4, getLecturerIdAsInt());
                     pstmt.executeUpdate();
                 }
@@ -231,6 +243,64 @@ public class Lecturer extends User {
         } catch (SQLException e) {
             System.err.println("Error uploading marks: " + e.getMessage());
         }
+    }
+
+    /**
+     * Automated Continuous Assessment (CA) calculation for a student in a specific course.
+     * Implements UGC and Faculty of Technology By-Law No. 92-2025:
+     * - Aggregates all continuous assessment components (Quizzes, Assignments, Mid Exam, etc.)
+     * - Computes weighted CA score and CA % out of 100
+     * - Determines CA eligibility (threshold >= 40.00% is ELIGIBLE)
+     */
+    public StudentCaResult calculateOverallStudentCA(int studentId, int courseId) {
+        String sql = "SELECT ec.component_id, ec.component_name, ec.weight_percentage, ec.maximum_marks, " +
+                     "       m.marks_obtained " +
+                     "FROM evaluation_components ec " +
+                     "LEFT JOIN marks m ON ec.component_id = m.component_id AND m.student_id = ? " +
+                     "WHERE ec.course_id = ? AND ec.component_type = 'CA' " +
+                     "ORDER BY ec.component_id ASC";
+
+        double totalCaWeightedScore = 0.0;
+        double totalCaWeight = 0.0;
+        int totalCaComponents = 0;
+        int enteredCaComponents = 0;
+
+        try (Connection conn = main.java.dao.DBConnection.getConnection()) {
+            if (conn != null) {
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setInt(1, studentId);
+                    pstmt.setInt(2, courseId);
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        while (rs.next()) {
+                            totalCaComponents++;
+                            double weight = rs.getDouble("weight_percentage");
+                            double maxMark = rs.getDouble("maximum_marks");
+                            totalCaWeight += weight;
+
+                            double obtained = rs.getDouble("marks_obtained");
+                            if (!rs.wasNull()) {
+                                enteredCaComponents++;
+                                if (maxMark > 0) {
+                                    totalCaWeightedScore += (obtained / maxMark) * weight;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error calculating overall student CA: " + e.getMessage());
+        }
+
+        totalCaWeightedScore = MarksCalculationService.round2(totalCaWeightedScore);
+        Double caPercentage = null;
+        if (totalCaWeight > 0 && enteredCaComponents > 0) {
+            caPercentage = MarksCalculationService.round2((totalCaWeightedScore / totalCaWeight) * 100.0);
+        }
+        String eligibility = MarksCalculationService.determineCaEligibility(caPercentage);
+
+        return new StudentCaResult(studentId, courseId, totalCaWeightedScore, totalCaWeight,
+                totalCaComponents, enteredCaComponents, caPercentage, eligibility);
     }
 
     /**
@@ -467,6 +537,7 @@ public class Lecturer extends User {
      */
     public static class Mark {
         private int markId;
+        private int componentId;
         private int studentId;
         private double marks;
         private String assessmentType;
@@ -483,8 +554,20 @@ public class Lecturer extends User {
             this.date = date;
         }
 
+        public Mark(int markId, int componentId, int studentId, double marks, String assessmentType, String assessmentName, Date date) {
+            this.markId = markId;
+            this.componentId = componentId;
+            this.studentId = studentId;
+            this.marks = marks;
+            this.assessmentType = assessmentType;
+            this.assessmentName = assessmentName;
+            this.date = date;
+        }
+
         public int getMarkId() { return markId; }
         public void setMarkId(int markId) { this.markId = markId; }
+        public int getComponentId() { return componentId; }
+        public void setComponentId(int componentId) { this.componentId = componentId; }
         public int getStudentId() { return studentId; }
         public void setStudentId(int studentId) { this.studentId = studentId; }
         public double getMarks() { return marks; }
@@ -495,6 +578,42 @@ public class Lecturer extends User {
         public void setAssessmentName(String assessmentName) { this.assessmentName = assessmentName; }
         public Date getDate() { return date; }
         public void setDate(Date date) { this.date = date; }
+    }
+
+    /**
+     * Data transfer object encapsulating automated Student CA calculation result.
+     */
+    public static class StudentCaResult {
+        private final int studentId;
+        private final int courseId;
+        private final double totalCaWeightedScore;
+        private final double totalCaWeight;
+        private final int totalCaComponents;
+        private final int enteredCaComponents;
+        private final Double caPercentage;
+        private final String caEligibility;
+
+        public StudentCaResult(int studentId, int courseId, double totalCaWeightedScore, double totalCaWeight,
+                               int totalCaComponents, int enteredCaComponents, Double caPercentage, String caEligibility) {
+            this.studentId = studentId;
+            this.courseId = courseId;
+            this.totalCaWeightedScore = totalCaWeightedScore;
+            this.totalCaWeight = totalCaWeight;
+            this.totalCaComponents = totalCaComponents;
+            this.enteredCaComponents = enteredCaComponents;
+            this.caPercentage = caPercentage;
+            this.caEligibility = caEligibility != null ? caEligibility : "PENDING";
+        }
+
+        public int getStudentId() { return studentId; }
+        public int getCourseId() { return courseId; }
+        public double getTotalCaWeightedScore() { return totalCaWeightedScore; }
+        public double getTotalCaWeight() { return totalCaWeight; }
+        public int getTotalCaComponents() { return totalCaComponents; }
+        public int getEnteredCaComponents() { return enteredCaComponents; }
+        public Double getCaPercentage() { return caPercentage; }
+        public String getCaEligibility() { return caEligibility; }
+        public boolean isEligible() { return "ELIGIBLE".equalsIgnoreCase(caEligibility); }
     }
 
     /**
