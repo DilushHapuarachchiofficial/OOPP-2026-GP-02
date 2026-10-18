@@ -1,21 +1,7 @@
 package main.java.model;
 
-/**
- * User.java
- * TecFAMS – Faculty of Technology Academic Management System
- * University of Ruhuna
- *
- * Base entity class representing a system user according to the TecFAMS Class Diagram.
- *
- * Implements strict Object-Oriented Programming (OOP) encapsulation:
- * - All attributes are declared private.
- * - Comprehensive getters and setters provided for all fields.
- * - Default, full-parameter, and convenience constructors provided.
- * - Authentication and profile operations declared in class diagram:
- *     + login() : boolean
- *     + logout() : void
- *     + updateProfile() : void
- */
+
+ 
 public class User {
 
     // =========================================================================

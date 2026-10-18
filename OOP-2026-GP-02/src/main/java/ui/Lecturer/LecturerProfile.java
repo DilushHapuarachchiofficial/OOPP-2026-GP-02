@@ -21,26 +21,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.sql.SQLException;
 
-/**
- * LecturerProfile.java
- * TecFAMS – Faculty of Technology Academic Management System
- *
- * Premium Executive Lecturer Profile User Interface.
- *
- * Key Capabilities & Enhancements:
- * - Executive Hero Cover Banner: Dual-layer card with rich academic gradient (#082F5A -> #0B4F9C),
- *   subtle architectural geometry, elevated circular avatar with drop-shadow, and official faculty tags.
- * - Live KPI Metrics Panel: Dynamic mini cards displaying Course Assignments, Materials Uploaded,
- *   and Account Security Status loaded in real time.
- * - Sectional Academic & Contact Forms: Clean visual separation between system-managed identifiers
- *   (with locks & embedded prefix icons) and editable personal contact details.
- * - Interactive Password Strength Meter: Real-time visual progress bar and dynamic requirement checklist
- *   (8+ chars, letters, numbers) that dynamically updates as the user types.
- * - Comprehensive High-DPI Vector Icons: 18 crisp Graphics2D vector icons (User, Building, Award,
- *   Book, Document, Key, Shield, Hash, Camera, etc.) guaranteeing razor-sharp display.
- * - Fluid Responsive Architecture: 2-column layout on desktop (>= 920px), stacked 1-column on narrower viewports.
- * - Standalone main runner with sample session for immediate testing in IntelliJ IDEA.
- */
+
 public class LecturerProfile extends JPanel {
 
     // =========================================================================

@@ -18,19 +18,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * CourseMaterialsLogic.java
- * TecFAMS - Faculty of Technology Academic Management System
- *
- * Dedicated business logic and data access class for Course Materials.
- * Separated from the UI layer to maintain clean OOP separation of concerns.
- *
- * Responsibilities:
- * - Direct database BLOB storage in course_materials table (file_name, file_data, file_size)
- * - Safe opening and downloading from database streams
- * - Lecturer assigned courses verification via course_lecturers table
- * - Document validation (extensions, magic bytes signatures, file size limit)
- */
 public class CourseMaterialsLogic {
 
     // Maximum allowed file size: 50 MB

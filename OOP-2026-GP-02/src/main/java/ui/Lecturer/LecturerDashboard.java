@@ -20,25 +20,7 @@ import java.io.InputStream;
 import java.util.List;
 import javax.imageio.ImageIO;
 
-/**
- * LecturerDashboard.java
- * TecFAMS – Faculty of Technology Academic Management System
- *
- * Professional Lecturer Dashboard Page (Part 2: Real Database Integration).
- *
- * Key Capabilities:
- * - Asynchronous JDBC data retrieval using SwingWorker (non-blocking EDT).
- * - Real data binding for authenticated lecturer profile, assigned courses count,
- *   uploaded materials count, and official faculty notices.
- * - Distinct, robust UI state handling:
- *     1. LOADING: Pulsing indicator while background worker queries MySQL.
- *     2. SUCCESS: Real database statistics, cards, and recent notices.
- *     3. ZERO RESULTS: Legitimate count of 0 or empty notice board without fake fallbacks.
- *     4. DATABASE ERROR: Styled diagnostic panel with "Retry Connection" action.
- *     5. UNAUTHENTICATED: Security prompt when no active lecturer session exists.
- * - Seamless integration with Navbar.java under a shared container.
- * - Responsive Swing layout (BorderLayout, GridLayout, BoxLayout, JScrollPane).
- */
+
 public class LecturerDashboard extends JPanel {
 
     // =========================================================================

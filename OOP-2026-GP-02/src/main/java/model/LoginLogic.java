@@ -7,19 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-/**
- * LoginLogic.java
- * TecFAMS – Faculty of Technology Academic Management System
- * University of Ruhuna
- *
- * Role: Business & Authentication Logic (Controller / Service layer)
- * 
- * Responsibilities:
- * - Admin, Lecturer, Technical Officer, and Undergraduate credential validation using database details
- * - User input validation (empty fields, role selection)
- * - MySQL + JDBC database authentication & SQL file fallback database support
- * - Dashboard navigation dispatching
- */
+
 public class LoginLogic {
 
     // =========================================================================

@@ -30,21 +30,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * StudentDetailsEligibility.java
- * TecFAMS - Faculty of Technology Academic Management System
- *
- * Fully Responsive, High-DPI, Professional Java Swing UI Component
- * for Lecturer Portal: Student Details & Examination Attendance Eligibility.
- *
- * Responsiveness & Compatibility Highlights:
- * - 100% Vector Icons (Java2D): Zero reliance on OS Unicode emojis; renders
- *   crisply on all Windows versions, laptop displays, and high-DPI scaling.
- * - Laptop-Optimized Fluid Layouts: Uses adaptive card grids and wrapping flows
- *   so controls, filters, and cards never clip on 1366x768 or scaled screens.
- * - Table Horizontal & Vertical Scroll: Prevents column squishing and enables
- *   smooth inspection of all 9 attendance & eligibility fields.
- */
+
 public class StudentDetailsEligibility extends JPanel {
 
     // =========================================================================

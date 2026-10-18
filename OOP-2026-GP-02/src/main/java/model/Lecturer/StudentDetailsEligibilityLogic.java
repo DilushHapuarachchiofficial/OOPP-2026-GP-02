@@ -12,22 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * StudentDetailsEligibilityLogic.java
- * TecFAMS - Faculty of Technology Academic Management System
- *
- * Dedicated business logic and database access layer for Student Details and
- * Exam Attendance Eligibility Management.
- *
- * Responsibilities:
- * - Parameterized JDBC queries against MySQL tecfams_db.
- * - Retrieve only courses assigned to the authenticated lecturer.
- * - Calculate Theory-only, Practical-only, and Combined attendance percentages.
- * - Enforce university 80% threshold policy (>= 80.00% is Eligible).
- * - Precision-safe handling of exactly 80.00% without floating point errors.
- * - Categorize all 5 required attendance & medical scenarios.
- * - Associate medical records with students and courses without row duplication.
- */
+
 public class StudentDetailsEligibilityLogic {
 
     // Threshold constant: 80% attendance required for examination admission

@@ -31,32 +31,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * LecturerMarksManagement.java
- * TecFAMS – Faculty of Technology Academic Management System
- * Faculty of Technology, University of Ruhuna
- *
- * Comprehensive, production-grade Marks Management module for University Lecturers.
- * Fully compliant with:
- * - University of Ruhuna Faculty of Technology Student Handbook (2026 / By-Law No. 92-2025)
- * - UGC Commission Guidelines on Continuous Assessment (CA) & 4.00 Grade Point Grading Scale
- * - TecFAMS OOP Class Diagram architecture (Lecturer, Mark, Undergraduate, Eligibility, Course)
- *
- * Core Capabilities:
- * 1. Assessment Creation & Management:
- *    - Quick-add Quizzes, Assignments, Mid Exam (Midterm), End Exam (ESA), and Custom Assessments.
- *    - Scheme weight tracking ensuring CA + Final Exam = 100%.
- * 2. Open Examination & Registered Students View:
- *    - View open examinations & assessments, display all registered students for each quiz or examination.
- * 3. Individual Marks Entry & Real-Time Overall CA Automation:
- *    - Inline table editing & dedicated student marks inspector panel.
- *    - Real-time automatic calculation of each student's Overall CA score, CA %, and CA Eligibility (>= 40.00%).
- *    - Complete course assessment breakdown per student.
- * 4. Reliable Custom Vector Graphics & Styling:
- *    - ModernButton with custom anti-aliasing (overrides Windows Look & Feel native button rendering flaws).
- *    - Hand-drawn MarksVectorIcon graphics replacing broken emojis/unicode glyphs.
- *    - Curated Ruhuna Faculty of Technology academic color palette.
- */
+
 public class LecturerMarksManagement extends JPanel {
 
     // =========================================================================

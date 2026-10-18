@@ -26,20 +26,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * CourseMaterials.java
- * TecFAMS - Faculty of Technology Academic Management System
- *
- * Professional Lecturer Course Materials Management User Interface.
- *
- * Design Architecture:
- * - Separated UI layer: Delegates all business, database, and file tasks to CourseMaterialsLogic.
- * - Non-blocking EDT operations: Uses SwingWorker for asynchronous database queries.
- * - TecFAMS High-Contrast Academic Theme (#082F5A Navy, #0B4F9C Pro Blue, #F4F7FB Background).
- * - Full CRUD capabilities: Upload, View Details, Download/Open, Edit Metadata, Delete.
- * - Multi-criteria search and filtering (Course dropdown, File Type dropdown, Text search).
- * - Responsive Swing layout: Scrolls vertically and adapts cleanly to any screen dimension.
- */
+
 public class CourseMaterials extends JPanel {
 
     // =========================================================================

@@ -1,12 +1,6 @@
 package main.java.model;
 
-/**
- * UserSession.java
- * TecFAMS – Faculty of Technology Academic Management System
- *
- * Thread-safe global session manager holding the identity of the currently
- * authenticated user. Populated upon successful login and invalidated upon logout.
- */
+
 public class UserSession {
 
     private static volatile UserSession currentSession = null;

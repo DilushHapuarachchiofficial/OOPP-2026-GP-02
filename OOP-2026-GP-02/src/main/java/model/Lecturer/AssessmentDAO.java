@@ -6,15 +6,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * AssessmentDAO.java
- * TecFAMS – Faculty of Technology Academic Management System
- * Faculty of Technology, University of Ruhuna
- *
- * Dedicated Data Access Object for course evaluation components and assessment configurations.
- * Handles course-specific assessment schemes (Quizzes, Assignments, Mini-projects, Midterms, End Exams)
- * with complete parameterization, PreparedStatement security, and schema compatibility.
- */
+
 public class AssessmentDAO {
 
     /**

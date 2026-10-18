@@ -27,16 +27,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Premium TecFAMS Lecturer Horizontal Navigation Bar in Java Swing.
- *
- * Designed specifically for the Faculty of Technology Academic Management System.
- * Fully self-contained component:
- * - Pure typography academic branding (no external logo image)
- * - 4 core horizontal navigation items (Dashboard, Course Materials, Student Eligibility, Marks Management)
- * - Profile dropdown menu with "My Profile" and "Logout"
- * - Genuine database & session notifications loaded from tecfams_db
- */
 public class Navbar extends JPanel {
 
     // =========================================================================
