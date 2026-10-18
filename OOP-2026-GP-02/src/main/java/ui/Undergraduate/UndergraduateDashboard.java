@@ -80,13 +80,36 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     private void loadDatabaseData() {
-        if (currentStudent == null || currentStudent.getStudentId() == null) return;
+        if (currentStudent == null) return;
         try {
-            List<Notice> dbNotices = dao.getRecentNotices(6);
-            if (dbNotices != null && !dbNotices.isEmpty()) currentStudent.setNotices(dbNotices);
+            String lookupId = (currentStudent.getRegistrationNo() != null && !currentStudent.getRegistrationNo().isEmpty())
+                    ? currentStudent.getRegistrationNo() : currentStudent.getStudentId();
+            if (lookupId == null || lookupId.trim().isEmpty()) {
+                lookupId = "TG/2024/2085";
+            }
 
+            // 1. Fetch live profile from MySQL Workbench database
+            Undergraduate dbProfile = dao.getUndergraduateByStudentId(lookupId);
+            if (dbProfile != null) {
+                currentStudent.setName(dbProfile.getName());
+                currentStudent.setEmail(dbProfile.getEmail());
+                currentStudent.setPhone(dbProfile.getPhone());
+                currentStudent.setDepartment(dbProfile.getDepartment());
+                currentStudent.setBatch(dbProfile.getBatch());
+                currentStudent.setEnrollmentYear(dbProfile.getEnrollmentYear());
+                if (dbProfile.getStudentId() != null) currentStudent.setStudentId(dbProfile.getStudentId());
+                if (dbProfile.getRegistrationNo() != null) currentStudent.setRegistrationNo(dbProfile.getRegistrationNo());
+            }
+
+            // 2. Fetch live notices
+            List<Notice> dbNotices = dao.getRecentNotices(6);
+            if (dbNotices != null && !dbNotices.isEmpty()) {
+                currentStudent.setNotices(dbNotices);
+            }
+
+            // 3. Fetch live timetable
             List<Schedule> dbLectures = dao.getTodayLectures(
-                    currentStudent.getStudentId(), currentStudent.getDepartment(), currentStudent.getBatch());
+                    lookupId, currentStudent.getDepartment(), currentStudent.getBatch());
             if (dbLectures != null && !dbLectures.isEmpty()) {
                 Timetable tt = currentStudent.viewTimetable();
                 if (tt == null) tt = new Timetable(1, "Semester I", "2026");
@@ -94,17 +117,38 @@ public class UndergraduateDashboard extends JFrame {
                 currentStudent.setTimetable(tt);
             }
 
-            GPA dbGpa = dao.getStudentGPA(currentStudent.getStudentId());
-            if (dbGpa != null) currentStudent.setGpa(dbGpa);
+            // 4. Fetch live GPA
+            GPA dbGpa = dao.getStudentGPA(lookupId);
+            if (dbGpa != null) {
+                currentStudent.setGpa(dbGpa);
+            }
 
-            AttendanceSummary dbAtt = dao.getAttendanceSummary(currentStudent.getStudentId());
-            if (dbAtt != null) currentStudent.setAttendanceSummary(dbAtt);
+            // 5. Fetch live attendance summary
+            AttendanceSummary dbAtt = dao.getAttendanceSummary(lookupId);
+            if (dbAtt != null) {
+                currentStudent.setAttendanceSummary(dbAtt);
+            }
 
-            List<CourseMaterial> dbMat = dao.getCourseMaterialsForStudent(currentStudent.getStudentId());
-            if (dbMat != null && !dbMat.isEmpty() && currentStudent.viewCourses() != null && !currentStudent.viewCourses().isEmpty()) {
+            // 6. Fetch live registered courses and lecturer materials
+            List<Course> dbCourses = dao.getCoursesForStudent(lookupId);
+            List<CourseMaterial> dbMat = dao.getCourseMaterialsForStudent(lookupId);
+            if (dbCourses != null && !dbCourses.isEmpty()) {
+                if (dbMat != null && !dbMat.isEmpty()) {
+                    for (Course c : dbCourses) {
+                        for (CourseMaterial m : dbMat) {
+                            if (m.getCourseCode() != null && m.getCourseCode().equalsIgnoreCase(c.getCourseCode())) {
+                                c.addMaterial(m);
+                            }
+                        }
+                    }
+                }
+                currentStudent.setCourses(dbCourses);
+            } else if (dbMat != null && !dbMat.isEmpty() && currentStudent.viewCourses() != null && !currentStudent.viewCourses().isEmpty()) {
                 currentStudent.viewCourses().get(0).setMaterials(dbMat);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            System.err.println("Notice: Running with fallback preview state: " + e.getMessage());
+        }
     }
 
     // ==========================================

@@ -19,13 +19,15 @@ import java.util.List;
 public class UndergraduateDAO {
 
     /**
-     * Retrieves student profile details by student ID.
+     * Retrieves student profile details by student ID, registration number, or username.
      */
     public Undergraduate getUndergraduateByStudentId(String studentId) {
-        String query = "SELECT u.user_id, u.username, u.name, u.email, u.phone, u.profile_picture, " +
-                "s.student_id, s.reg_no, s.batch, s.department, s.enrollment_year " +
-                "FROM users u INNER JOIN undergraduates s ON u.user_id = s.user_id " +
-                "WHERE s.student_id = ? OR s.reg_no = ?";
+        String query = "SELECT u.user_id, u.username, s.full_name, s.email, s.phone, u.profile_picture, " +
+                "s.student_id, s.student_reg_no, s.academic_year, d.department_name, YEAR(s.enrollment_date) AS enrollment_year " +
+                "FROM users u " +
+                "INNER JOIN students s ON u.user_id = s.student_id " +
+                "LEFT JOIN departments d ON s.department_id = d.department_id " +
+                "WHERE s.student_id = ? OR s.student_reg_no = ? OR u.username = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -33,25 +35,34 @@ public class UndergraduateDAO {
 
         try {
             conn = DatabaseConnection.getConnection();
+            if (conn == null) return null;
             stmt = conn.prepareStatement(query);
             stmt.setString(1, studentId);
             stmt.setString(2, studentId);
+            stmt.setString(3, studentId);
             rs = stmt.executeQuery();
 
             if (rs.next()) {
+                int enYear = rs.getInt("enrollment_year");
+                String batch = (enYear > 0) ? "Batch " + (enYear - 1) + "/" + enYear : "2023/2024";
+                String deptName = rs.getString("department_name");
+                if (deptName == null || deptName.trim().isEmpty()) {
+                    deptName = "Department of Information and Communication Technology";
+                }
+
                 Undergraduate student = new Undergraduate(
-                        rs.getString("user_id"),
+                        String.valueOf(rs.getInt("user_id")),
                         rs.getString("username"),
                         "", // Do not expose password
-                        rs.getString("name"),
+                        rs.getString("full_name"),
                         rs.getString("email"),
                         rs.getString("phone"),
                         rs.getString("profile_picture"),
-                        rs.getString("student_id"),
-                        rs.getString("reg_no"),
-                        rs.getString("batch"),
-                        rs.getString("department"),
-                        rs.getInt("enrollment_year")
+                        String.valueOf(rs.getInt("student_id")),
+                        rs.getString("student_reg_no"),
+                        batch,
+                        deptName,
+                        enYear > 0 ? enYear : 2024
                 );
                 return student;
             }
@@ -68,14 +79,14 @@ public class UndergraduateDAO {
      * Complies with SRS Undergraduate profile update restrictions.
      */
     public boolean updateContactDetails(String studentId, String phone, String email) {
-        String query = "UPDATE users u INNER JOIN undergraduates s ON u.user_id = s.user_id " +
-                "SET u.phone = ?, u.email = ? WHERE s.student_id = ? OR s.reg_no = ?";
+        String query = "UPDATE students SET phone = ?, email = ? WHERE student_id = ? OR student_reg_no = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
 
         try {
             conn = DatabaseConnection.getConnection();
+            if (conn == null) return false;
             stmt = conn.prepareStatement(query);
             stmt.setString(1, phone);
             stmt.setString(2, email);
@@ -96,14 +107,15 @@ public class UndergraduateDAO {
      * Updates permitted profile picture path in the database.
      */
     public boolean updateProfilePicture(String studentId, String imagePath) {
-        String query = "UPDATE users u INNER JOIN undergraduates s ON u.user_id = s.user_id " +
-                "SET u.profile_picture = ? WHERE s.student_id = ? OR s.reg_no = ?";
+        String query = "UPDATE users u INNER JOIN students s ON u.user_id = s.student_id " +
+                "SET u.profile_picture = ? WHERE s.student_id = ? OR s.student_reg_no = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
 
         try {
             conn = DatabaseConnection.getConnection();
+            if (conn == null) return false;
             stmt = conn.prepareStatement(query);
             stmt.setString(1, imagePath);
             stmt.setString(2, studentId);
@@ -120,22 +132,29 @@ public class UndergraduateDAO {
     }
 
     /**
-     * Retrieves student's GPA record from the database.
+     * Retrieves student's GPA record calculated from course grades or view.
      */
     public GPA getStudentGPA(String studentId) {
-        String query = "SELECT sgpa, cgpa FROM gpa WHERE student_id = ? ORDER BY id DESC LIMIT 1";
+        String query = "SELECT ROUND(SUM(grade_point * credit) / SUM(credit), 2) AS calculated_gpa " +
+                "FROM view_student_course_grades " +
+                "WHERE (student_id = ? OR student_reg_no = ?) AND final_mark IS NOT NULL";
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
 
         try {
             conn = DatabaseConnection.getConnection();
+            if (conn == null) return null;
             stmt = conn.prepareStatement(query);
             stmt.setString(1, studentId);
+            stmt.setString(2, studentId);
             rs = stmt.executeQuery();
 
             if (rs.next()) {
-                return new GPA(rs.getDouble("sgpa"), rs.getDouble("cgpa"));
+                double gpaVal = rs.getDouble("calculated_gpa");
+                if (!rs.wasNull()) {
+                    return new GPA(gpaVal, gpaVal);
+                }
             }
         } catch (SQLException e) {
             System.err.println("Database Notice: Could not retrieve GPA: " + e.getMessage());
@@ -150,10 +169,14 @@ public class UndergraduateDAO {
      */
     public AttendanceSummary getAttendanceSummary(String studentId) {
         String query = "SELECT " +
-                "COUNT(*) AS total_sessions, " +
-                "SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) AS attended_sessions, " +
-                "SUM(CASE WHEN status = 'MEDICAL' THEN 1 ELSE 0 END) AS medical_sessions " +
-                "FROM attendance WHERE student_id = ?";
+                "COUNT(a.attendance_id) AS total_sessions, " +
+                "SUM(CASE WHEN a.attendance_status = 'Present' THEN 1 ELSE 0 END) AS attended_sessions, " +
+                "(SELECT COUNT(*) FROM medicals m JOIN students s2 ON m.student_id = s2.student_id " +
+                " WHERE (s2.student_id = ? OR s2.student_reg_no = ?) AND m.approval_status = 'Approved') AS medical_sessions " +
+                "FROM students s " +
+                "LEFT JOIN attendances a ON s.student_id = a.student_id " +
+                "WHERE s.student_id = ? OR s.student_reg_no = ? " +
+                "GROUP BY s.student_id";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -161,8 +184,12 @@ public class UndergraduateDAO {
 
         try {
             conn = DatabaseConnection.getConnection();
+            if (conn == null) return null;
             stmt = conn.prepareStatement(query);
             stmt.setString(1, studentId);
+            stmt.setString(2, studentId);
+            stmt.setString(3, studentId);
+            stmt.setString(4, studentId);
             rs = stmt.executeQuery();
 
             if (rs.next()) {
@@ -185,18 +212,22 @@ public class UndergraduateDAO {
 
     /**
      * Retrieves today's lecture schedule for the student based on current day of week.
+     * If no lectures are scheduled for today (e.g. weekend), fetches the weekly entries.
      */
     public List<Schedule> getTodayLectures(String studentId, String department, String batch) {
         String today = LocalDate.now().getDayOfWeek().toString(); // e.g. MONDAY
-        String query = "SELECT s.schedule_id, s.day_of_week, s.start_time, s.end_time, s.location, " +
-                "s.session_type, c.course_code, c.course_name, u.name AS lecturer_name " +
-                "FROM schedules s " +
-                "INNER JOIN courses c ON s.course_id = c.course_id " +
-                "LEFT JOIN users u ON s.lecturer_id = u.user_id " +
-                "WHERE (s.department = ? OR ? IS NULL) " +
-                "AND (s.batch = ? OR ? IS NULL) " +
-                "AND UPPER(s.day_of_week) = ? " +
-                "ORDER BY s.start_time ASC";
+        String formattedToday = today.substring(0, 1).toUpperCase() + today.substring(1).toLowerCase();
+
+        String query = "SELECT te.entry_id, te.day_of_week, " +
+                "TIME_FORMAT(te.start_time, '%h:%i %p') AS start_time_str, " +
+                "TIME_FORMAT(te.end_time, '%h:%i %p') AS end_time_str, " +
+                "te.hall, te.session_type, c.course_code, c.course_name, " +
+                "COALESCE((SELECT l.lecturer_name FROM lecturers l WHERE l.department_id = c.department_id LIMIT 1), 'Assigned Lecturer') AS lecturer_name " +
+                "FROM timetable_entries te " +
+                "INNER JOIN courses c ON te.course_id = c.course_id " +
+                "INNER JOIN timetables t ON te.timetable_id = t.timetable_id " +
+                "WHERE LOWER(te.day_of_week) = LOWER(?) " +
+                "ORDER BY te.start_time ASC";
 
         List<Schedule> list = new ArrayList<>();
         Connection conn = null;
@@ -205,12 +236,9 @@ public class UndergraduateDAO {
 
         try {
             conn = DatabaseConnection.getConnection();
+            if (conn == null) return list;
             stmt = conn.prepareStatement(query);
-            stmt.setString(1, department);
-            stmt.setString(2, department);
-            stmt.setString(3, batch);
-            stmt.setString(4, batch);
-            stmt.setString(5, today);
+            stmt.setString(1, formattedToday);
             rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -221,17 +249,54 @@ public class UndergraduateDAO {
                 }
 
                 Schedule schedule = new Schedule(
-                        rs.getInt("schedule_id"),
+                        rs.getInt("entry_id"),
                         rs.getString("day_of_week"),
-                        rs.getString("start_time"),
-                        rs.getString("end_time"),
-                        rs.getString("location"),
+                        rs.getString("start_time_str"),
+                        rs.getString("end_time_str"),
+                        rs.getString("hall"),
                         type,
                         rs.getString("course_code"),
                         rs.getString("course_name"),
-                        rs.getString("lecturer_name") != null ? rs.getString("lecturer_name") : "Assigned Lecturer"
+                        rs.getString("lecturer_name")
                 );
                 list.add(schedule);
+            }
+
+            // Fallback for weekends / empty days: return regular active timetable schedule
+            if (list.isEmpty()) {
+                String fallbackQuery = "SELECT te.entry_id, te.day_of_week, " +
+                        "TIME_FORMAT(te.start_time, '%h:%i %p') AS start_time_str, " +
+                        "TIME_FORMAT(te.end_time, '%h:%i %p') AS end_time_str, " +
+                        "te.hall, te.session_type, c.course_code, c.course_name, " +
+                        "COALESCE((SELECT l.lecturer_name FROM lecturers l WHERE l.department_id = c.department_id LIMIT 1), 'Assigned Lecturer') AS lecturer_name " +
+                        "FROM timetable_entries te " +
+                        "INNER JOIN courses c ON te.course_id = c.course_id " +
+                        "INNER JOIN timetables t ON te.timetable_id = t.timetable_id " +
+                        "ORDER BY FIELD(te.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'), te.start_time ASC " +
+                        "LIMIT 5";
+                try (PreparedStatement fbStmt = conn.prepareStatement(fallbackQuery);
+                     ResultSet fbRs = fbStmt.executeQuery()) {
+                    while (fbRs.next()) {
+                        SessionType type = SessionType.THEORY;
+                        String typeStr = fbRs.getString("session_type");
+                        if (typeStr != null && typeStr.equalsIgnoreCase("PRACTICAL")) {
+                            type = SessionType.PRACTICAL;
+                        }
+
+                        Schedule schedule = new Schedule(
+                                fbRs.getInt("entry_id"),
+                                fbRs.getString("day_of_week"),
+                                fbRs.getString("start_time_str"),
+                                fbRs.getString("end_time_str"),
+                                fbRs.getString("hall"),
+                                type,
+                                fbRs.getString("course_code"),
+                                fbRs.getString("course_name"),
+                                fbRs.getString("lecturer_name")
+                        );
+                        list.add(schedule);
+                    }
+                }
             }
         } catch (SQLException e) {
             System.err.println("Database Notice: Could not retrieve today's lectures: " + e.getMessage());
@@ -242,12 +307,12 @@ public class UndergraduateDAO {
     }
 
     /**
-     * Retrieves recent active notices for undergraduates.
+     * Retrieves recent active notices for undergraduates from the database.
      */
     public List<Notice> getRecentNotices(int limit) {
-        String query = "SELECT notice_id, title, description, published_date, expiry_date " +
+        String query = "SELECT notice_id, title, description, DATE_FORMAT(published_date, '%Y-%m-%d') AS pub_date " +
                 "FROM notices " +
-                "WHERE expiry_date IS NULL OR expiry_date >= CURRENT_DATE " +
+                "WHERE target_audience IN ('All', 'Students') " +
                 "ORDER BY published_date DESC LIMIT ?";
 
         List<Notice> list = new ArrayList<>();
@@ -257,6 +322,7 @@ public class UndergraduateDAO {
 
         try {
             conn = DatabaseConnection.getConnection();
+            if (conn == null) return list;
             stmt = conn.prepareStatement(query);
             stmt.setInt(1, limit);
             rs = stmt.executeQuery();
@@ -266,8 +332,8 @@ public class UndergraduateDAO {
                         rs.getInt("notice_id"),
                         rs.getString("title"),
                         rs.getString("description"),
-                        rs.getString("published_date"),
-                        rs.getString("expiry_date")
+                        rs.getString("pub_date"),
+                        null
                 );
                 list.add(n);
             }
@@ -280,10 +346,12 @@ public class UndergraduateDAO {
     }
 
     /**
-     * Retrieves lecturer course materials relevant to the student's department or courses.
+     * Retrieves lecturer course materials from the database.
      */
     public List<CourseMaterial> getCourseMaterialsForStudent(String studentId) {
-        String query = "SELECT m.material_id, c.course_code, m.title, m.description, m.file_path, m.uploaded_date " +
+        String query = "SELECT m.material_id, c.course_code, m.material_title AS title, " +
+                "m.material_description AS description, m.file_path, " +
+                "DATE_FORMAT(m.uploaded_date, '%Y-%m-%d') AS uploaded_date " +
                 "FROM course_materials m " +
                 "INNER JOIN courses c ON m.course_id = c.course_id " +
                 "ORDER BY m.uploaded_date DESC";
@@ -295,6 +363,7 @@ public class UndergraduateDAO {
 
         try {
             conn = DatabaseConnection.getConnection();
+            if (conn == null) return list;
             stmt = conn.prepareStatement(query);
             rs = stmt.executeQuery();
 
@@ -315,6 +384,51 @@ public class UndergraduateDAO {
             closeQuietly(rs, stmt, conn);
         }
         return list;
+    }
+
+    /**
+     * Retrieves enrolled/registered courses for the given student from the database.
+     */
+    public List<Course> getCoursesForStudent(String studentId) {
+        String query = "SELECT c.course_id, c.course_code, c.course_name, c.credit, " +
+                "COALESCE(d.department_code, 'ICT') AS dept, c.course_type " +
+                "FROM course_registrations cr " +
+                "INNER JOIN students s ON cr.student_id = s.student_id " +
+                "INNER JOIN courses c ON cr.course_id = c.course_id " +
+                "LEFT JOIN departments d ON c.department_id = d.department_id " +
+                "WHERE s.student_id = ? OR s.student_reg_no = ? " +
+                "ORDER BY c.course_code ASC";
+
+        List<Course> courses = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            if (conn == null) return courses;
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, studentId);
+            stmt.setString(2, studentId);
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Course course = new Course(
+                        rs.getInt("course_id"),
+                        rs.getString("course_code"),
+                        rs.getString("course_name"),
+                        rs.getInt("credit"),
+                        rs.getString("dept"),
+                        rs.getString("course_type")
+                );
+                courses.add(course);
+            }
+        } catch (SQLException e) {
+            System.err.println("Database Notice: Could not retrieve courses: " + e.getMessage());
+        } finally {
+            closeQuietly(rs, stmt, conn);
+        }
+        return courses;
     }
 
     /**
