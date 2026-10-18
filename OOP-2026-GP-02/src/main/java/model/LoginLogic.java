@@ -263,11 +263,9 @@ public class LoginLogic {
             main.java.ui.Lecturer.StudentDetailsEligibility eligibility = new main.java.ui.Lecturer.StudentDetailsEligibility(navbar, contentCards, mainContent);
             mainContent.add(eligibility, main.java.ui.Lecturer.Navbar.PAGE_ELIGIBILITY);
 
-            mainContent.add(createLecturerModulePlaceholder(
-                    "Marks Management",
-                    "Enter, calculate, and publish continuous assessment and end-of-semester exam marks.",
-                    navbar, contentCards, mainContent
-            ), main.java.ui.Lecturer.Navbar.PAGE_MARKS);
+            // 4. Live Marks Management Module
+            main.java.ui.Lecturer.LecturerMarksManagement marksManagement = new main.java.ui.Lecturer.LecturerMarksManagement(navbar, contentCards, mainContent);
+            mainContent.add(marksManagement, main.java.ui.Lecturer.Navbar.PAGE_MARKS);
 
             main.java.ui.Lecturer.LecturerProfile profile = new main.java.ui.Lecturer.LecturerProfile(navbar, contentCards, mainContent);
             mainContent.add(profile, main.java.ui.Lecturer.Navbar.PAGE_PROFILE);
@@ -281,6 +279,8 @@ public class LoginLogic {
                     materials.refreshMaterials();
                 } else if (main.java.ui.Lecturer.Navbar.PAGE_ELIGIBILITY.equals(pageName)) {
                     eligibility.refreshData();
+                } else if (main.java.ui.Lecturer.Navbar.PAGE_MARKS.equals(pageName)) {
+                    marksManagement.refreshAllData();
                 } else if (main.java.ui.Lecturer.Navbar.PAGE_PROFILE.equals(pageName)) {
                     profile.loadLecturerProfile();
                 }
