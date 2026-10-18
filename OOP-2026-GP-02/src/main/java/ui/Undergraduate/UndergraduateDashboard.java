@@ -239,12 +239,6 @@ public class UndergraduateDashboard extends JFrame {
         content.add(cardsRow);
         content.add(Box.createVerticalStrut(20));
 
-        // Quick Access Shortcuts
-        JPanel quickAccess = createQuickAccessRow();
-        quickAccess.setAlignmentX(Component.LEFT_ALIGNMENT);
-        content.add(quickAccess);
-        content.add(Box.createVerticalStrut(20));
-
         // 2-Column Split: Lectures/Notes (Left) & Notices/Assistance (Right)
         JPanel gridSplit = new JPanel(new GridBagLayout());
         gridSplit.setOpaque(false);
@@ -376,48 +370,7 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     // ==========================================
-    // 4. QUICK ACCESS SHORTCUTS ROW
-    // ==========================================
-    private JPanel createQuickAccessRow() {
-        JPanel wrapper = new JPanel(new BorderLayout(0, 8));
-        wrapper.setOpaque(false);
-
-        JLabel title = new JLabel("Quick Access Shortcuts");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        title.setForeground(COLOR_TEXT_PRIMARY);
-        wrapper.add(title, BorderLayout.NORTH);
-
-        JPanel row = new JPanel(new GridLayout(1, 7, 8, 0));
-        row.setOpaque(false);
-
-        String[][] items = {
-                {"Attendance", "Attendance Records"},
-                {"Medicals", "Medical Details"},
-                {"Courses", "Course Modules"},
-                {"Grades & GPA", "Grades & GPA"},
-                {"Timetable", "Timetable"},
-                {"Lecturer Notes", "Course Materials"},
-                {"Notices", "Notices & Announcements"}
-        };
-
-        for (String[] it : items) {
-            JButton btn = new JButton(it[0]);
-            btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            btn.setForeground(COLOR_PRIMARY_NAVY);
-            btn.setBackground(COLOR_WHITE);
-            btn.setFocusPainted(false);
-            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btn.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(8, 4, 8, 4)));
-            btn.addActionListener(e -> showModulePlaceholder(it[1]));
-            row.add(btn);
-        }
-
-        wrapper.add(row, BorderLayout.CENTER);
-        return wrapper;
-    }
-
-    // ==========================================
-    // 5. TODAY'S LECTURES CARD
+    // 4. TODAY'S LECTURES CARD
     // ==========================================
     private JPanel createTodayLecturesCard() {
         JPanel list = new JPanel();
@@ -499,7 +452,7 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     // ==========================================
-    // 6. LECTURER NOTES CARD
+    // 5. LECTURER NOTES CARD
     // ==========================================
     private JPanel createLecturerNotesCard() {
         JButton viewAll = createLinkButton("View All Materials →", e -> showModulePlaceholder("Course Materials"));
@@ -571,7 +524,7 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     // ==========================================
-    // 7. RECENT NOTICES CARD
+    // 6. RECENT NOTICES CARD
     // ==========================================
     private JPanel createRecentNoticesCard() {
         JButton viewAll = createLinkButton("View All Notices →", e -> showModulePlaceholder("Notices & Announcements"));
@@ -631,7 +584,7 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     // ==========================================
-    // 8. ACADEMIC ASSISTANCE CARD
+    // 7. ACADEMIC ASSISTANCE CARD
     // ==========================================
     private JPanel createAcademicSupportCard() {
         JPanel card = new JPanel(new BorderLayout(0, 6));
@@ -683,7 +636,7 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     // ==========================================
-    // 9. MODULE ACTIONS & HELPERS
+    // 8. MODULE ACTIONS & HELPERS
     // ==========================================
     public void showModulePlaceholder(String moduleName) {
         JOptionPane.showMessageDialog(
@@ -758,7 +711,7 @@ public class UndergraduateDashboard extends JFrame {
     public UndergraduateNavigation getNavigationPanel() { return navigationPanel; }
 
     // ==========================================
-    // 10. PREVIEW DATA & ENTRY POINT
+    // 9. PREVIEW DATA & ENTRY POINT
     // ==========================================
     private static Undergraduate createDefaultTestStudent() {
         Undergraduate student = new Undergraduate(
