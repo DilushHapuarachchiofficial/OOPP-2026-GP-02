@@ -656,21 +656,51 @@ CREATE TABLE `evaluation_components` (
   `course_id` int(11) NOT NULL,
   `component_name` varchar(50) NOT NULL,
   `component_type` enum('CA','Final') NOT NULL,
+  `assessment_type` varchar(30) NOT NULL DEFAULT 'General',
   `maximum_marks` decimal(5,2) DEFAULT 100.00,
-  `weight_percentage` decimal(5,2) NOT NULL
+  `weight_percentage` decimal(5,2) NOT NULL,
+  `assessment_date` date DEFAULT NULL,
+  `status` enum('Draft','Open','Closed','Published') NOT NULL DEFAULT 'Open'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `evaluation_components`
 --
 
-INSERT INTO `evaluation_components` (`component_id`, `course_id`, `component_name`, `component_type`, `maximum_marks`, `weight_percentage`) VALUES
-(1, 1, 'Quiz 01', 'CA', 100.00, 10.00),
-(2, 1, 'Mid-Semester Exam', 'CA', 100.00, 20.00),
-(3, 1, 'Mini Project Assignment', 'CA', 100.00, 10.00),
-(4, 1, 'Final Practical & Theory Exam', 'Final', 100.00, 60.00),
-(5, 3, 'CA Continuous Assessment', 'CA', 100.00, 40.00),
-(6, 3, 'Final Examination', 'Final', 100.00, 60.00);
+INSERT INTO `evaluation_components` (`component_id`, `course_id`, `component_name`, `component_type`, `assessment_type`, `maximum_marks`, `weight_percentage`, `assessment_date`, `status`) VALUES
+(1, 1, 'Quiz 01', 'CA', 'Quiz', 100.00, 10.00, NULL, 'Open'),
+(2, 1, 'Mid-Semester Exam', 'CA', 'Midterm', 100.00, 20.00, NULL, 'Open'),
+(3, 1, 'Mini Project Assignment', 'CA', 'Mini-Project', 100.00, 10.00, NULL, 'Open'),
+(4, 1, 'Final Practical & Theory Exam', 'Final', 'End Exam', 100.00, 60.00, NULL, 'Open'),
+(5, 3, 'CA Continuous Assessment', 'CA', 'Continuous Assessment', 100.00, 40.00, NULL, 'Open'),
+(6, 3, 'Final Examination', 'Final', 'End Exam', 100.00, 60.00, NULL, 'Open');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `course_result_status`
+--
+
+CREATE TABLE IF NOT EXISTS `course_result_status` (
+  `status_id` int(11) NOT NULL AUTO_INCREMENT,
+  `course_id` int(11) NOT NULL,
+  `status` enum('Draft','Reviewed','Published') NOT NULL DEFAULT 'Draft',
+  `published_by` int(11) DEFAULT NULL,
+  `published_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`status_id`),
+  UNIQUE KEY `uq_course_result_status` (`course_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `course_result_status`
+--
+
+INSERT INTO `course_result_status` (`status_id`, `course_id`, `status`, `published_by`, `published_at`) VALUES
+(1, 1, 'Draft', NULL, NULL),
+(2, 2, 'Draft', NULL, NULL),
+(3, 3, 'Draft', NULL, NULL),
+(4, 4, 'Draft', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1198,6 +1228,163 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 DROP TABLE IF EXISTS `view_student_gpa`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_student_gpa`  AS SELECT `view_student_course_grades`.`student_id` AS `student_id`, `view_student_course_grades`.`student_reg_no` AS `student_reg_no`, `view_student_course_grades`.`full_name` AS `full_name`, count(`view_student_course_grades`.`course_id`) AS `total_courses_evaluated`, sum(`view_student_course_grades`.`credit`) AS `total_credits`, round(sum(`view_student_course_grades`.`grade_point` * `view_student_course_grades`.`credit`) / nullif(sum(`view_student_course_grades`.`credit`),0),2) AS `gpa` FROM `view_student_course_grades` WHERE `view_student_course_grades`.`grade_point` is not null GROUP BY `view_student_course_grades`.`student_id`, `view_student_course_grades`.`student_reg_no`, `view_student_course_grades`.`full_name` ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `view_course_final_results`
+--
+DROP TABLE IF EXISTS `view_course_final_results`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_course_final_results` AS 
+WITH course_ca_totals AS (
+    SELECT 
+        course_id,
+        COUNT(component_id) AS total_ca_components,
+        COALESCE(SUM(weight_percentage), 0) AS total_ca_weight
+    FROM evaluation_components
+    WHERE component_type = 'CA'
+    GROUP BY course_id
+),
+course_final_totals AS (
+    SELECT 
+        course_id,
+        COUNT(component_id) AS total_final_components,
+        COALESCE(SUM(weight_percentage), 0) AS total_final_weight
+    FROM evaluation_components
+    WHERE component_type = 'Final'
+    GROUP BY course_id
+),
+student_ca_scores AS (
+    SELECT 
+        ec.course_id,
+        m.student_id,
+        COUNT(m.mark_id) AS entered_ca_count,
+        SUM((m.marks_obtained / ec.maximum_marks) * ec.weight_percentage) AS weighted_ca_score
+    FROM marks m
+    JOIN evaluation_components ec ON m.component_id = ec.component_id
+    WHERE ec.component_type = 'CA'
+    GROUP BY ec.course_id, m.student_id
+),
+student_final_scores AS (
+    SELECT 
+        ec.course_id,
+        m.student_id,
+        COUNT(m.mark_id) AS entered_final_count,
+        SUM((m.marks_obtained / ec.maximum_marks) * ec.weight_percentage) AS weighted_final_score
+    FROM marks m
+    JOIN evaluation_components ec ON m.component_id = ec.component_id
+    WHERE ec.component_type = 'Final'
+    GROUP BY ec.course_id, m.student_id
+),
+calculated_results AS (
+    SELECT 
+        s.student_id,
+        s.student_reg_no,
+        s.full_name,
+        c.course_id,
+        c.course_code,
+        c.course_name,
+        cr.academic_year,
+        cr.semester,
+        cr.registration_status,
+        
+        COALESCE(cct.total_ca_components, 0) AS total_ca_components,
+        COALESCE(scs.entered_ca_count, 0) AS entered_ca_count,
+        COALESCE(cft.total_final_components, 0) AS total_final_components,
+        COALESCE(sfs.entered_final_count, 0) AS entered_final_count,
+        
+        COALESCE(cct.total_ca_weight, 0) AS total_ca_weight,
+        COALESCE(cft.total_final_weight, 0) AS total_final_weight,
+        
+        ROUND(COALESCE(scs.weighted_ca_score, 0.00), 2) AS weighted_ca_score,
+        ROUND(COALESCE(sfs.weighted_final_score, 0.00), 2) AS weighted_final_score,
+        
+        CASE 
+            WHEN COALESCE(cct.total_ca_weight, 0) > 0 AND scs.entered_ca_count > 0 THEN
+                ROUND((scs.weighted_ca_score / cct.total_ca_weight) * 100.0, 2)
+            ELSE NULL 
+        END AS ca_percentage,
+        
+        CASE 
+            WHEN COALESCE(cft.total_final_weight, 0) > 0 AND sfs.entered_final_count > 0 THEN
+                ROUND((sfs.weighted_final_score / cft.total_final_weight) * 100.0, 2)
+            ELSE NULL 
+        END AS end_exam_percentage,
+        
+        ROUND(COALESCE(scs.weighted_ca_score, 0.00) + COALESCE(sfs.weighted_final_score, 0.00), 2) AS final_calculated_marks,
+        COALESCE(crs.status, 'Draft') AS publication_status
+    FROM students s
+    JOIN course_registrations cr ON s.student_id = cr.student_id
+    JOIN courses c ON cr.course_id = c.course_id
+    LEFT JOIN course_ca_totals cct ON c.course_id = cct.course_id
+    LEFT JOIN course_final_totals cft ON c.course_id = cft.course_id
+    LEFT JOIN student_ca_scores scs ON s.student_id = scs.student_id AND c.course_id = scs.course_id
+    LEFT JOIN student_final_scores sfs ON s.student_id = sfs.student_id AND c.course_id = sfs.course_id
+    LEFT JOIN course_result_status crs ON c.course_id = crs.course_id
+    WHERE cr.registration_status IN ('Registered', 'Repeat')
+)
+SELECT 
+    student_id,
+    student_reg_no,
+    full_name,
+    course_id,
+    course_code,
+    course_name,
+    academic_year,
+    semester,
+    registration_status,
+    ca_percentage,
+    CASE 
+        WHEN ca_percentage IS NULL THEN 'PENDING'
+        WHEN ca_percentage >= 40.00 THEN 'ELIGIBLE'
+        ELSE 'NOT_ELIGIBLE'
+    END AS ca_eligibility,
+    end_exam_percentage,
+    weighted_ca_score,
+    weighted_final_score,
+    final_calculated_marks,
+    -- Faculty of Technology, University of Ruhuna Student Handbook By-Law No. 92-2025 Table 1 & Table 2
+    CASE 
+        WHEN entered_ca_count < total_ca_components OR (total_final_components > 0 AND entered_final_count < total_final_components) THEN 'I'
+        WHEN final_calculated_marks >= 85.00 THEN 'A+'
+        WHEN final_calculated_marks >= 75.00 THEN 'A'
+        WHEN final_calculated_marks >= 70.00 THEN 'A-'
+        WHEN final_calculated_marks >= 65.00 THEN 'B+'
+        WHEN final_calculated_marks >= 60.00 THEN 'B'
+        WHEN final_calculated_marks >= 55.00 THEN 'B-'
+        WHEN final_calculated_marks >= 50.00 THEN 'C+'
+        WHEN final_calculated_marks >= 45.00 THEN 'C'
+        WHEN final_calculated_marks >= 40.00 THEN 'C-'
+        WHEN final_calculated_marks >= 35.00 THEN 'D'
+        ELSE 'E'
+    END AS letter_grade,
+    CASE 
+        WHEN entered_ca_count < total_ca_components OR (total_final_components > 0 AND entered_final_count < total_final_components) THEN 0.00
+        WHEN final_calculated_marks >= 85.00 THEN 4.00
+        WHEN final_calculated_marks >= 75.00 THEN 4.00
+        WHEN final_calculated_marks >= 70.00 THEN 3.70
+        WHEN final_calculated_marks >= 65.00 THEN 3.30
+        WHEN final_calculated_marks >= 60.00 THEN 3.00
+        WHEN final_calculated_marks >= 55.00 THEN 2.70
+        WHEN final_calculated_marks >= 50.00 THEN 2.30
+        WHEN final_calculated_marks >= 45.00 THEN 2.00
+        WHEN final_calculated_marks >= 40.00 THEN 1.70
+        WHEN final_calculated_marks >= 35.00 THEN 1.30
+        ELSE 0.00
+    END AS grade_point,
+    -- Result Status (Handbook Section 3.19.1 & Table 2)
+    CASE 
+        WHEN entered_ca_count < total_ca_components OR (total_final_components > 0 AND entered_final_count < total_final_components) THEN 'Incomplete'
+        WHEN ca_percentage < 40.00 AND (total_final_components = 0 OR end_exam_percentage < 35.00) THEN 'E'
+        WHEN ca_percentage < 40.00 THEN 'EC'
+        WHEN total_final_components > 0 AND end_exam_percentage < 35.00 THEN 'EE'
+        WHEN final_calculated_marks >= 45.00 THEN 'Pass'
+        WHEN final_calculated_marks >= 35.00 THEN 'Pass (D/C-)'
+        ELSE 'Fail'
+    END AS result_status,
+    publication_status
+FROM calculated_results;
 
 --
 -- Indexes for dumped tables
