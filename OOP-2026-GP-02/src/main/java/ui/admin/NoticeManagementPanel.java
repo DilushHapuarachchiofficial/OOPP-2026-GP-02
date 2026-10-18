@@ -129,29 +129,27 @@ public class NoticeManagementPanel extends JPanel {
         table.getColumnModel().getColumn(2).setPreferredWidth(120);
         table.getColumnModel().getColumn(3).setPreferredWidth(150);
         table.getColumnModel().getColumn(4).setPreferredWidth(100);
+        table.setFillsViewportHeight(true);
         
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.getVerticalScrollBar().setUI(new ModernScrollBarUI());
         tableWrapper.add(scrollPane, BorderLayout.CENTER);
         
-        // Pagination Footer
+        // Footer info (pagination buttons removed)
         JPanel footerPanel = new JPanel(new BorderLayout());
         footerPanel.setOpaque(false);
-        footerPanel.setBorder(new EmptyBorder(15, 0, 0, 0));
+        footerPanel.setBorder(new EmptyBorder(12, 5, 0, 5));
         
         showingLabel = new JLabel("Showing notices");
         showingLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         showingLabel.setForeground(new Color(120, 130, 140));
         
-        JPanel paginationPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        paginationPanel.setOpaque(false);
-        paginationPanel.add(createPageButton("Previous", false));
-        paginationPanel.add(createPageButton("1", true));
-        paginationPanel.add(createPageButton("Next", false));
-        
         footerPanel.add(showingLabel, BorderLayout.WEST);
-        footerPanel.add(paginationPanel, BorderLayout.EAST);
         
         contentPanel.add(tableWrapper, BorderLayout.CENTER);
         contentPanel.add(footerPanel, BorderLayout.SOUTH);
@@ -374,24 +372,57 @@ public class NoticeManagementPanel extends JPanel {
             String dateStr = n.getPublishedDate() != null ? sdf.format(n.getPublishedDate()) : "";
             model.addRow(new Object[]{ idStr, n.getTitle(), n.getTargetAudience(), dateStr, "" });
         }
-        if (showingLabel != null) showingLabel.setText("Showing 1 - " + list.size() + " of " + list.size() + " notices");
+        if (showingLabel != null) {
+            int count = list.size();
+            showingLabel.setText("Showing all " + count + " " + (count == 1 ? "notice" : "notices"));
+        }
     }
     
-    private JButton createPageButton(String text, boolean active) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", active ? Font.BOLD : Font.PLAIN, 13));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setMargin(new Insets(4, 12, 4, 12));
-        if (active) {
-            btn.setBackground(new Color(21, 101, 192));
-            btn.setForeground(Color.WHITE);
-        } else {
-            btn.setBackground(Color.WHITE);
-            btn.setForeground(new Color(100, 110, 120));
+    /**
+     * Modern sleek scrollbar UI matching application design
+     */
+    private static class ModernScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
+        @Override
+        protected void configureScrollBarColors() {
+            this.thumbColor = new Color(203, 213, 225);
+            this.trackColor = new Color(245, 247, 250);
         }
-        return btn;
+
+        @Override
+        protected JButton createDecreaseButton(int orientation) {
+            return createZeroButton();
+        }
+
+        @Override
+        protected JButton createIncreaseButton(int orientation) {
+            return createZeroButton();
+        }
+
+        private JButton createZeroButton() {
+            JButton btn = new JButton();
+            btn.setPreferredSize(new Dimension(0, 0));
+            btn.setMinimumSize(new Dimension(0, 0));
+            btn.setMaximumSize(new Dimension(0, 0));
+            return btn;
+        }
+
+        @Override
+        protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+            if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(185, 198, 214));
+            g2.fill(new RoundRectangle2D.Float(thumbBounds.x + 2, thumbBounds.y + 1, thumbBounds.width - 4, thumbBounds.height - 2, 6, 6));
+            g2.dispose();
+        }
+
+        @Override
+        protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setColor(new Color(245, 247, 250));
+            g2.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
+            g2.dispose();
+        }
     }
     
     class AudienceCellRenderer extends DefaultTableCellRenderer {

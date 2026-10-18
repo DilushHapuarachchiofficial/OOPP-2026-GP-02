@@ -259,6 +259,9 @@ public class AdminDashboard extends JFrame {
             }
             setActiveButtonStyle(btn);
             activeButton = btn;
+            if ("Dashboard".equals(title) && dashboardHomePanel != null) {
+                dashboardHomePanel.refreshData();
+            }
             cardLayout.show(cardPanel, title);
         });
 
