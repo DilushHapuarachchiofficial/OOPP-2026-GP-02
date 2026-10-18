@@ -233,7 +233,7 @@ public class UndergraduateDashboard extends JFrame {
         content.add(welcomeBox);
         content.add(Box.createVerticalStrut(18));
 
-        // 4 Summary Metric Cards
+        // 3 Summary Metric Cards
         JPanel cardsRow = createSummaryCardsRow();
         cardsRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(cardsRow);
@@ -288,34 +288,33 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     // ==========================================
-    // 3. 4 SUMMARY METRIC CARDS
+    // 3. 3 SUMMARY METRIC CARDS
     // ==========================================
     private JPanel createSummaryCardsRow() {
-        JPanel row = new JPanel(new GridLayout(1, 4, 14, 0));
+        JPanel row = new JPanel(new GridLayout(1, 3, 14, 0));
         row.setOpaque(false);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         row.setPreferredSize(new Dimension(0, 120));
 
-        // Card 1: Student Profile
-        row.add(createMetricCard(
+        // Card 1: Student Profile (Integrated with Enrollment Year & Academic Details)
+        int yr = currentStudent.getEnrollmentYear();
+        String enrolledStr = yr > 0 ? "Enrolled in " + yr : "Enrolled in 2024";
+        String regStr = "Reg: " + (currentStudent.getRegistrationNo() != null ? currentStudent.getRegistrationNo() : "N/A");
+        String batchStr = "Batch: " + (currentStudent.getBatch() != null ? currentStudent.getBatch() : "N/A");
+
+        JPanel profileCard = createMetricCard(
                 "STUDENT PROFILE",
                 currentStudent.getName() != null ? currentStudent.getName() : "Student",
-                "Reg: " + (currentStudent.getRegistrationNo() != null ? currentStudent.getRegistrationNo() : "N/A"),
-                "Batch: " + (currentStudent.getBatch() != null ? currentStudent.getBatch() : "N/A"),
+                regStr + "  •  " + batchStr,
+                enrolledStr + "  •  Level II (Semester I)",
                 COLOR_MAIN_BLUE
-        ));
+        );
+        if (currentStudent.getDepartment() != null && !currentStudent.getDepartment().isEmpty()) {
+            profileCard.setToolTipText(currentStudent.getDepartment());
+        }
+        row.add(profileCard);
 
-        // Card 2: Enrollment Year
-        int yr = currentStudent.getEnrollmentYear();
-        row.add(createMetricCard(
-                "ENROLLMENT YEAR",
-                yr > 0 ? "Enrolled in " + yr : "Enrolled in 2024",
-                currentStudent.getDepartment() != null ? currentStudent.getDepartment() : "Faculty of Technology",
-                "Level II (Semester I)",
-                COLOR_PRIMARY_NAVY
-        ));
-
-        // Card 3: Current GPA
+        // Card 2: Current GPA
         GPA gpa = currentStudent.viewGPA();
         String gpaStr = (gpa != null && (gpa.getSGPA() > 0 || gpa.getCGPA() > 0))
                 ? String.format("SGPA: %.2f | CGPA: %.2f", gpa.getSGPA(), gpa.getCGPA())
@@ -328,7 +327,7 @@ public class UndergraduateDashboard extends JFrame {
                 new Color(0x7C, 0x3A, 0xED)
         ));
 
-        // Card 4: Attendance Overview
+        // Card 3: Attendance Overview
         AttendanceSummary att = currentStudent.getAttendanceSummary();
         boolean eligible = (att != null && att.isEligible());
         String attStr = (att != null && att.getTotalSessions() > 0)
