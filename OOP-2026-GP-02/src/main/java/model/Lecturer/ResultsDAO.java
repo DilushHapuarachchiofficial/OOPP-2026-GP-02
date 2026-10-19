@@ -9,20 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * ResultsDAO.java
- * TecFAMS – Faculty of Technology Academic Management System
- * Faculty of Technology, University of Ruhuna
- *
- * Dedicated Data Access Object for final course results and publication management.
- * Retrieves calculated student scores, CA eligibility, UGC letter grades, and grade points
- * directly from the MySQL view `view_course_final_results`.
- *
- * Workflow Rules:
- * - Read-only retrieval of calculated results from the database view.
- * - Publication status management ('Draft' -> 'Reviewed' -> 'Published').
- * - Restricts publication and status updates to assigned lecturers only.
- */
+
 public class ResultsDAO {
 
     /**

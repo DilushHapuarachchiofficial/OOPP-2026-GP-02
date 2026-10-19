@@ -4,13 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * LecturerDashboardModel.java
- * TecFAMS – Faculty of Technology Academic Management System
- *
- * Data model representing the state of the Lecturer Dashboard.
- * Serves as the clean data contract between the UI and the database DAO.
- */
+
 public class LecturerDashboardModel {
 
     public enum State {

@@ -9,21 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * MarksDAO.java
- * TecFAMS – Faculty of Technology Academic Management System
- * Faculty of Technology, University of Ruhuna
- *
- * Dedicated Data Access Object for student assessment marks.
- * Handles row-by-row and batch marks entry, editing, transactional updates,
- * and security validation (ensuring lecturers only modify courses assigned to them).
- *
- * Critical Guarantees:
- * - Distinguishes unentered (null / absence of row) from legitimate 0 marks.
- * - Prevents SQL injection through PreparedStatement.
- * - Enforces ACID transactional integrity: rolls back completely on any error.
- * - Restricts student retrieval strictly to officially registered students for the course.
- */
+
 public class MarksDAO {
 
     /**

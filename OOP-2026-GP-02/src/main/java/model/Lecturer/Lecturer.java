@@ -12,10 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Lecturer.java
- * TecFAMS – Faculty of Technology Academic Management System
- */
+
 public class Lecturer extends User {
 
     // =========================================================================
@@ -149,10 +146,6 @@ public class Lecturer extends User {
     // METHODS SPECIFIED IN CLASS DIAGRAM
     // =========================================================================
 
-    /**
-     * + updateProfile() : void
-     * Updates lecturer profile details in the database via LecturerProfileLogic.
-     */
     @Override
     public void updateProfile() {
         int id = getLecturerIdAsInt();
@@ -161,10 +154,7 @@ public class Lecturer extends User {
         }
     }
 
-    /**
-     * + addCourseMaterial(course : Course, material : CourseMaterial) : void
-     * Uploads course material for the specified course.
-     */
+    
     public void addCourseMaterial(Course course, CourseMaterial material) {
         if (course == null || material == null) return;
         int id = getLecturerIdAsInt();
@@ -245,13 +235,7 @@ public class Lecturer extends User {
         }
     }
 
-    /**
-     * Automated Continuous Assessment (CA) calculation for a student in a specific course.
-     * Implements UGC and Faculty of Technology By-Law No. 92-2025:
-     * - Aggregates all continuous assessment components (Quizzes, Assignments, Mid Exam, etc.)
-     * - Computes weighted CA score and CA % out of 100
-     * - Determines CA eligibility (threshold >= 40.00% is ELIGIBLE)
-     */
+  
     public StudentCaResult calculateOverallStudentCA(int studentId, int courseId) {
         String sql = "SELECT ec.component_id, ec.component_name, ec.weight_percentage, ec.maximum_marks, " +
                      "       m.marks_obtained " +

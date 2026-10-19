@@ -3,25 +3,6 @@ package main.java.model.Lecturer;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-/**
- * MarksCalculationService.java
- * TecFAMS – Faculty of Technology Academic Management System
- * Faculty of Technology, University of Ruhuna
- *
- * Centralized, testable business logic for academic evaluation calculations,
- * Continuous Assessment (CA) eligibility determination, and official UGC grading
- * adhering strictly to UGC Commission Circular No. 12/2024 ("Guidance of the Grading System
- * of Degree Programmes Offered under the Technology Stream").
- *
- * Key Academic Distinctions:
- * 1. Raw Assessment Mark: The score received out of the assessment's maximum mark.
- * 2. Normalized Percentage: (Raw Mark / Maximum Mark) * 100.
- * 3. Weighted Contribution: (Raw Mark / Maximum Mark) * Weight Percentage.
- * 4. CA Percentage: (Total CA Weighted Score / Total CA Configured Weight) * 100 (Out of 100).
- * 5. CA Eligibility Threshold: CA Percentage >= 40.00% is ELIGIBLE for End-of-Semester Examination.
- * 6. Final Calculated Course Mark: Total CA Weighted Score + Total Final Exam Weighted Score (Out of 100).
- * 7. Official UGC Technology Grading Scale (Circular No. 12/2024).
- */
 public class MarksCalculationService {
 
     // Minimum Continuous Assessment (CA) percentage required for final exam eligibility & passing CA (Grade C- threshold, 40%)

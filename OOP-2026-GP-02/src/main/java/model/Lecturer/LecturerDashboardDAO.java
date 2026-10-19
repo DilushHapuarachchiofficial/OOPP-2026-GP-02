@@ -9,20 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * LecturerDashboardDAO.java
- * TecFAMS – Faculty of Technology Academic Management System
- *
- * Dedicated data-access class for the Lecturer Dashboard.
- * Executes read-only parameterized JDBC queries against the TecFAMS MySQL database.
- *
- * Architecture Rules:
- * - Uses PreparedStatement for all parameterized queries.
- * - Uses try-with-resources for automatic JDBC resource management.
- * - Reuses existing DBConnection.getConnection() configuration.
- * - Zero fallback to fabricated or mock data upon connection failures.
- * - Differentiates legitimate zero counts from database query errors.
- */
+
 public class LecturerDashboardDAO {
 
     /**

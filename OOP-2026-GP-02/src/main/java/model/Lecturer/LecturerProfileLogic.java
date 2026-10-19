@@ -15,23 +15,7 @@ import java.sql.SQLException;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
-/**
- * LecturerProfileLogic.java
- * TecFAMS – Faculty of Technology Academic Management System
- *
- * Dedicated business logic and data access class for the Lecturer Profile page.
- * Keeps business validation, JDBC database access, and session synchronization
- * cleanly separated from the Swing UI layer.
- *
- * Responsibilities:
- * - Parameterized JDBC queries against MySQL tables: `lecturers`, `users`, and `departments`.
- * - Profile information retrieval for the authenticated lecturer.
- * - Validation of personal information (name, email format, email uniqueness, phone format).
- * - Safe updating of editable profile fields in the database.
- * - Password change validation (current password check, length, complexity, match verification).
- * - Safe updating of user passwords in the `users` table.
- * - Synchronization of active `UserSession` upon profile updates.
- */
+
 public class LecturerProfileLogic {
 
     // Regex for basic email format validation
