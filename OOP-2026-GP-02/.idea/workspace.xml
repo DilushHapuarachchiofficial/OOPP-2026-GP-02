@@ -4,16 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/Lecturer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/Lecturer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerProfileLogic.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerProfileLogic.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/MarksCalculationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/MarksCalculationService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/MarksDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/MarksDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/ResultsDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/ResultsDAO.java" afterDir="false" />
-    </list>
+    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
