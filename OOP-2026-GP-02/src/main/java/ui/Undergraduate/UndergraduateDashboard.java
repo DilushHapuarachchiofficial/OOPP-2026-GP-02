@@ -43,6 +43,10 @@ public class UndergraduateDashboard extends JFrame {
     private final Undergraduate currentStudent;
     private final UndergraduateDAO dao;
     private UndergraduateNavigation navigationPanel;
+    private CardLayout contentCardLayout;
+    private JPanel mainContentArea;
+    private JScrollPane dashboardOverviewPanel;
+    private UndergraduateLectureNotesPanel lectureNotesPanel;
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
@@ -73,8 +77,19 @@ public class UndergraduateDashboard extends JFrame {
         navigationPanel = new UndergraduateNavigation(this, currentStudent);
         topContainer.add(navigationPanel);
 
+        // Center: CardLayout container to seamlessly switch between Dashboard and Module Views
+        contentCardLayout = new CardLayout();
+        mainContentArea = new JPanel(contentCardLayout);
+        mainContentArea.setBackground(COLOR_BG);
+
+        dashboardOverviewPanel = createDashboardOverviewPanel();
+        lectureNotesPanel = new UndergraduateLectureNotesPanel(currentStudent, this);
+
+        mainContentArea.add(dashboardOverviewPanel, "DASHBOARD");
+        mainContentArea.add(lectureNotesPanel, "LECTURE_NOTES");
+
         rootPanel.add(topContainer, BorderLayout.NORTH);
-        rootPanel.add(createDashboardOverviewPanel(), BorderLayout.CENTER);
+        rootPanel.add(mainContentArea, BorderLayout.CENTER);
 
         setContentPane(rootPanel);
     }
@@ -686,10 +701,12 @@ public class UndergraduateDashboard extends JFrame {
         if (navigationPanel != null) {
             navigationPanel.highlightButton("MATERIALS");
         }
-        SwingUtilities.invokeLater(() -> {
-            UndergraduateLectureNotesUI notesUI = new UndergraduateLectureNotesUI(currentStudent, this);
-            notesUI.setVisible(true);
-        });
+        if (lectureNotesPanel != null) {
+            lectureNotesPanel.loadLectureNotesData();
+        }
+        if (contentCardLayout != null && mainContentArea != null) {
+            contentCardLayout.show(mainContentArea, "LECTURE_NOTES");
+        }
     }
 
     public void showModulePlaceholder(String moduleName) {
@@ -708,6 +725,9 @@ public class UndergraduateDashboard extends JFrame {
     public void showDashboardView() {
         if (navigationPanel != null) {
             navigationPanel.highlightButton("DASHBOARD");
+        }
+        if (contentCardLayout != null && mainContentArea != null) {
+            contentCardLayout.show(mainContentArea, "DASHBOARD");
         }
     }
 
