@@ -159,6 +159,11 @@ public class UndergraduateNavigation extends JPanel {
                 if (parentDashboard != null) {
                     parentDashboard.showDashboardView();
                 }
+            } else if ("MATERIALS".equals(moduleKey)) {
+                highlightButton("MATERIALS");
+                if (parentDashboard != null) {
+                    parentDashboard.openLectureNotes();
+                }
             } else {
                 if (parentDashboard != null) {
                     parentDashboard.showModulePlaceholder(title);

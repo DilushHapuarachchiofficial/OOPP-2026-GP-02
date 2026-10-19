@@ -47,6 +47,7 @@ public class UndergraduateLectureNotesUI extends JFrame {
 
     // Student identity and DAO
     private final Undergraduate loggedInStudent;
+    private final UndergraduateDashboard parentDashboard;
     private final String studentIdentifier;
     private final LectureNotesDAO lectureNotesDAO;
 
@@ -58,12 +59,15 @@ public class UndergraduateLectureNotesUI extends JFrame {
     private List<LectureNoteItem> displayedNotes;
 
     /**
-     * Primary constructor: Receives the currently logged-in Undergraduate student model.
+     * Primary constructor: Receives the currently logged-in Undergraduate student model
+     * and the parent UndergraduateDashboard window.
      *
-     * @param student The logged-in undergraduate student object.
+     * @param student         The logged-in undergraduate student object.
+     * @param parentDashboard The parent dashboard window (can be null for standalone mode).
      */
-    public UndergraduateLectureNotesUI(Undergraduate student) {
+    public UndergraduateLectureNotesUI(Undergraduate student, UndergraduateDashboard parentDashboard) {
         this.loggedInStudent = student;
+        this.parentDashboard = parentDashboard;
         this.studentIdentifier = resolveStudentIdentifier(student);
         this.lectureNotesDAO = new LectureNotesDAO();
         this.displayedNotes = new ArrayList<>();
@@ -73,12 +77,22 @@ public class UndergraduateLectureNotesUI extends JFrame {
     }
 
     /**
+     * Constructor: Receives the currently logged-in Undergraduate student model.
+     *
+     * @param student The logged-in undergraduate student object.
+     */
+    public UndergraduateLectureNotesUI(Undergraduate student) {
+        this(student, null);
+    }
+
+    /**
      * Overloaded constructor: Allows passing a student ID or registration number directly.
      *
      * @param studentIdOrRegNo The student's ID or registration number (e.g., "TG/2024/2085").
      */
     public UndergraduateLectureNotesUI(String studentIdOrRegNo) {
         this.loggedInStudent = null;
+        this.parentDashboard = null;
         this.studentIdentifier = (studentIdOrRegNo != null && !studentIdOrRegNo.trim().isEmpty())
                 ? studentIdOrRegNo.trim()
                 : "TG/2024/2085";
@@ -94,7 +108,7 @@ public class UndergraduateLectureNotesUI extends JFrame {
      * Uses default preview student if no active session is supplied.
      */
     public UndergraduateLectureNotesUI() {
-        this((Undergraduate) null);
+        this((Undergraduate) null, null);
     }
 
     /**
@@ -137,6 +151,16 @@ public class UndergraduateLectureNotesUI extends JFrame {
 
         // Bottom Section: Action buttons (Open, Download, Refresh, Close)
         rootPanel.add(createBottomActionPanel(), BorderLayout.SOUTH);
+
+        // Notify parent dashboard to reset navigation highlight when this window is closed
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent e) {
+                if (parentDashboard != null) {
+                    parentDashboard.showDashboardView();
+                }
+            }
+        });
 
         setContentPane(rootPanel);
     }

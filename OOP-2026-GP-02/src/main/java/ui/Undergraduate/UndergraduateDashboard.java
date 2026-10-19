@@ -499,7 +499,7 @@ public class UndergraduateDashboard extends JFrame {
     // 5. LECTURER NOTES CARD
     // ==========================================
     private JPanel createLecturerNotesCard() {
-        JButton viewAll = createLinkButton("View All Materials →", e -> showModulePlaceholder("Course Materials"));
+        JButton viewAll = createLinkButton("View All Materials →", e -> openLectureNotes());
 
         JPanel list = new JPanel();
         list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
@@ -682,7 +682,21 @@ public class UndergraduateDashboard extends JFrame {
     // ==========================================
     // 8. MODULE ACTIONS & HELPERS
     // ==========================================
+    public void openLectureNotes() {
+        if (navigationPanel != null) {
+            navigationPanel.highlightButton("MATERIALS");
+        }
+        SwingUtilities.invokeLater(() -> {
+            UndergraduateLectureNotesUI notesUI = new UndergraduateLectureNotesUI(currentStudent, this);
+            notesUI.setVisible(true);
+        });
+    }
+
     public void showModulePlaceholder(String moduleName) {
+        if ("Lecturer Notes".equalsIgnoreCase(moduleName) || "Course Materials".equalsIgnoreCase(moduleName) || "MATERIALS".equalsIgnoreCase(moduleName)) {
+            openLectureNotes();
+            return;
+        }
         JOptionPane.showMessageDialog(
                 this,
                 moduleName + " UI will open in a separate window.\n(Currently under development by group members)",
