@@ -541,6 +541,13 @@ public class UndergraduateDashboard extends JFrame {
         JPanel row = new JPanel(new BorderLayout(10, 0));
         row.setBackground(COLOR_WHITE);
         row.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(8, 12, 8, 12)));
+        row.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        row.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                openLectureNotes();
+            }
+        });
 
         JPanel info = new JPanel(new GridLayout(2, 1, 0, 2));
         info.setOpaque(false);
@@ -557,16 +564,14 @@ public class UndergraduateDashboard extends JFrame {
         info.add(dLbl);
         row.add(info, BorderLayout.CENTER);
 
-        JButton openBtn = new JButton("View / Open");
-        openBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        JButton openBtn = new JButton("View Notes →");
+        openBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
         openBtn.setForeground(COLOR_MAIN_BLUE);
         openBtn.setBackground(COLOR_LIGHT_BLUE);
         openBtn.setFocusPainted(false);
         openBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        openBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_MAIN_BLUE, 1, true), new EmptyBorder(4, 8, 4, 8)));
-        openBtn.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Material: " + cm.getTitle() + "\nPath: " + cm.getFilePath() + "\n\nHosted on TecFAMS Faculty Repository.",
-                "Course Material", JOptionPane.INFORMATION_MESSAGE));
+        openBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_MAIN_BLUE, 1, true), new EmptyBorder(5, 12, 5, 12)));
+        openBtn.addActionListener(e -> openLectureNotes());
 
         row.add(openBtn, BorderLayout.EAST);
         return row;
