@@ -46,7 +46,7 @@ public class UndergraduateDashboard extends JFrame {
     private CardLayout contentCardLayout;
     private JPanel mainContentArea;
     private JScrollPane dashboardOverviewPanel;
-    private UndergraduateLectureNotesPanel lectureNotesPanel;
+    private UndergraduateLectureNotesUI lectureNotesPanel;
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
@@ -83,7 +83,7 @@ public class UndergraduateDashboard extends JFrame {
         mainContentArea.setBackground(COLOR_BG);
 
         dashboardOverviewPanel = createDashboardOverviewPanel();
-        lectureNotesPanel = new UndergraduateLectureNotesPanel(currentStudent, this);
+        lectureNotesPanel = new UndergraduateLectureNotesUI(currentStudent, this);
 
         mainContentArea.add(dashboardOverviewPanel, "DASHBOARD");
         mainContentArea.add(lectureNotesPanel, "LECTURE_NOTES");
