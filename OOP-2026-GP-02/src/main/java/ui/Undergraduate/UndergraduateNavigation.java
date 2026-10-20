@@ -65,24 +65,48 @@ public class UndergraduateNavigation extends JPanel {
         setPreferredSize(new Dimension(0, 56));
         setBackground(COLOR_PRIMARY_NAVY);
 
-        // Center: Horizontal Navigation Buttons (starting from left)
-        JPanel navList = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 9));
+        // Center: Horizontal Navigation Buttons centered across the bar
+        JPanel navList = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 9)) {
+            @Override
+            public Dimension getPreferredSize() {
+                Dimension d = super.getPreferredSize();
+                Container parent = getParent();
+                if (parent instanceof JViewport) {
+                    d.width = Math.max(d.width, parent.getWidth());
+                }
+                return d;
+            }
+        };
         navList.setOpaque(false);
-        navList.setBorder(new EmptyBorder(0, 16, 0, 8));
+        navList.setBorder(new EmptyBorder(0, 8, 0, 8));
 
         // 1. Dashboard (Active main view)
         dashboardBtn = createSidebarItem("Dashboard", "DASHBOARD", true);
         navList.add(dashboardBtn);
 
-        // 2-9. Other Academic Modules (Open separate UI / show message)
-        navList.add(createSidebarItem("My Profile", "PROFILE", false));
-        navList.add(createSidebarItem("Attendance", "ATTENDANCE", false));
-        navList.add(createSidebarItem("Medical Details", "MEDICAL", false));
-        navList.add(createSidebarItem("Course Details", "COURSES", false));
-        navList.add(createSidebarItem("Grades & GPA", "GRADES", false));
-        navList.add(createSidebarItem("Timetable", "TIMETABLE", false));
+        // 2. Lecturer Notes (Connected to enrolled course notes page)
         navList.add(createSidebarItem("Lecturer Notes", "MATERIALS", false));
+
+        // 3. Attendance
+        navList.add(createSidebarItem("Attendance", "ATTENDANCE", false));
+
+        // 4. Medical Details
+        navList.add(createSidebarItem("Medical Details", "MEDICAL", false));
+
+        // 5. Course Details
+        navList.add(createSidebarItem("Course Details", "COURSES", false));
+
+        // 6. Grades & GPA
+        navList.add(createSidebarItem("Grades & GPA", "GRADES", false));
+
+        // 7. Timetable
+        navList.add(createSidebarItem("Timetable", "TIMETABLE", false));
+
+        // 8. Notices
         navList.add(createSidebarItem("Notices", "NOTICES", false));
+
+        // 9. My Profile (Last item)
+        navList.add(createSidebarItem("My Profile", "PROFILE", false));
 
         JScrollPane scrollPane = new JScrollPane(navList);
         scrollPane.setBorder(null);
