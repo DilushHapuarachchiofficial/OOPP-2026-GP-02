@@ -80,13 +80,18 @@ public class TechnicalOfficerDashboard extends JFrame {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().setBackground(BG_COLOR);
 
+        // Top Container: Combines the branding header & horizontal navigation bar
+        JPanel topContainer = new JPanel(new BorderLayout());
+
         // 1. Top Header Bar
         JPanel topHeader = createHeader();
-        getContentPane().add(topHeader, BorderLayout.NORTH);
+        topContainer.add(topHeader, BorderLayout.NORTH);
 
-        // 2. Left Sidebar Navigation
+        // 2. Top Navigation Bar (Horizontal)
         navigationBar = new TechnicalOfficerNavigationBar(this);
-        getContentPane().add(navigationBar, BorderLayout.WEST);
+        topContainer.add(navigationBar, BorderLayout.SOUTH);
+
+        getContentPane().add(topContainer, BorderLayout.NORTH);
 
         // 3. Central Dashboard Content
         JScrollPane centerScroll = new JScrollPane(createDashboardContent());
@@ -97,9 +102,10 @@ public class TechnicalOfficerDashboard extends JFrame {
     }
 
     /**
-     * Top Header adhering to prompt specification:
+     * Top Header adhering to specification:
      * - Top-left: "TecFAMS" in large, bold text
      * - "Technical Officer Dashboard" directly underneath in smaller text
+     * - Faculty Portal / University of Ruhuna branding tag
      * - Welcome message: "Welcome back, [Technical Officer Name]!"
      * - User information and avatar area
      */
@@ -111,9 +117,12 @@ public class TechnicalOfficerDashboard extends JFrame {
                 new EmptyBorder(12, 24, 12, 24)
         ));
 
-        // Left Branding Block
-        JPanel leftBrand = new JPanel(new GridLayout(2, 1, 0, 2));
+        // Left Branding Block with University Tag
+        JPanel leftBrand = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
         leftBrand.setOpaque(false);
+
+        JPanel titleBlock = new JPanel(new GridLayout(2, 1, 0, 2));
+        titleBlock.setOpaque(false);
 
         JLabel brandTitle = new JLabel("TecFAMS");
         brandTitle.setFont(FONT_HEADER_LARGE);
@@ -123,8 +132,30 @@ public class TechnicalOfficerDashboard extends JFrame {
         brandSubtitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         brandSubtitle.setForeground(MAIN_BLUE);
 
-        leftBrand.add(brandTitle);
-        leftBrand.add(brandSubtitle);
+        titleBlock.add(brandTitle);
+        titleBlock.add(brandSubtitle);
+
+        // University Tag Badge
+        JPanel uniTag = new JPanel(new GridLayout(2, 1, 0, 1));
+        uniTag.setOpaque(false);
+        uniTag.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 1, 0, 0, BORDER_COLOR),
+                new EmptyBorder(2, 14, 2, 0)
+        ));
+
+        JLabel facultyLabel = new JLabel("FACULTY PORTAL");
+        facultyLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        facultyLabel.setForeground(Color.decode("#64748B"));
+
+        JLabel uniLabel = new JLabel("University of Ruhuna");
+        uniLabel.setFont(FONT_SMALL);
+        uniLabel.setForeground(TEXT_SECONDARY);
+
+        uniTag.add(facultyLabel);
+        uniTag.add(uniLabel);
+
+        leftBrand.add(titleBlock);
+        leftBrand.add(uniTag);
 
         // Right User Information Block
         JPanel rightInfo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 0));
