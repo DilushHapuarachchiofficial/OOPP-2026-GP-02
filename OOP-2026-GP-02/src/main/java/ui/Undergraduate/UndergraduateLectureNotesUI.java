@@ -9,9 +9,6 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,14 +21,14 @@ import java.util.List;
  * TecFAMS - Faculty of Technology Academic Management System
  * Undergraduate Lecture Notes UI Page.
  *
- * Implemented as a clean, embeddable JPanel component that renders
- * directly within the main Undergraduate Dashboard window.
- * Displays only the lecture notes belonging to courses in which
- * the currently logged-in student is enrolled.
+ * Displays lecture notes grouped course-by-course for each course
+ * the logged-in student is enrolled in.
+ * Each course has its own distinct card/box, and each lecture note
+ * includes an 'Open Note' and 'Download' button right beside it.
  */
 public class UndergraduateLectureNotesUI extends JPanel {
 
-    // TecFAMS Blue-and-White Theme Colors
+    // TecFAMS Theme Palette
     private static final Color COLOR_PRIMARY_NAVY = new Color(0x12, 0x3B, 0x70); // #123B70
     private static final Color COLOR_MAIN_BLUE    = new Color(0x25, 0x63, 0xEB); // #2563EB
     private static final Color COLOR_LIGHT_BLUE   = new Color(0xEA, 0xF2, 0xFF); // #EAF2FF
@@ -40,8 +37,9 @@ public class UndergraduateLectureNotesUI extends JPanel {
     private static final Color COLOR_TEXT_PRIMARY = new Color(0x17, 0x2B, 0x4D); // #172B4D
     private static final Color COLOR_TEXT_MUTED   = new Color(0x71, 0x80, 0x96); // #718096
     private static final Color COLOR_BORDER       = new Color(0xE2, 0xE8, 0xF0); // #E2E8F0
+    private static final Color COLOR_SUCCESS      = new Color(0x10, 0xB9, 0x81); // #10B981
 
-    // Student identity, parent window, and DAO references
+    // Data references
     private final Undergraduate loggedInStudent;
     private final UndergraduateDashboard parentDashboard;
     private final String studentIdentifier;
@@ -49,38 +47,22 @@ public class UndergraduateLectureNotesUI extends JPanel {
 
     // UI Components
     private JPanel mainContentPanel;
-    private JTable notesTable;
-    private DefaultTableModel tableModel;
     private JLabel statusCountLabel;
-    private List<LectureNoteItem> displayedNotes;
 
-    /**
-     * Primary constructor: Used by UndergraduateDashboard to embed the lecture notes page.
-     *
-     * @param student         The logged-in undergraduate student object.
-     * @param parentDashboard Reference to the parent dashboard window.
-     */
     public UndergraduateLectureNotesUI(Undergraduate student, UndergraduateDashboard parentDashboard) {
         this.loggedInStudent = student;
         this.parentDashboard = parentDashboard;
         this.studentIdentifier = resolveStudentIdentifier(student);
         this.lectureNotesDAO = new LectureNotesDAO();
-        this.displayedNotes = new ArrayList<>();
 
         initializePanel();
         loadLectureNotesData();
     }
 
-    /**
-     * Overloaded constructor without dashboard reference.
-     */
     public UndergraduateLectureNotesUI(Undergraduate student) {
         this(student, null);
     }
 
-    /**
-     * Overloaded constructor accepting student ID or registration number directly.
-     */
     public UndergraduateLectureNotesUI(String studentIdOrRegNo) {
         this.loggedInStudent = null;
         this.parentDashboard = null;
@@ -88,15 +70,11 @@ public class UndergraduateLectureNotesUI extends JPanel {
                 ? studentIdOrRegNo.trim()
                 : "TG/2024/2085";
         this.lectureNotesDAO = new LectureNotesDAO();
-        this.displayedNotes = new ArrayList<>();
 
         initializePanel();
         loadLectureNotesData();
     }
 
-    /**
-     * Resolves the student ID or registration number from the Undergraduate object.
-     */
     private String resolveStudentIdentifier(Undergraduate student) {
         if (student == null) {
             return "TG/2024/2085";
@@ -110,33 +88,27 @@ public class UndergraduateLectureNotesUI extends JPanel {
         return "TG/2024/2085";
     }
 
-    /**
-     * Sets up the panel layout, heading bar, content card, and action bar.
-     */
     private void initializePanel() {
         setLayout(new BorderLayout());
         setBackground(COLOR_BG);
 
-        // Top Section: Heading "My Course Lecture Notes" and status count
+        // 1. Top Heading Section
         add(createHeadingPanel(), BorderLayout.NORTH);
 
-        // Center Section: Dynamic card area (Table or Empty state message)
+        // 2. Center Dynamic Content Section
         mainContentPanel = new JPanel(new BorderLayout());
         mainContentPanel.setBackground(COLOR_BG);
-        mainContentPanel.setBorder(new EmptyBorder(12, 24, 16, 24));
+        mainContentPanel.setBorder(new EmptyBorder(8, 24, 12, 24));
         add(mainContentPanel, BorderLayout.CENTER);
 
-        // Bottom Section: Actions (Back to Dashboard, Refresh, Download, Open)
+        // 3. Bottom Action Bar
         add(createBottomActionPanel(), BorderLayout.SOUTH);
     }
 
-    /**
-     * Creates the heading banner with title, enrolled course status, and quick return shortcut.
-     */
     private JPanel createHeadingPanel() {
         JPanel headingBar = new JPanel(new BorderLayout());
         headingBar.setBackground(COLOR_BG);
-        headingBar.setBorder(new EmptyBorder(18, 24, 4, 24));
+        headingBar.setBorder(new EmptyBorder(16, 24, 6, 24));
 
         JPanel leftBox = new JPanel(new GridLayout(2, 1, 0, 4));
         leftBox.setOpaque(false);
@@ -153,7 +125,6 @@ public class UndergraduateLectureNotesUI extends JPanel {
         leftBox.add(statusCountLabel);
         headingBar.add(leftBox, BorderLayout.WEST);
 
-        // Quick back to dashboard shortcut on top-right
         if (parentDashboard != null) {
             JButton backBtn = new JButton("← Back to Dashboard");
             backBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -173,16 +144,15 @@ public class UndergraduateLectureNotesUI extends JPanel {
     }
 
     /**
-     * Loads enrolled courses and their associated lecture notes from the database.
-     * Enforces course-based restriction and displays proper empty state messages.
+     * Loads enrolled courses and groups lecture notes by each course.
      */
     public void loadLectureNotesData() {
         mainContentPanel.removeAll();
 
-        // 1. Retrieve enrolled courses for the logged-in student
+        // 1. Fetch courses enrolled by this student
         List<Course> enrolledCourses = lectureNotesDAO.getEnrolledCoursesForStudent(studentIdentifier);
 
-        // Empty State 1: Student is not enrolled in any courses
+        // Empty State 1: Student is not currently enrolled in any courses
         if (enrolledCourses == null || enrolledCourses.isEmpty()) {
             statusCountLabel.setText("Enrollment Status: No registered courses found");
             mainContentPanel.add(createEmptyStatePanel(
@@ -194,11 +164,11 @@ public class UndergraduateLectureNotesUI extends JPanel {
             return;
         }
 
-        // 2. Retrieve lecture notes strictly belonging to those enrolled courses
-        displayedNotes = lectureNotesDAO.getLectureNotesForStudent(studentIdentifier);
+        // 2. Fetch all lecture notes belonging to those enrolled courses
+        List<LectureNoteItem> allNotes = lectureNotesDAO.getLectureNotesForStudent(studentIdentifier);
 
-        // Empty State 2: Student is enrolled in courses, but no notes uploaded yet
-        if (displayedNotes == null || displayedNotes.isEmpty()) {
+        // Empty State 2: Enrolled in courses, but zero lecture notes uploaded yet
+        if (allNotes == null || allNotes.isEmpty()) {
             statusCountLabel.setText("Enrolled Courses: " + enrolledCourses.size() + "  |  Available Notes: 0");
             mainContentPanel.add(createEmptyStatePanel(
                     "No lecture notes are available for your enrolled courses.",
@@ -209,20 +179,224 @@ public class UndergraduateLectureNotesUI extends JPanel {
             return;
         }
 
-        // 3. Notes are available: Display in clean JTable
+        // 3. Populate course-by-course card view
         statusCountLabel.setText("Enrolled Courses: " + enrolledCourses.size() +
-                "  |  Available Notes: " + displayedNotes.size() + " document(s)");
+                "  |  Available Notes: " + allNotes.size() + " document(s)");
 
-        JPanel tableCard = createTablePanel(displayedNotes);
-        mainContentPanel.add(tableCard, BorderLayout.CENTER);
+        JPanel courseCardsList = createCourseCardsListPanel(enrolledCourses, allNotes);
+
+        JScrollPane scrollPane = new JScrollPane(courseCardsList);
+        scrollPane.setBorder(null);
+        scrollPane.setBackground(COLOR_BG);
+        scrollPane.getViewport().setBackground(COLOR_BG);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        mainContentPanel.add(scrollPane, BorderLayout.CENTER);
 
         mainContentPanel.revalidate();
         mainContentPanel.repaint();
     }
 
     /**
-     * Creates an empty state panel when no courses or notes are available.
+     * Builds the vertical list of course cards/boxes.
      */
+    private JPanel createCourseCardsListPanel(List<Course> courses, List<LectureNoteItem> allNotes) {
+        JPanel container = new JPanel();
+        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        container.setOpaque(false);
+
+        for (int i = 0; i < courses.size(); i++) {
+            Course course = courses.get(i);
+
+            // Filter lecture notes belonging specifically to this course
+            List<LectureNoteItem> courseNotes = new ArrayList<>();
+            for (LectureNoteItem note : allNotes) {
+                if (note.getCourseCode() != null && note.getCourseCode().equalsIgnoreCase(course.getCourseCode())) {
+                    courseNotes.add(note);
+                }
+            }
+
+            // Create individual course card (box)
+            JPanel courseCard = createIndividualCourseCard(course, courseNotes);
+            courseCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+            container.add(courseCard);
+
+            if (i < courses.size() - 1) {
+                container.add(Box.createVerticalStrut(16));
+            }
+        }
+
+        return container;
+    }
+
+    /**
+     * Creates a single course card (box) containing its course details
+     * and the list of lecture notes with adjacent action buttons.
+     */
+    private JPanel createIndividualCourseCard(Course course, List<LectureNoteItem> notes) {
+        JPanel card = new JPanel(new BorderLayout(0, 8));
+        card.setBackground(COLOR_WHITE);
+        card.setBorder(new CompoundBorder(
+                new LineBorder(COLOR_BORDER, 1, true),
+                new EmptyBorder(14, 18, 14, 18)
+        ));
+
+        // 1. Course Box Header
+        JPanel cardHeader = new JPanel(new BorderLayout(12, 0));
+        cardHeader.setOpaque(false);
+        cardHeader.setBorder(new CompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xED, 0xF2, 0xF7)),
+                new EmptyBorder(0, 0, 10, 0)
+        ));
+
+        // Left Header: Course Code Badge + Course Name
+        JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        leftHeader.setOpaque(false);
+
+        JLabel codeBadge = new JLabel(" " + course.getCourseCode() + " ");
+        codeBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        codeBadge.setForeground(COLOR_MAIN_BLUE);
+        codeBadge.setBackground(COLOR_LIGHT_BLUE);
+        codeBadge.setOpaque(true);
+        codeBadge.setBorder(new CompoundBorder(
+                new LineBorder(new Color(0xBF, 0xDB, 0xFE), 1, true),
+                new EmptyBorder(4, 8, 4, 8)
+        ));
+
+        JLabel nameLabel = new JLabel(course.getCourseName());
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        nameLabel.setForeground(COLOR_PRIMARY_NAVY);
+
+        String info = (course.getCredits() > 0 ? course.getCredits() + " Credits" : "") +
+                (course.getDepartment() != null ? " • " + course.getDepartment() : "");
+        JLabel deptLabel = new JLabel(info);
+        deptLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        deptLabel.setForeground(COLOR_TEXT_MUTED);
+
+        leftHeader.add(codeBadge);
+        leftHeader.add(nameLabel);
+        leftHeader.add(deptLabel);
+        cardHeader.add(leftHeader, BorderLayout.WEST);
+
+        // Right Header: Notes count badge
+        String countText = notes.size() + (notes.size() == 1 ? " Lecture Note" : " Lecture Notes");
+        JLabel countBadge = new JLabel(countText);
+        countBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        countBadge.setForeground(notes.isEmpty() ? COLOR_TEXT_MUTED : COLOR_SUCCESS);
+        cardHeader.add(countBadge, BorderLayout.EAST);
+
+        card.add(cardHeader, BorderLayout.NORTH);
+
+        // 2. Course Notes List
+        JPanel notesListPanel = new JPanel();
+        notesListPanel.setLayout(new BoxLayout(notesListPanel, BoxLayout.Y_AXIS));
+        notesListPanel.setOpaque(false);
+
+        if (notes.isEmpty()) {
+            JPanel emptyNoteBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 6));
+            emptyNoteBox.setOpaque(false);
+            JLabel emptyMsg = new JLabel("No lecture notes have been uploaded for this course yet.");
+            emptyMsg.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+            emptyMsg.setForeground(COLOR_TEXT_MUTED);
+            emptyNoteBox.add(emptyMsg);
+            notesListPanel.add(emptyNoteBox);
+        } else {
+            for (int j = 0; j < notes.size(); j++) {
+                LectureNoteItem note = notes.get(j);
+                JPanel noteRow = createNoteRowItem(note, j + 1);
+                noteRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+                notesListPanel.add(noteRow);
+
+                if (j < notes.size() - 1) {
+                    notesListPanel.add(Box.createVerticalStrut(8));
+                }
+            }
+        }
+
+        card.add(notesListPanel, BorderLayout.CENTER);
+        return card;
+    }
+
+    /**
+     * Creates an individual lecture note row with title, metadata,
+     * and immediate Open/Download action buttons on the right.
+     */
+    private JPanel createNoteRowItem(LectureNoteItem note, int index) {
+        JPanel row = new JPanel(new BorderLayout(14, 0));
+        row.setBackground(new Color(0xFA, 0xFC, 0xFF));
+        row.setBorder(new CompoundBorder(
+                new LineBorder(COLOR_BORDER, 1, true),
+                new EmptyBorder(10, 14, 10, 14)
+        ));
+
+        // Left Content: Note Index Badge, Title, and Metadata
+        JPanel leftPanel = new JPanel(new BorderLayout(12, 0));
+        leftPanel.setOpaque(false);
+
+        JLabel numLabel = new JLabel(String.valueOf(index));
+        numLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        numLabel.setForeground(COLOR_TEXT_MUTED);
+        numLabel.setPreferredSize(new Dimension(20, 20));
+        leftPanel.add(numLabel, BorderLayout.WEST);
+
+        JPanel detailsBox = new JPanel(new GridLayout(2, 1, 0, 2));
+        detailsBox.setOpaque(false);
+
+        JLabel titleLabel = new JLabel(note.getTitle());
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        titleLabel.setForeground(COLOR_TEXT_PRIMARY);
+
+        String desc = (note.getDescription() != null && !note.getDescription().isEmpty())
+                ? " • " + note.getDescription() : "";
+        String metaText = "Lecturer: " + (note.getLecturerName() != null ? note.getLecturerName() : "Course Lecturer") +
+                "  |  Type: " + note.getFileType() +
+                "  |  Uploaded: " + (note.getUploadedDate() != null ? note.getUploadedDate() : "N/A") + desc;
+        JLabel metaLabel = new JLabel(metaText);
+        metaLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        metaLabel.setForeground(COLOR_TEXT_MUTED);
+
+        detailsBox.add(titleLabel);
+        detailsBox.add(metaLabel);
+        leftPanel.add(detailsBox, BorderLayout.CENTER);
+
+        row.add(leftPanel, BorderLayout.CENTER);
+
+        // Right Content: Immediate Open Note & Download buttons beside the note
+        JPanel actionBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        actionBox.setOpaque(false);
+
+        // 1. Download Note Button
+        JButton downloadBtn = new JButton("Download");
+        downloadBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        downloadBtn.setForeground(COLOR_MAIN_BLUE);
+        downloadBtn.setBackground(COLOR_LIGHT_BLUE);
+        downloadBtn.setFocusPainted(false);
+        downloadBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        downloadBtn.setBorder(new CompoundBorder(
+                new LineBorder(COLOR_MAIN_BLUE, 1, true),
+                new EmptyBorder(5, 12, 5, 12)
+        ));
+        downloadBtn.addActionListener(e -> downloadNote(note));
+        actionBox.add(downloadBtn);
+
+        // 2. Open Note Button
+        JButton openBtn = new JButton("Open Note");
+        openBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        openBtn.setForeground(COLOR_WHITE);
+        openBtn.setBackground(COLOR_MAIN_BLUE);
+        openBtn.setFocusPainted(false);
+        openBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        openBtn.setBorder(new CompoundBorder(
+                new LineBorder(COLOR_MAIN_BLUE, 1, true),
+                new EmptyBorder(5, 14, 5, 14)
+        ));
+        openBtn.addActionListener(e -> openNote(note));
+        actionBox.add(openBtn);
+
+        row.add(actionBox, BorderLayout.EAST);
+        return row;
+    }
+
     private JPanel createEmptyStatePanel(String primaryMessage, String secondaryMessage) {
         JPanel card = new JPanel(new GridBagLayout());
         card.setBackground(COLOR_WHITE);
@@ -268,104 +442,6 @@ public class UndergraduateLectureNotesUI extends JPanel {
         return card;
     }
 
-    /**
-     * Builds the JTable displaying lecture notes.
-     */
-    private JPanel createTablePanel(List<LectureNoteItem> notes) {
-        JPanel card = new JPanel(new BorderLayout(0, 8));
-        card.setBackground(COLOR_WHITE);
-        card.setBorder(new CompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(12, 12, 12, 12)
-        ));
-
-        String[] columnNames = {
-                "#",
-                "Lecture Note Title",
-                "Course Code",
-                "Course Name",
-                "Lecturer",
-                "File Type",
-                "Uploaded Date"
-        };
-
-        tableModel = new DefaultTableModel(columnNames, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // View-only table
-            }
-        };
-
-        int rowNumber = 1;
-        for (LectureNoteItem item : notes) {
-            Object[] rowData = new Object[]{
-                    rowNumber++,
-                    item.getTitle(),
-                    item.getCourseCode(),
-                    item.getCourseName(),
-                    item.getLecturerName(),
-                    item.getFileType(),
-                    item.getUploadedDate()
-            };
-            tableModel.addRow(rowData);
-        }
-
-        notesTable = new JTable(tableModel);
-        notesTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        notesTable.setRowHeight(34);
-        notesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        notesTable.setGridColor(new Color(0xED, 0xF2, 0xF7));
-        notesTable.setShowVerticalLines(false);
-        notesTable.setShowHorizontalLines(true);
-        notesTable.setSelectionBackground(COLOR_LIGHT_BLUE);
-        notesTable.setSelectionForeground(COLOR_PRIMARY_NAVY);
-
-        JTableHeader header = notesTable.getTableHeader();
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setBackground(new Color(0xF1, 0xF5, 0xF9));
-        header.setForeground(COLOR_PRIMARY_NAVY);
-        header.setPreferredSize(new Dimension(header.getWidth(), 36));
-        header.setReorderingAllowed(false);
-
-        notesTable.getColumnModel().getColumn(0).setPreferredWidth(35);   // #
-        notesTable.getColumnModel().getColumn(1).setPreferredWidth(270);  // Title
-        notesTable.getColumnModel().getColumn(2).setPreferredWidth(95);   // Code
-        notesTable.getColumnModel().getColumn(3).setPreferredWidth(220);  // Name
-        notesTable.getColumnModel().getColumn(4).setPreferredWidth(170);  // Lecturer
-        notesTable.getColumnModel().getColumn(5).setPreferredWidth(95);   // Type
-        notesTable.getColumnModel().getColumn(6).setPreferredWidth(95);   // Date
-
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-        notesTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
-        notesTable.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
-        notesTable.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
-        notesTable.getColumnModel().getColumn(6).setCellRenderer(centerRenderer);
-
-        notesTable.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                if (evt.getClickCount() == 2) {
-                    openSelectedNote();
-                }
-            }
-        });
-
-        if (notesTable.getRowCount() > 0) {
-            notesTable.setRowSelectionInterval(0, 0);
-        }
-
-        JScrollPane scrollPane = new JScrollPane(notesTable);
-        scrollPane.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, COLOR_BORDER));
-        scrollPane.getViewport().setBackground(COLOR_WHITE);
-
-        card.add(scrollPane, BorderLayout.CENTER);
-        return card;
-    }
-
-    /**
-     * Bottom action bar containing Back to Dashboard, Refresh, Download, and Open buttons.
-     */
     private JPanel createBottomActionPanel() {
         JPanel bottomBar = new JPanel(new BorderLayout());
         bottomBar.setBackground(COLOR_WHITE);
@@ -374,7 +450,7 @@ public class UndergraduateLectureNotesUI extends JPanel {
                 new EmptyBorder(12, 24, 12, 24)
         ));
 
-        JLabel hintLabel = new JLabel("Tip: Double-click any note to open it, or use the buttons on the right.");
+        JLabel hintLabel = new JLabel("Tip: Click 'Open Note' beside any lecture note to view it, or 'Download' to save a copy.");
         hintLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         hintLabel.setForeground(COLOR_TEXT_MUTED);
         bottomBar.add(hintLabel, BorderLayout.WEST);
@@ -394,16 +470,6 @@ public class UndergraduateLectureNotesUI extends JPanel {
         refreshBtn.addActionListener(e -> loadLectureNotesData());
         buttonBox.add(refreshBtn);
 
-        // 3. Download Note Button
-        JButton downloadBtn = createStyledButton("Download Note", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE, COLOR_MAIN_BLUE);
-        downloadBtn.addActionListener(e -> downloadSelectedNote());
-        buttonBox.add(downloadBtn);
-
-        // 4. Open Note Button
-        JButton openBtn = createStyledButton("Open Note", COLOR_MAIN_BLUE, COLOR_WHITE, COLOR_MAIN_BLUE);
-        openBtn.addActionListener(e -> openSelectedNote());
-        buttonBox.add(openBtn);
-
         bottomBar.add(buttonBox, BorderLayout.EAST);
         return bottomBar;
     }
@@ -422,30 +488,13 @@ public class UndergraduateLectureNotesUI extends JPanel {
         return btn;
     }
 
-    private LectureNoteItem getSelectedLectureNote() {
-        if (notesTable == null || displayedNotes == null || displayedNotes.isEmpty()) {
-            return null;
-        }
-        int selectedRow = notesTable.getSelectedRow();
-        if (selectedRow < 0 || selectedRow >= displayedNotes.size()) {
-            return null;
-        }
-        return displayedNotes.get(selectedRow);
-    }
+    /**
+     * Directly opens the specified lecture note file.
+     */
+    private void openNote(LectureNoteItem note) {
+        if (note == null) return;
 
-    private void openSelectedNote() {
-        LectureNoteItem selectedNote = getSelectedLectureNote();
-        if (selectedNote == null) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Please select a lecture note from the table first.",
-                    "No Note Selected",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-            return;
-        }
-
-        String filePath = selectedNote.getFilePath();
+        String filePath = note.getFilePath();
         if (filePath == null || filePath.trim().isEmpty()) {
             JOptionPane.showMessageDialog(
                     this,
@@ -462,10 +511,10 @@ public class UndergraduateLectureNotesUI extends JPanel {
             JOptionPane.showMessageDialog(
                     this,
                     "The lecture note file was not found on the server storage.\n\n" +
-                            "Note Title: " + selectedNote.getTitle() + "\n" +
-                            "Course: " + selectedNote.getCourseCode() + " - " + selectedNote.getCourseName() + "\n" +
+                            "Note Title: " + note.getTitle() + "\n" +
+                            "Course: " + note.getCourseCode() + " - " + note.getCourseName() + "\n" +
                             "File Path: " + targetFile.getAbsolutePath() + "\n\n" +
-                            "Please contact the lecturer (" + selectedNote.getLecturerName() + ") or Technical Officer.",
+                            "Please contact the lecturer (" + note.getLecturerName() + ") or Technical Officer.",
                     "File Not Found",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -494,19 +543,13 @@ public class UndergraduateLectureNotesUI extends JPanel {
         }
     }
 
-    private void downloadSelectedNote() {
-        LectureNoteItem selectedNote = getSelectedLectureNote();
-        if (selectedNote == null) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Please select a lecture note from the table first.",
-                    "No Note Selected",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-            return;
-        }
+    /**
+     * Directly downloads the specified lecture note file.
+     */
+    private void downloadNote(LectureNoteItem note) {
+        if (note == null) return;
 
-        String filePath = selectedNote.getFilePath();
+        String filePath = note.getFilePath();
         if (filePath == null || filePath.trim().isEmpty()) {
             JOptionPane.showMessageDialog(
                     this,
@@ -524,7 +567,7 @@ public class UndergraduateLectureNotesUI extends JPanel {
                     this,
                     "The lecture note file could not be retrieved from the server storage.\n\n" +
                             "File Path: " + sourceFile.getAbsolutePath() + "\n\n" +
-                            "Please contact the course lecturer (" + selectedNote.getLecturerName() + ").",
+                            "Please contact the course lecturer (" + note.getLecturerName() + ").",
                     "File Retrieval Failed",
                     JOptionPane.WARNING_MESSAGE
             );
