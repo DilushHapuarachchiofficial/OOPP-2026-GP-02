@@ -20,7 +20,7 @@ import static main.java.ui.TechnicalOfficer.TechnicalOfficerDashboard.*;
  * - Horizontal links to Dashboard, Attendance, Medical Records, Timetable, Notices, and Profile
  * - Dedicated styled Logout button on the right edge with confirmation
  */
-public class TechnicalOfficerNavigationBar extends JPanel {
+public class   TechnicalOfficerNavigationBar extends JPanel {
 
     private final TechnicalOfficerDashboard dashboard;
     private final Map<String, NavTabButton> navButtonMap = new LinkedHashMap<>();
