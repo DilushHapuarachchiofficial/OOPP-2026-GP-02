@@ -366,30 +366,62 @@ public class UndergraduateLectureNotesUI extends JPanel {
         actionBox.setOpaque(false);
 
         // 1. Download Note Button
-        JButton downloadBtn = new JButton("Download");
-        downloadBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        JButton downloadBtn = new JButton("Download") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(new Color(0xBF, 0xDB, 0xFE));
+                } else if (getModel().isRollover()) {
+                    g2.setColor(new Color(0xDB, 0xEA, 0xFE));
+                } else {
+                    g2.setColor(COLOR_LIGHT_BLUE);
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+                g2.setColor(COLOR_MAIN_BLUE);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 6, 6);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        downloadBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
         downloadBtn.setForeground(COLOR_MAIN_BLUE);
-        downloadBtn.setBackground(COLOR_LIGHT_BLUE);
+        downloadBtn.setContentAreaFilled(false);
+        downloadBtn.setOpaque(false);
+        downloadBtn.setBorderPainted(false);
         downloadBtn.setFocusPainted(false);
         downloadBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        downloadBtn.setBorder(new CompoundBorder(
-                new LineBorder(COLOR_MAIN_BLUE, 1, true),
-                new EmptyBorder(5, 12, 5, 12)
-        ));
+        downloadBtn.setBorder(new EmptyBorder(6, 14, 6, 14));
         downloadBtn.addActionListener(e -> downloadNote(note));
         actionBox.add(downloadBtn);
 
-        // 2. Open Note Button
-        JButton openBtn = new JButton("Open Note");
+        // 2. Open Note Button (Solid Royal Blue with Crisp White Text)
+        JButton openBtn = new JButton("Open Note") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(new Color(0x1E, 0x40, 0xAF)); // Dark blue on press
+                } else if (getModel().isRollover()) {
+                    g2.setColor(new Color(0x1D, 0x4E, 0xD8)); // Hover blue
+                } else {
+                    g2.setColor(COLOR_MAIN_BLUE); // #2563EB solid primary blue
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         openBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        openBtn.setForeground(COLOR_WHITE);
-        openBtn.setBackground(COLOR_MAIN_BLUE);
+        openBtn.setForeground(Color.WHITE);
+        openBtn.setContentAreaFilled(false);
+        openBtn.setOpaque(false);
+        openBtn.setBorderPainted(false);
         openBtn.setFocusPainted(false);
         openBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        openBtn.setBorder(new CompoundBorder(
-                new LineBorder(COLOR_MAIN_BLUE, 1, true),
-                new EmptyBorder(5, 14, 5, 14)
-        ));
+        openBtn.setBorder(new EmptyBorder(6, 14, 6, 14));
         openBtn.addActionListener(e -> openNote(note));
         actionBox.add(openBtn);
 
@@ -475,16 +507,33 @@ public class UndergraduateLectureNotesUI extends JPanel {
     }
 
     private JButton createStyledButton(String text, Color bg, Color fg, Color border) {
-        JButton btn = new JButton(text);
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(new Color(Math.max(bg.getRed() - 20, 0), Math.max(bg.getGreen() - 20, 0), Math.max(bg.getBlue() - 20, 0)));
+                } else if (getModel().isRollover()) {
+                    g2.setColor(new Color(Math.max(bg.getRed() - 8, 0), Math.max(bg.getGreen() - 8, 0), Math.max(bg.getBlue() - 8, 0)));
+                } else {
+                    g2.setColor(bg);
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+                g2.setColor(border);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 6, 6);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setBackground(bg);
         btn.setForeground(fg);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(false);
+        btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(new CompoundBorder(
-                new LineBorder(border, 1, true),
-                new EmptyBorder(7, 16, 7, 16)
-        ));
+        btn.setBorder(new EmptyBorder(7, 16, 7, 16));
         return btn;
     }
 
