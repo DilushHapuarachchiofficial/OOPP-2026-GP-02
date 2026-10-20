@@ -47,6 +47,7 @@ public class UndergraduateDashboard extends JFrame {
     private JPanel mainContentArea;
     private JScrollPane dashboardOverviewPanel;
     private UndergraduateLectureNotesUI lectureNotesPanel;
+    private UndergraduateAttendanceUI attendancePanel;
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
@@ -84,9 +85,11 @@ public class UndergraduateDashboard extends JFrame {
 
         dashboardOverviewPanel = createDashboardOverviewPanel();
         lectureNotesPanel = new UndergraduateLectureNotesUI(currentStudent, this);
+        attendancePanel = new UndergraduateAttendanceUI(currentStudent, this);
 
         mainContentArea.add(dashboardOverviewPanel, "DASHBOARD");
         mainContentArea.add(lectureNotesPanel, "LECTURE_NOTES");
+        mainContentArea.add(attendancePanel, "ATTENDANCE");
 
         rootPanel.add(topContainer, BorderLayout.NORTH);
         rootPanel.add(mainContentArea, BorderLayout.CENTER);
@@ -389,13 +392,22 @@ public class UndergraduateDashboard extends JFrame {
         String attSub = (att != null && att.getTotalSessions() > 0)
                 ? att.getAttendedSessions() + " / " + att.getTotalSessions() + " sessions"
                 : "Requires TO Entry";
-        row.add(createMetricCard(
+        JPanel attCard = createMetricCard(
                 "ATTENDANCE OVERVIEW",
                 attStr,
                 attSub,
                 eligible ? "Eligible for Exam (>=80%)" : (att != null ? "Below 80% Requirement" : "Requirement: 80%"),
                 eligible ? COLOR_SUCCESS : (att != null ? COLOR_DANGER : COLOR_TEXT_MUTED)
-        ));
+        );
+        attCard.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        attCard.setToolTipText("Click to view full attendance registry and breakdown");
+        attCard.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                openAttendance();
+            }
+        });
+        row.add(attCard);
 
         return row;
     }
@@ -714,9 +726,25 @@ public class UndergraduateDashboard extends JFrame {
         }
     }
 
+    public void openAttendance() {
+        if (navigationPanel != null) {
+            navigationPanel.highlightButton("ATTENDANCE");
+        }
+        if (attendancePanel != null) {
+            attendancePanel.loadAttendanceData();
+        }
+        if (contentCardLayout != null && mainContentArea != null) {
+            contentCardLayout.show(mainContentArea, "ATTENDANCE");
+        }
+    }
+
     public void showModulePlaceholder(String moduleName) {
         if ("Lecturer Notes".equalsIgnoreCase(moduleName) || "Course Materials".equalsIgnoreCase(moduleName) || "MATERIALS".equalsIgnoreCase(moduleName)) {
             openLectureNotes();
+            return;
+        }
+        if ("Attendance".equalsIgnoreCase(moduleName) || "ATTENDANCE".equalsIgnoreCase(moduleName)) {
+            openAttendance();
             return;
         }
         JOptionPane.showMessageDialog(
