@@ -4,7 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="" />
+    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/lib/mysql-connector-j-8.4.0.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TechnicalOfficer/TechnicalOfficerDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/TechnicalOfficer/TechnicalOfficerDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Admin.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Admin.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Attendance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Attendance.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Course.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Course.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Medical.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Medical.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Notice.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Notice.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Student.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Student.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/TechnicalOfficer/TechnicalOfficer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/TechnicalOfficer/TechnicalOfficer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Timetable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Timetable.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/User.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -20,10 +33,10 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 3,
-  "fromUser": false
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3,
+  &quot;fromUser&quot;: false
+}</component>
   <component name="ProjectId" id="3K95zehMxn4Ifosjrp8ZSRnSvKp" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -32,13 +45,15 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.Main.executor": "Run",
+    "Application.TechnicalOfficerDashboard.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "folder-structure",
+    "git-widget-placeholder": "W__Technical__officer__version2",
     "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "E:/OOP_mini_project/OOPP-2026-GP-02/OOP-2026-GP-02",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -50,8 +65,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-a203e0a19954-intellij.indexing.shared.core-IU-262.10315.125" />
-        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.10315.125" />
+        <option value="bundled-jdk-30f59d01ecdd-a203e0a19954-intellij.indexing.shared.core-IU-262.10968.63" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.10968.63" />
       </set>
     </attachedChunks>
   </component>
