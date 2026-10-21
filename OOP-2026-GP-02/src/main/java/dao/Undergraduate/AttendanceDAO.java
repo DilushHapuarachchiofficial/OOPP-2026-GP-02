@@ -273,10 +273,15 @@ public class AttendanceDAO {
 
     private List<CourseAttendanceSummary> getFallbackCourseSummaries() {
         List<CourseAttendanceSummary> list = new ArrayList<>();
-        list.add(new CourseAttendanceSummary(1, "ICT2132", "Object Oriented Programming Practicum", 15, 13, 1, 1));
-        list.add(new CourseAttendanceSummary(2, "ICT2113", "Data Structures and Algorithms", 15, 14, 1, 0));
-        list.add(new CourseAttendanceSummary(3, "ICT2122", "Database Management Systems", 15, 15, 0, 0));
-        list.add(new CourseAttendanceSummary(4, "ENG2112", "Communication Skills II", 12, 11, 1, 0));
+        list.add(new CourseAttendanceSummary(1, "ICT2122", "Object Oriented Programming", 15, 14, 1, 0));
+        list.add(new CourseAttendanceSummary(2, "ICT2132", "Object Oriented Programming Practicum", 15, 15, 0, 0));
+        list.add(new CourseAttendanceSummary(3, "ICT2142", "E-Business Systems", 15, 14, 1, 0));
+        list.add(new CourseAttendanceSummary(4, "ICT2152", "Object Oriented Analysis and Design", 15, 14, 1, 0));
+        list.add(new CourseAttendanceSummary(5, "ICT2162", "Management Information Systems", 12, 11, 1, 0));
+        list.add(new CourseAttendanceSummary(6, "TCS2112", "Business Economics", 12, 12, 0, 0));
+        list.add(new CourseAttendanceSummary(7, "TCS2121", "Soft Skills", 10, 10, 0, 0));
+        list.add(new CourseAttendanceSummary(8, "TCS1212", "Fundamentals of Management", 15, 14, 1, 0));
+        list.add(new CourseAttendanceSummary(9, "TMS1233", "Discrete Mathematics", 15, 13, 2, 0));
         return list;
     }
 }
