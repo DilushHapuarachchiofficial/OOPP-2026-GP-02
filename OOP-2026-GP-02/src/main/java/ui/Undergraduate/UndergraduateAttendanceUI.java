@@ -129,7 +129,29 @@ public class UndergraduateAttendanceUI extends JPanel {
         setBackground(COLOR_BG);
 
         // Scrollable content area
-        JPanel scrollContent = new JPanel();
+        class ScrollablePanel extends JPanel implements Scrollable {
+            @Override
+            public Dimension getPreferredScrollableViewportSize() {
+                return getPreferredSize();
+            }
+            @Override
+            public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+                return 16;
+            }
+            @Override
+            public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+                return 64;
+            }
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return true;
+            }
+            @Override
+            public boolean getScrollableTracksViewportHeight() {
+                return false;
+            }
+        }
+        JPanel scrollContent = new ScrollablePanel();
         scrollContent.setLayout(new BoxLayout(scrollContent, BoxLayout.Y_AXIS));
         scrollContent.setBackground(COLOR_BG);
         scrollContent.setBorder(new EmptyBorder(16, 24, 24, 24));
@@ -173,6 +195,7 @@ public class UndergraduateAttendanceUI extends JPanel {
         mainScrollPane.setBorder(null);
         mainScrollPane.setBackground(COLOR_BG);
         mainScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        mainScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         add(mainScrollPane, BorderLayout.CENTER);
     }
 
@@ -407,80 +430,181 @@ public class UndergraduateAttendanceUI extends JPanel {
     private JPanel createCourseCard(CourseAttendanceSummary cs) {
         JPanel card = new JPanel(new BorderLayout(0, 14));
         card.setBackground(COLOR_WHITE);
-        card.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(16, 20, 16, 20)));
+        card.setBorder(new CompoundBorder(
+                new LineBorder(COLOR_BORDER, 1, true),
+                new EmptyBorder(16, 18, 16, 18)
+        ));
 
         // Top Row: Course Code & Name (Left) + Percentage & Eligibility Badge (Right)
-        JPanel topRow = new JPanel(new BorderLayout(12, 0));
+        JPanel topRow = new JPanel(new BorderLayout(14, 0));
         topRow.setOpaque(false);
 
-        JPanel titleBox = new JPanel(new GridLayout(2, 1, 0, 4));
+        // Left: Course Code pill & Course Name
+        JPanel titleBox = new JPanel();
+        titleBox.setLayout(new BoxLayout(titleBox, BoxLayout.Y_AXIS));
         titleBox.setOpaque(false);
+
+        JPanel codeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        codeRow.setOpaque(false);
+        codeRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         JLabel codeLbl = new JLabel(cs.getCourseCode());
         codeLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
         codeLbl.setForeground(COLOR_PRIMARY_NAVY);
+        codeRow.add(codeLbl);
 
         JLabel nameLbl = new JLabel(cs.getCourseName());
         nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        nameLbl.setForeground(COLOR_TEXT_MUTED);
+        nameLbl.setForeground(COLOR_TEXT_PRIMARY);
+        nameLbl.setToolTipText(cs.getCourseName());
+        nameLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        titleBox.add(codeLbl);
+        titleBox.add(codeRow);
+        titleBox.add(Box.createVerticalStrut(3));
         titleBox.add(nameLbl);
-        topRow.add(titleBox, BorderLayout.WEST);
+        topRow.add(titleBox, BorderLayout.CENTER);
 
-        // Right side: Percentage + Badge Pill
+        // Right side: Percentage + Eligibility Badge Pill
         boolean eligible = cs.isEligible();
         double pct = cs.getPercentage();
-        Color barColor = eligible ? COLOR_SUCCESS : (pct >= 70.0 ? COLOR_WARNING : COLOR_DANGER);
+        Color pctColor = eligible ? new Color(0x05, 0x96, 0x69) : (pct >= 70.0 ? COLOR_WARNING : COLOR_DANGER);
 
-        JPanel rightBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        JPanel rightBox = new JPanel();
+        rightBox.setLayout(new BoxLayout(rightBox, BoxLayout.Y_AXIS));
         rightBox.setOpaque(false);
 
-        JLabel pctLbl = new JLabel(String.format("%.1f%%", pct));
-        pctLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        pctLbl.setForeground(barColor);
-        rightBox.add(pctLbl);
+        JLabel pctLbl = new JLabel(String.format("%.1f%%", pct), SwingConstants.RIGHT);
+        pctLbl.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        pctLbl.setForeground(pctColor);
+        pctLbl.setAlignmentX(Component.RIGHT_ALIGNMENT);
 
-        Color badgeBg = (cs.getTotalSessions() == 0) ? COLOR_LIGHT_BLUE : (eligible ? new Color(0xD1, 0xFA, 0xE5) : new Color(0xFE, 0xE2, 0xE2));
-        Color badgeFg = (cs.getTotalSessions() == 0) ? COLOR_MAIN_BLUE : (eligible ? new Color(0x06, 0x5F, 0x46) : new Color(0x99, 0x1B, 0x1B));
-        String badgeText = (cs.getTotalSessions() == 0) ? "No Sessions" : (eligible ? "Eligible" : "At Risk (<80%)");
+        Color badgeBg = (cs.getTotalSessions() == 0)
+                ? COLOR_LIGHT_BLUE
+                : (eligible ? new Color(0xD1, 0xFA, 0xE5) : new Color(0xFE, 0xE2, 0xE2));
+        Color badgeFg = (cs.getTotalSessions() == 0)
+                ? COLOR_MAIN_BLUE
+                : (eligible ? new Color(0x06, 0x5F, 0x46) : new Color(0x99, 0x1B, 0x1B));
+        String badgeText = (cs.getTotalSessions() == 0)
+                ? "No Sessions"
+                : (eligible ? "● Eligible" : "▲ At Risk (<80%)");
 
-        JLabel badge = new JLabel("  " + badgeText + "  ");
-        badge.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        JLabel badge = new JLabel(badgeText);
+        badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
         badge.setBackground(badgeBg);
         badge.setForeground(badgeFg);
         badge.setOpaque(true);
-        badge.setBorder(new LineBorder(badgeBg, 4, true));
-        rightBox.add(badge);
+        badge.setBorder(new CompoundBorder(
+                new LineBorder(badgeBg, 1, true),
+                new EmptyBorder(3, 8, 3, 8)
+        ));
+        badge.setAlignmentX(Component.RIGHT_ALIGNMENT);
 
+        rightBox.add(pctLbl);
+        rightBox.add(Box.createVerticalStrut(3));
+        rightBox.add(badge);
         topRow.add(rightBox, BorderLayout.EAST);
+
         card.add(topRow, BorderLayout.NORTH);
 
-        // Bottom Row: Detailed counts (Total, Present, Absent, Medical)
-        JPanel statRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
-        statRow.setOpaque(false);
-        statRow.add(createMiniStat("Total", String.valueOf(cs.getTotalSessions()), COLOR_TEXT_PRIMARY));
-        statRow.add(createMiniStat("Present", String.valueOf(cs.getAttendedSessions()), COLOR_SUCCESS));
-        statRow.add(createMiniStat("Absent", String.valueOf(cs.getAbsentSessions()), COLOR_DANGER));
-        statRow.add(createMiniStat("Medical", String.valueOf(cs.getMedicalSessions()), COLOR_WARNING));
+        // Center / Bottom: 4 Stat Tiles Grid (Total, Present, Absent, Medical)
+        JPanel statsGrid = new JPanel(new GridLayout(1, 4, 8, 0));
+        statsGrid.setOpaque(false);
 
-        card.add(statRow, BorderLayout.SOUTH);
+        int total = cs.getTotalSessions();
+        int attended = cs.getAttendedSessions();
+        int absent = cs.getAbsentSessions();
+        int medical = cs.getMedicalSessions();
+
+        statsGrid.add(createStatTile(
+                "TOTAL",
+                String.valueOf(total),
+                "Sessions",
+                new Color(0xF8, 0xFA, 0xFC),
+                COLOR_BORDER,
+                COLOR_TEXT_PRIMARY
+        ));
+
+        statsGrid.add(createStatTile(
+                "PRESENT",
+                String.valueOf(attended),
+                "Attended",
+                new Color(0xEC, 0xFD, 0xF5),
+                new Color(0xA7, 0xF3, 0xD0),
+                new Color(0x05, 0x96, 0x69)
+        ));
+
+        statsGrid.add(createStatTile(
+                "ABSENT",
+                String.valueOf(absent),
+                "Missed",
+                absent > 0 ? new Color(0xFE, 0xF2, 0xF2) : new Color(0xF8, 0xFA, 0xFC),
+                absent > 0 ? new Color(0xFE, 0xCD, 0xCD) : COLOR_BORDER,
+                absent > 0 ? new Color(0xDC, 0x26, 0x26) : COLOR_TEXT_MUTED
+        ));
+
+        statsGrid.add(createStatTile(
+                "MEDICAL",
+                String.valueOf(medical),
+                "Approved",
+                medical > 0 ? new Color(0xFF, 0xFB, 0xEB) : new Color(0xF8, 0xFA, 0xFC),
+                medical > 0 ? new Color(0xFD, 0xE6, 0x8A) : COLOR_BORDER,
+                medical > 0 ? new Color(0xD9, 0x77, 0x06) : COLOR_TEXT_MUTED
+        ));
+
+        card.add(statsGrid, BorderLayout.CENTER);
+
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                card.setBorder(new CompoundBorder(
+                        new LineBorder(COLOR_MAIN_BLUE, 1, true),
+                        new EmptyBorder(16, 18, 16, 18)
+                ));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                card.setBorder(new CompoundBorder(
+                        new LineBorder(COLOR_BORDER, 1, true),
+                        new EmptyBorder(16, 18, 16, 18)
+                ));
+            }
+        });
+
         return card;
     }
 
-    private JPanel createMiniStat(String label, String value, Color color) {
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        p.setOpaque(false);
-        JLabel l = new JLabel(label + ":");
-        l.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        l.setForeground(COLOR_TEXT_MUTED);
+    private JPanel createStatTile(String label, String value, String subLabel, Color bgColor, Color borderColor, Color valColor) {
+        JPanel tile = new JPanel();
+        tile.setLayout(new BoxLayout(tile, BoxLayout.Y_AXIS));
+        tile.setBackground(bgColor);
+        tile.setBorder(new CompoundBorder(
+                new LineBorder(borderColor, 1, true),
+                new EmptyBorder(8, 8, 8, 8)
+        ));
 
-        JLabel v = new JLabel(value);
-        v.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        v.setForeground(color);
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        lbl.setForeground(COLOR_TEXT_MUTED);
+        lbl.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        p.add(l);
-        p.add(v);
-        return p;
+        JLabel val = new JLabel(value);
+        val.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        val.setForeground(valColor);
+        val.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel sub = new JLabel(subLabel);
+        sub.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        sub.setForeground(COLOR_TEXT_MUTED);
+        sub.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        tile.add(lbl);
+        tile.add(Box.createVerticalStrut(2));
+        tile.add(val);
+        tile.add(Box.createVerticalStrut(2));
+        tile.add(sub);
+
+        return tile;
     }
 
     // ==========================================
