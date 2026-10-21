@@ -54,7 +54,7 @@ public class   TechnicalOfficerNavigationBar extends JPanel {
         });
         addNavItem(menuPanel, "MEDICAL",    "🏥", "Medical Records", () -> {
             if (dashboard != null) {
-                dashboard.openSectionAction("Medical Records Management", "Undergraduate Medical Records section.\n(Medical Certificate Submissions and Approval Status)");
+                dashboard.openMedicalManagement();
             }
         });
         addNavItem(menuPanel, "TIMETABLE",  "📅", "Department Timetable", () -> {
