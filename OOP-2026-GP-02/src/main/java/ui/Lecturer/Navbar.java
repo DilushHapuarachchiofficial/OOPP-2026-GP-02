@@ -1,5 +1,6 @@
 package main.java.ui.Lecturer;
 
+import main.java.ui.LoginUI;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -667,14 +668,16 @@ public class Navbar extends JPanel {
 
             // Return to LoginUI
             try {
-                Class<?> loginClass = Class.forName("main.java.ui.LoginUI");
-                Object loginInstance = loginClass.getDeclaredConstructor().newInstance();
-                if (loginInstance instanceof JFrame) {
-                    ((JFrame) loginInstance).setVisible(true);
+                LoginUI loginUI = new LoginUI();
+                loginUI.setVisible(true);
+            } catch (Throwable t) {
+                try {
+                    Class<?> loginClass = Class.forName("main.java.ui.LoginUI");
+                    JFrame loginFrame = (JFrame) loginClass.getDeclaredConstructor().newInstance();
+                    loginFrame.setVisible(true);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null, "You have been logged out successfully.", "Logged Out", JOptionPane.INFORMATION_MESSAGE);
                 }
-            } catch (Exception ex) {
-                // Standalone fallback message
-                JOptionPane.showMessageDialog(null, "You have been logged out successfully.", "Logged Out", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
@@ -1319,39 +1322,5 @@ public class Navbar extends JPanel {
         }
     }
 
-    // =========================================================================
-    // STANDALONE DEMO TEST RUNNER
-    // =========================================================================
-    public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {}
-
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("TecFAMS - Lecturer Navbar Preview");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1200, 700);
-            frame.setLocationRelativeTo(null);
-
-            Navbar navbar = new Navbar();
-
-            JPanel placeholderContent = new JPanel(new BorderLayout());
-            placeholderContent.setBackground(COLOR_LIGHT_BG);
-
-            JLabel statusLabel = new JLabel("Current Selected Page: " + navbar.getActivePage(), SwingConstants.CENTER);
-            statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-            statusLabel.setForeground(COLOR_DEEP_NAVY);
-            placeholderContent.add(statusLabel, BorderLayout.CENTER);
-
-            // React to navbar clicks
-            navbar.addNavigationListener(page -> {
-                statusLabel.setText("Current Selected Page: " + page);
-            });
-
-            frame.setLayout(new BorderLayout());
-            frame.add(navbar, BorderLayout.NORTH);
-            frame.add(placeholderContent, BorderLayout.CENTER);
-            frame.setVisible(true);
-        });
-    }
 }
+
