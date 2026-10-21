@@ -49,7 +49,7 @@ public class   TechnicalOfficerNavigationBar extends JPanel {
         addNavItem(menuPanel, "DASHBOARD",  "📊", "Dashboard", () -> selectNav("DASHBOARD"));
         addNavItem(menuPanel, "ATTENDANCE", "📝", "Attendance Management", () -> {
             if (dashboard != null) {
-                dashboard.openSectionAction("Attendance Management", "Undergraduate Attendance Management section.\n(Theory and Practical Attendance, 15 Sessions Per Module)");
+                dashboard.openAttendanceManagement();
             }
         });
         addNavItem(menuPanel, "MEDICAL",    "🏥", "Medical Records", () -> {
