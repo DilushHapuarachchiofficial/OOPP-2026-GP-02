@@ -203,30 +203,42 @@ public class UndergraduateAttendanceUI extends JPanel {
         JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         rightActions.setOpaque(false);
 
-        JButton refreshBtn = new JButton("Refresh Data");
-        refreshBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        refreshBtn.setForeground(COLOR_PRIMARY_NAVY);
-        refreshBtn.setBackground(COLOR_WHITE);
-        refreshBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(7, 14, 7, 14)));
-        refreshBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        refreshBtn.setFocusPainted(false);
-        refreshBtn.addActionListener(e -> {
-            loadAttendanceData();
-            JOptionPane.showMessageDialog(this, "Attendance records refreshed successfully.", "TecFAMS", JOptionPane.INFORMATION_MESSAGE);
+        JButton backBtn = new JButton("← Back to Dashboard") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(new Color(0x0E, 0x2A, 0x52));
+                } else if (getModel().isRollover()) {
+                    g2.setColor(COLOR_MAIN_BLUE);
+                } else {
+                    g2.setColor(COLOR_PRIMARY_NAVY);
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        backBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        backBtn.setForeground(COLOR_WHITE);
+        backBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        backBtn.setFocusPainted(false);
+        backBtn.setBorderPainted(false);
+        backBtn.setContentAreaFilled(false);
+        backBtn.setOpaque(false);
+        backBtn.setBorder(new EmptyBorder(8, 16, 8, 16));
+        backBtn.addActionListener(e -> {
+            if (parentDashboard != null) {
+                parentDashboard.showDashboardView();
+            } else {
+                Window win = SwingUtilities.getWindowAncestor(UndergraduateAttendanceUI.this);
+                if (win != null) {
+                    win.dispose();
+                }
+            }
         });
-        rightActions.add(refreshBtn);
-
-        if (parentDashboard != null) {
-            JButton backBtn = new JButton("← Back to Dashboard");
-            backBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            backBtn.setForeground(COLOR_WHITE);
-            backBtn.setBackground(COLOR_PRIMARY_NAVY);
-            backBtn.setBorder(new EmptyBorder(8, 16, 8, 16));
-            backBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            backBtn.setFocusPainted(false);
-            backBtn.addActionListener(e -> parentDashboard.showDashboardView());
-            rightActions.add(backBtn);
-        }
+        rightActions.add(backBtn);
 
         header.add(rightActions, BorderLayout.EAST);
         return header;
