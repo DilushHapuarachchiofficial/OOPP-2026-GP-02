@@ -139,6 +139,16 @@ public class LoginLogic {
         if (sqlUser != null) {
             if (cleanPassword.equals(sqlUser.getPasswordHash())) {
                 String mappedRole = DBConnection.normalizeRole(sqlUser.getRole());
+                int inferredId = 1;
+                String displayName = cleanUsername;
+                if ("Lecturer".equalsIgnoreCase(mappedRole)) {
+                    inferredId = 4;
+                    displayName = "Dr. Chinthaka Premachandra";
+                }
+                UserSession.setCurrentSession(new UserSession(
+                        inferredId, cleanUsername, mappedRole,
+                        displayName, mappedRole, "Faculty of Technology", ""
+                ));
                 return new AuthResult(true, "Authentication successful!", mappedRole);
             } else {
                 return new AuthResult(false, "Invalid username or password.", null);
@@ -147,18 +157,36 @@ public class LoginLogic {
 
         // 5. Fallback Mock Test Credentials
         if (ADMIN_USERNAME.equals(cleanUsername) && ADMIN_PASSWORD.equals(cleanPassword)) {
+            UserSession.setCurrentSession(new UserSession(
+                    1, cleanUsername, "Admin",
+                    "System Administrator", "Admin", "Faculty of Technology", "admin@fot.ruh.ac.lk"
+            ));
             return new AuthResult(true, "Admin authentication successful!", "Admin");
         }
 
         if (LECTURER_USERNAME.equals(cleanUsername) && LECTURER_PASSWORD.equals(cleanPassword)) {
+            UserSession.setCurrentSession(new UserSession(
+                    4, cleanUsername, "Lecturer",
+                    "Dr. Chinthaka Premachandra", "Senior Lecturer Gr. I",
+                    "Department of Information and Communication Technology", "chinthaka@fot.ruh.ac.lk"
+            ));
             return new AuthResult(true, "Lecturer authentication successful!", "Lecturer");
         }
 
         if (OFFICER_USERNAME.equals(cleanUsername) && OFFICER_PASSWORD.equals(cleanPassword)) {
+            UserSession.setCurrentSession(new UserSession(
+                    12, cleanUsername, "Technical Officer",
+                    "Mr. Kamal Perera", "Technical Officer", "Faculty of Technology", "kamal@fot.ruh.ac.lk"
+            ));
             return new AuthResult(true, "Technical Officer authentication successful!", "Technical Officer");
         }
 
         if (STUDENT_USERNAME.equals(cleanUsername) && STUDENT_PASSWORD.equals(cleanPassword)) {
+            UserSession.setCurrentSession(new UserSession(
+                    18, cleanUsername, "Undergraduate",
+                    "Kavishka Perera", "Undergraduate",
+                    "Department of Information and Communication Technology", "tg2062@fot.ruh.ac.lk"
+            ));
             return new AuthResult(true, "Undergraduate authentication successful!", "Undergraduate");
         }
 
@@ -186,8 +214,9 @@ public class LoginLogic {
         }
 
         if (role == null) return;
+        String normalizedRole = DBConnection.normalizeRole(role);
 
-        switch (role) {
+        switch (normalizedRole) {
             case "Admin":
                 openAdminDashboard();
                 break;
@@ -202,7 +231,7 @@ public class LoginLogic {
                 break;
             default:
                 JOptionPane.showMessageDialog(null, 
-                    "Unknown role. Unable to open dashboard.", 
+                    "Unknown role: " + role + ". Unable to open dashboard.", 
                     "System Error", 
                     JOptionPane.ERROR_MESSAGE);
                 break;
@@ -210,16 +239,31 @@ public class LoginLogic {
     }
 
     // =========================================================================
-    // DASHBOARD PLACEHOLDER METHODS
-    // Future classes: AdminDashboard, LecturerDashboard, TechnicalOfficerDashboard, UndergraduateDashboard
+    // DASHBOARD LAUNCHER & DYNAMIC LINKING METHODS
+    // Future classes created by group members: AdminDashboard, TechnicalOfficerDashboard, UndergraduateDashboard
     // =========================================================================
 
     public static void openAdminDashboard() {
-        // Placeholder until AdminDashboard.java is created
-        JOptionPane.showMessageDialog(null,
-                "✓ Login Successful!\n\nRole: Admin\nWelcome to TecFAMS Admin Portal.\n\n[AdminDashboard will be connected here]",
-                "TecFAMS - Admin Portal",
-                JOptionPane.INFORMATION_MESSAGE);
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            boolean opened = tryOpenDashboard(
+                "main.java.ui.admin.AdminDashboard",
+                "main.java.ui.Admin.AdminDashboard",
+                "ui.admin.AdminDashboard",
+                "ui.Admin.AdminDashboard",
+                "main.java.ui.AdminDashboard",
+                "ui.AdminDashboard",
+                "main.java.ui.admin.AdminUI",
+                "main.java.ui.Admin.AdminUI",
+                "ui.admin.AdminUI",
+                "ui.AdminUI"
+            );
+            if (!opened) {
+                JOptionPane.showMessageDialog(null,
+                        "✓ Login Successful!\n\nRole: Admin\nWelcome to TecFAMS Admin Portal.\n\n[AdminDashboard UI class will open here once created by your team member]",
+                        "TecFAMS - Admin Portal",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
     }
 
     public static void openLecturerDashboard() {
@@ -355,18 +399,131 @@ public class LoginLogic {
     }
 
     public static void openTechnicalOfficerDashboard() {
-        // Placeholder until TechnicalOfficerDashboard.java is created
-        JOptionPane.showMessageDialog(null,
-                "✓ Login Successful!\n\nRole: Technical Officer\nWelcome to TecFAMS Resource Portal.\n\n[TechnicalOfficerDashboard will be connected here]",
-                "TecFAMS - Technical Officer Portal",
-                JOptionPane.INFORMATION_MESSAGE);
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            boolean opened = tryOpenDashboard(
+                "main.java.ui.TechnicalOfficer.TechnicalOfficerDashboard",
+                "main.java.ui.technicalofficer.TechnicalOfficerDashboard",
+                "ui.TechnicalOfficer.TechnicalOfficerDashboard",
+                "ui.technicalofficer.TechnicalOfficerDashboard",
+                "main.java.ui.TechnicalOfficerDashboard",
+                "ui.TechnicalOfficerDashboard",
+                "main.java.ui.TechnicalOfficer.TechnicalOfficerUI",
+                "main.java.ui.technicalofficer.TechnicalOfficerUI",
+                "ui.TechnicalOfficer.TechnicalOfficerUI",
+                "ui.technicalofficer.TechnicalOfficerUI",
+                "main.java.ui.to.TODashboard",
+                "ui.to.TODashboard"
+            );
+            if (!opened) {
+                JOptionPane.showMessageDialog(null,
+                        "✓ Login Successful!\n\nRole: Technical Officer\nWelcome to TecFAMS Resource Portal.\n\n[TechnicalOfficerDashboard UI class will open here once created by your team member]",
+                        "TecFAMS - Technical Officer Portal",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
     }
 
     public static void openUndergraduateDashboard() {
-        // Placeholder until UndergraduateDashboard.java is created
-        JOptionPane.showMessageDialog(null,
-                "✓ Login Successful!\n\nRole: Undergraduate\nWelcome to TecFAMS Student Portal.\n\n[UndergraduateDashboard will be connected here]",
-                "TecFAMS - Student Portal",
-                JOptionPane.INFORMATION_MESSAGE);
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            boolean opened = tryOpenDashboard(
+                "main.java.ui.Undergraduate.UndergraduateDashboard",
+                "main.java.ui.undergraduate.UndergraduateDashboard",
+                "ui.Undergraduate.UndergraduateDashboard",
+                "ui.undergraduate.UndergraduateDashboard",
+                "main.java.ui.Student.StudentDashboard",
+                "main.java.ui.student.StudentDashboard",
+                "ui.Student.StudentDashboard",
+                "ui.student.StudentDashboard",
+                "main.java.ui.UndergraduateDashboard",
+                "ui.UndergraduateDashboard",
+                "main.java.ui.StudentDashboard",
+                "ui.StudentDashboard",
+                "main.java.ui.Undergraduate.UndergraduateUI",
+                "main.java.ui.undergraduate.UndergraduateUI",
+                "main.java.ui.Student.StudentUI",
+                "main.java.ui.student.StudentUI"
+            );
+            if (!opened) {
+                JOptionPane.showMessageDialog(null,
+                        "✓ Login Successful!\n\nRole: Undergraduate\nWelcome to TecFAMS Student Portal.\n\n[UndergraduateDashboard UI class will open here once created by your team member]",
+                        "TecFAMS - Student Portal",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+    }
+
+    /**
+     * Attempts to dynamically discover and instantiate a Dashboard Window/Frame by checking class names.
+     * Keeps modules decoupled so the project compiles and runs smoothly even before group members merge their code.
+     *
+     * @param candidateClassNames Possible fully qualified class names for the dashboard
+     * @return true if a dashboard class was found, instantiated, and made visible; false otherwise.
+     */
+    private static boolean tryOpenDashboard(String... candidateClassNames) {
+        for (String className : candidateClassNames) {
+            try {
+                Class<?> clazz = Class.forName(className);
+                Object instance = null;
+
+                // 1. Try static main(String[] args) if available in the group member's class
+                try {
+                    java.lang.reflect.Method mainMethod = clazz.getMethod("main", String[].class);
+                    if (java.lang.reflect.Modifier.isStatic(mainMethod.getModifiers())) {
+                        mainMethod.invoke(null, (Object) new String[0]);
+                        return true;
+                    }
+                } catch (NoSuchMethodException ignored) {}
+
+                // 2. Try default no-arg constructor
+                try {
+                    java.lang.reflect.Constructor<?> defaultCtor = clazz.getDeclaredConstructor();
+                    defaultCtor.setAccessible(true);
+                    instance = defaultCtor.newInstance();
+                } catch (NoSuchMethodException e) {
+                    // 3. Try looking for a single-argument constructor (e.g. passing null or student object)
+                    for (java.lang.reflect.Constructor<?> ctor : clazz.getDeclaredConstructors()) {
+                        if (ctor.getParameterCount() == 1) {
+                            try {
+                                ctor.setAccessible(true);
+                                instance = ctor.newInstance(new Object[]{null});
+                                break;
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+
+                if (instance != null) {
+                    if (instance instanceof JFrame) {
+                        ((JFrame) instance).setVisible(true);
+                        return true;
+                    } else if (instance instanceof java.awt.Window) {
+                        ((java.awt.Window) instance).setVisible(true);
+                        return true;
+                    } else if (instance instanceof javax.swing.JComponent) {
+                        // If their dashboard is a JPanel or JComponent, wrap in a JFrame
+                        JFrame frame = new JFrame("TecFAMS - " + clazz.getSimpleName());
+                        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        frame.setSize(1100, 720);
+                        frame.setLocationRelativeTo(null);
+                        frame.add((javax.swing.JComponent) instance);
+                        frame.setVisible(true);
+                        return true;
+                    } else {
+                        // In case it's a helper with a setVisible or display method
+                        try {
+                            java.lang.reflect.Method setVis = clazz.getMethod("setVisible", boolean.class);
+                            setVis.invoke(instance, true);
+                            return true;
+                        } catch (Exception ignored) {}
+                    }
+                }
+            } catch (ClassNotFoundException ignored) {
+                // Class not in current branch, try next candidate
+            } catch (Exception e) {
+                System.err.println("Error instantiating dashboard class " + className + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        return false;
     }
 }
