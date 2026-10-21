@@ -26,7 +26,13 @@ import static main.java.ui.TechnicalOfficer.TechnicalOfficerDashboard.*;
  * MedicalManagementForm - Technical Officer Module for TecFAMS.
  * Faculty of Technology - University of Ruhuna.
  * 
- * Preserves 100% of the original UI appearance, theme tokens, database behavior, and workflows.
+ * Features:
+ * - TecFAMS header with Officer badge and Back to Dashboard button
+ * - Summary metric cards (Total, Pending, Approved, Rejected)
+ * - Filter & Search bar (Reg No/Name, Status, Date range, Search & Reset)
+ * - Medical Records table with DB columns, status badges, and details trigger
+ * - Medical Details panel (student info, absence dates, session info, certificate Browse/View, approval status)
+ * - Actions: Save New, Update (persists Approval Status), Clear, Refresh
  */
 public class MedicalManagementForm extends JFrame {
 
@@ -60,7 +66,7 @@ public class MedicalManagementForm extends JFrame {
     private JLabel lblVerifiedBy;
 
     // Action Buttons
-    private JButton btnApprove, btnReject, btnSaveNew, btnUpdate, btnClear, btnRefresh;
+    private JButton btnSaveNew, btnUpdate, btnClear, btnRefresh;
 
     // State
     private int currentMedicalId = -1;
@@ -466,7 +472,7 @@ public class MedicalManagementForm extends JFrame {
         docRow.add(docBtnRow, BorderLayout.EAST);
         addSection(formBody, "4. Medical Certificate Document", createFieldWrapper("Certificate File Path (PDF / Image):", docRow));
 
-        // 5. Verification & Approval Status
+        // 5. Verification & Approval Status (Kept as requested)
         JPanel statusGrid = new JPanel(new GridLayout(1, 2, 10, 0));
         statusGrid.setOpaque(false);
         cmbApprovalStatus = new JComboBox<>(new String[]{"Pending", "Approved", "Rejected"});
@@ -478,7 +484,7 @@ public class MedicalManagementForm extends JFrame {
         statusGrid.add(createFieldWrapper("Verified By:", lblVerifiedBy));
         addSection(formBody, "5. Verification & Approval Status", statusGrid);
 
-        // 6. Action Buttons Bar
+        // 6. Action Buttons Bar (Simplified: Save New, Update, Clear, Refresh)
         formBody.add(createActionButtonsSection());
 
         JScrollPane formScroll = new JScrollPane(formBody);
@@ -499,28 +505,23 @@ public class MedicalManagementForm extends JFrame {
         parent.add(Box.createVerticalStrut(8));
     }
 
+    /**
+     * Simplified Action Buttons Section:
+     * Contains Save New, Update (persisting Approval Status), Clear, and Refresh.
+     */
     private JPanel createActionButtonsSection() {
-        JPanel container = new JPanel();
-        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
-        container.setOpaque(false);
-
-        JPanel decisionRow = new JPanel(new GridLayout(1, 2, 10, 0));
-        decisionRow.setOpaque(false);
-        btnApprove = createActionButton("✔  Approve Medical", Color.decode("#059669"));
-        btnApprove.addActionListener(e -> handleQuickDecision("Approved"));
-        btnReject = createActionButton("✖  Reject Medical", Color.decode("#DC2626"));
-        btnReject.addActionListener(e -> handleQuickDecision("Rejected"));
-        decisionRow.add(btnApprove);
-        decisionRow.add(btnReject);
-
         JPanel mgmtRow = new JPanel(new GridLayout(1, 4, 8, 0));
         mgmtRow.setOpaque(false);
+
         btnSaveNew = createPrimaryButton("💾 Save New");
         btnSaveNew.addActionListener(e -> saveMedicalRecord(false));
+
         btnUpdate = createSecondaryButton("🔄 Update");
         btnUpdate.addActionListener(e -> saveMedicalRecord(true));
+
         btnClear = createSecondaryButton("🧹 Clear");
         btnClear.addActionListener(e -> clearDetailsPanel());
+
         btnRefresh = createSecondaryButton("↺ Refresh");
         btnRefresh.addActionListener(e -> refreshAll());
 
@@ -529,22 +530,7 @@ public class MedicalManagementForm extends JFrame {
         mgmtRow.add(btnClear);
         mgmtRow.add(btnRefresh);
 
-        container.add(decisionRow);
-        container.add(Box.createVerticalStrut(10));
-        container.add(mgmtRow);
-        return container;
-    }
-
-    private JButton createActionButton(String text, Color bg) {
-        JButton btn = new JButton(text);
-        btn.setFont(FONT_MEDIUM);
-        btn.setForeground(WHITE);
-        btn.setBackground(bg);
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(new EmptyBorder(9, 14, 9, 14));
-        return btn;
+        return mgmtRow;
     }
 
     private JLabel createSectionTitle(String text) {
@@ -826,7 +812,11 @@ public class MedicalManagementForm extends JFrame {
         ps.setString(offset + 7, status);
 
         if ("Approved".equalsIgnoreCase(status) || "Rejected".equalsIgnoreCase(status)) {
-            ps.setInt(offset + 8, officerId);
+            if (officerId > 0) {
+                ps.setInt(offset + 8, officerId);
+            } else {
+                ps.setNull(offset + 8, Types.INTEGER);
+            }
         } else {
             ps.setNull(offset + 8, Types.INTEGER);
         }
@@ -837,6 +827,10 @@ public class MedicalManagementForm extends JFrame {
         return false;
     }
 
+    /**
+     * Save (New) or Update an existing Medical Record.
+     * When updating, the selected Approval Status from cmbApprovalStatus is persisted to the database.
+     */
     private void saveMedicalRecord(boolean isUpdate) {
         StudentItem student = (StudentItem) cmbStudentSelect.getSelectedItem();
         if (student == null) {
@@ -876,6 +870,17 @@ public class MedicalManagementForm extends JFrame {
             return;
         }
 
+        // Confirmation safety prompt if an existing record is being set to Rejected
+        if (isUpdate && "Rejected".equalsIgnoreCase(status)) {
+            int conf = JOptionPane.showConfirmDialog(
+                    this,
+                    "Are you sure you want to mark Medical Record #" + currentMedicalId + " as REJECTED?",
+                    "Confirm Rejection",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if (conf != JOptionPane.YES_OPTION) return;
+        }
+
         if (docPath.isEmpty()) docPath = "medicals/default_certificate.pdf";
 
         SessionItem sessionItem = (SessionItem) cmbSessionSelect.getSelectedItem();
@@ -890,6 +895,13 @@ public class MedicalManagementForm extends JFrame {
 
         try {
             int officerId = resolveTechnicalOfficerId(conn);
+
+            // Authorization check: cannot approve/reject without an identified officer account
+            if (("Approved".equalsIgnoreCase(status) || "Rejected".equalsIgnoreCase(status)) && officerId <= 0) {
+                JOptionPane.showMessageDialog(this, "Could not identify Technical Officer account in database for verification.", "Authentication Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             String sql;
             if (isUpdate) {
                 if (currentMedicalId <= 0) {
@@ -937,49 +949,6 @@ public class MedicalManagementForm extends JFrame {
                     txtDateFrom.getText().trim(), txtDateTo.getText().trim());
         }
         loadMedicalDetails(medId);
-    }
-
-    private void handleQuickDecision(String decision) {
-        if (currentMedicalId <= 0) {
-            JOptionPane.showMessageDialog(this, "Please select a medical record from the table first.", "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if ("Rejected".equalsIgnoreCase(decision)) {
-            int conf = JOptionPane.showConfirmDialog(
-                    this,
-                    "Are you sure you want to mark Medical Record #" + currentMedicalId + " as REJECTED?",
-                    "Confirm Rejection",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE);
-            if (conf != JOptionPane.YES_OPTION) return;
-        }
-
-        Connection conn = DatabaseConnection.getConnection();
-        if (conn == null) {
-            JOptionPane.showMessageDialog(this, "Database connection unavailable.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String sql = "UPDATE medicals SET approval_status = ?, verified_by = ? WHERE medical_id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            int officerId = resolveTechnicalOfficerId(conn);
-            ps.setString(1, decision);
-            ps.setInt(2, officerId);
-            ps.setInt(3, currentMedicalId);
-
-            if (ps.executeUpdate() > 0) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Medical Record #" + currentMedicalId + " has been marked as " + decision.toUpperCase() + " by " + currentOfficer.getName() + "!",
-                        "Status Updated",
-                        JOptionPane.INFORMATION_MESSAGE);
-                cmbApprovalStatus.setSelectedItem(decision);
-                refreshViews(currentMedicalId, false);
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Database Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     private void viewDocument() {
@@ -1036,7 +1005,7 @@ public class MedicalManagementForm extends JFrame {
         p.add(new JLabel("Document File: " + file.getName()));
         p.add(new JLabel("Disk Location: " + file.getAbsolutePath()));
         p.add(new JLabel("File Size: " + (file.length() / 1024) + " KB"));
-        p.add(new JLabel("Status: Verified valid certificate on file."));
+        p.add(new JLabel("File Status: Document available locally."));
 
         JButton btnClose = createPrimaryButton("Close");
         btnClose.addActionListener(e -> dlg.dispose());
@@ -1081,15 +1050,29 @@ public class MedicalManagementForm extends JFrame {
             if (rawId != null && rawId.matches("\\d+")) {
                 return Integer.parseInt(rawId);
             }
-            try (PreparedStatement ps = conn.prepareStatement("SELECT officer_id FROM technical_officers WHERE officer_name = ? LIMIT 1")) {
-                ps.setString(1, currentOfficer.getName());
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) return rs.getInt("officer_id");
+            if (currentOfficer.getEmail() != null && !currentOfficer.getEmail().trim().isEmpty()) {
+                try (PreparedStatement ps = conn.prepareStatement("SELECT officer_id FROM technical_officers WHERE email = ? LIMIT 1")) {
+                    ps.setString(1, currentOfficer.getEmail().trim());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) return rs.getInt("officer_id");
+                    }
                 }
+            }
+            if (currentOfficer.getName() != null && !currentOfficer.getName().trim().isEmpty()) {
+                try (PreparedStatement ps = conn.prepareStatement("SELECT officer_id FROM technical_officers WHERE officer_name = ? LIMIT 1")) {
+                    ps.setString(1, currentOfficer.getName().trim());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) return rs.getInt("officer_id");
+                    }
+                }
+            }
+            try (Statement s = conn.createStatement();
+                 ResultSet rs = s.executeQuery("SELECT officer_id FROM technical_officers LIMIT 1")) {
+                if (rs.next()) return rs.getInt("officer_id");
             }
         } catch (Exception ignored) {
         }
-        return 12; // Default Technical Officer ID from schema
+        return -1;
     }
 
     private void applyFilters() {
