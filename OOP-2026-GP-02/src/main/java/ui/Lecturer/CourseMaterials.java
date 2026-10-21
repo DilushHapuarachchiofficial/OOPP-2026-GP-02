@@ -1457,50 +1457,5 @@ public class CourseMaterials extends JPanel {
         return rawDate;
     }
 
-    // =========================================================================
-    // STANDALONE LAUNCHER & TESTING
-    // =========================================================================
-
-    /**
-     * Standalone main method allowing direct execution from IntelliJ IDEA.
-     * Simulates session for Dr. Chinthaka Premachandra (Lecturer ID: 4).
-     */
-    public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {}
-
-        // Set test session
-        UserSession.setCurrentSession(new UserSession(
-                4,
-                "lec_chinthaka",
-                "Lecturer",
-                "Dr. Chinthaka Premachandra",
-                "Senior Lecturer Gr. I",
-                "Department of Information and Communication Technology",
-                "chinthaka@fot.ruh.ac.lk"
-        ));
-
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("TecFAMS - Lecturer Course Materials");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1100, 750);
-            frame.setLayout(new BorderLayout());
-
-            Navbar navbar = new Navbar(Navbar.PAGE_MATERIALS);
-            CourseMaterials materials = new CourseMaterials();
-
-            navbar.addNavigationListener(pageName -> {
-                if (Navbar.PAGE_MATERIALS.equals(pageName)) {
-                    materials.refreshMaterials();
-                }
-            });
-
-            frame.add(navbar, BorderLayout.NORTH);
-            frame.add(materials, BorderLayout.CENTER);
-
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-        });
-    }
 }
+

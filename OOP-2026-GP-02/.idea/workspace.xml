@@ -4,7 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="" />
+    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/LoginLogic.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/LoginLogic.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/CourseMaterials.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/CourseMaterials.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerDashboard.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerMarksManagement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerMarksManagement.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerProfile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerProfile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/Navbar.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/Navbar.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/StudentDetailsEligibility.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/StudentDetailsEligibility.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -43,7 +53,7 @@
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;k__lecturer__version6&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;k__lecturer__version7&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/kavis/OneDrive/Desktop/TecFAMS/OOPP-2026-GP-02/OOP-2026-GP-02&quot;,
