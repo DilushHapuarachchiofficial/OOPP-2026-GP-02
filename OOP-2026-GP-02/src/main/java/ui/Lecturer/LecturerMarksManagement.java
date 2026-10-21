@@ -2492,34 +2492,5 @@ public class LecturerMarksManagement extends JPanel {
         public AssessmentComponent getAssessment() { return assessment; }
     }
 
-    // =========================================================================
-    // STANDALONE RUNNER
-    // =========================================================================
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception ignored) {}
-
-            JFrame frame = new JFrame("TecFAMS - Lecturer Marks Management");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1280, 800);
-            frame.setMinimumSize(new Dimension(1000, 680));
-            frame.setLocationRelativeTo(null);
-
-            if (UserSession.getCurrentSession() == null) {
-                UserSession.setCurrentSession(new UserSession(
-                        4, "lec_chinthaka", "Lecturer",
-                        "Dr. Chinthaka Premachandra", "Senior Lecturer Gr. I",
-                        "Department of Information and Communication Technology",
-                        "chinthaka@fot.ruh.ac.lk"
-                ));
-            }
-
-            LecturerMarksManagement marksPanel = new LecturerMarksManagement();
-            frame.add(marksPanel);
-            frame.setVisible(true);
-        });
-    }
 }
+
