@@ -2068,49 +2068,5 @@ public class LecturerProfile extends JPanel {
         }
     }
 
-    // =========================================================================
-    // STANDALONE RUNNER / DIRECT IDE TESTING
-    // =========================================================================
-
-    public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {}
-
-        // Mock session for Dr. Chinthaka Premachandra (Lecturer ID: 4)
-        if (UserSession.getCurrentSession() == null) {
-            UserSession.setCurrentSession(new UserSession(
-                    4,
-                    "lec_chinthaka",
-                    "Lecturer",
-                    "Dr. Chinthaka Premachandra",
-                    "Senior Lecturer Gr. I",
-                    "Department of Information and Communication Technology",
-                    "chinthaka@fot.ruh.ac.lk"
-            ));
-        }
-
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("TecFAMS - Lecturer Profile (Modern Academic Theme)");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1120, 800);
-            frame.setMinimumSize(new Dimension(880, 600));
-            frame.setLayout(new BorderLayout());
-
-            Navbar navbar = new Navbar(Navbar.PAGE_PROFILE);
-            LecturerProfile profile = new LecturerProfile();
-
-            navbar.addNavigationListener(pageName -> {
-                if (Navbar.PAGE_PROFILE.equals(pageName)) {
-                    profile.refreshProfileInformation();
-                }
-            });
-
-            frame.add(navbar, BorderLayout.NORTH);
-            frame.add(profile, BorderLayout.CENTER);
-
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-        });
-    }
 }
+
