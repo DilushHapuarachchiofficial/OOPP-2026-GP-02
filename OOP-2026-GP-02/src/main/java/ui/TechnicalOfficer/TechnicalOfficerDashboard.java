@@ -349,7 +349,7 @@ public class TechnicalOfficerDashboard extends JFrame {
                 "Process undergraduate medical certificate submissions, track approval statuses, and verify legitimate absence documentation.",
                 "🏥",
                 "Open Medical Records",
-                () -> openSectionAction("Medical Records Management", "Undergraduate Medical Records section.\n(Medical Certificate Submissions and Approval Status)")
+                this::openMedicalManagement
         ));
 
         // Card 3: Department Timetable
@@ -453,6 +453,11 @@ public class TechnicalOfficerDashboard extends JFrame {
         p.add(t);
         p.add(s);
         return p;
+    }
+
+    public void openMedicalManagement() {
+        MedicalManagementForm form = new MedicalManagementForm(this, currentOfficer);
+        form.setVisible(true);
     }
 
     public void openSectionAction(String title, String message) {
