@@ -405,83 +405,58 @@ public class UndergraduateAttendanceUI extends JPanel {
     }
 
     private JPanel createCourseCard(CourseAttendanceSummary cs) {
-        JPanel card = new JPanel(new BorderLayout(0, 10));
+        JPanel card = new JPanel(new BorderLayout(0, 14));
         card.setBackground(COLOR_WHITE);
-        card.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(14, 18, 14, 18)));
+        card.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(16, 20, 16, 20)));
 
-        // Top Row: Course Code & Name + Eligibility Badge
-        JPanel topRow = new JPanel(new BorderLayout());
+        // Top Row: Course Code & Name (Left) + Percentage & Eligibility Badge (Right)
+        JPanel topRow = new JPanel(new BorderLayout(12, 0));
         topRow.setOpaque(false);
 
-        JPanel titleBox = new JPanel(new GridLayout(2, 1, 0, 2));
+        JPanel titleBox = new JPanel(new GridLayout(2, 1, 0, 4));
         titleBox.setOpaque(false);
         JLabel codeLbl = new JLabel(cs.getCourseCode());
-        codeLbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        codeLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
         codeLbl.setForeground(COLOR_PRIMARY_NAVY);
 
         JLabel nameLbl = new JLabel(cs.getCourseName());
-        nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         nameLbl.setForeground(COLOR_TEXT_MUTED);
 
         titleBox.add(codeLbl);
         titleBox.add(nameLbl);
         topRow.add(titleBox, BorderLayout.WEST);
 
-        // Badge Pill
+        // Right side: Percentage + Badge Pill
         boolean eligible = cs.isEligible();
         double pct = cs.getPercentage();
+        Color barColor = eligible ? COLOR_SUCCESS : (pct >= 70.0 ? COLOR_WARNING : COLOR_DANGER);
+
+        JPanel rightBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        rightBox.setOpaque(false);
+
+        JLabel pctLbl = new JLabel(String.format("%.1f%%", pct));
+        pctLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        pctLbl.setForeground(barColor);
+        rightBox.add(pctLbl);
+
         Color badgeBg = (cs.getTotalSessions() == 0) ? COLOR_LIGHT_BLUE : (eligible ? new Color(0xD1, 0xFA, 0xE5) : new Color(0xFE, 0xE2, 0xE2));
         Color badgeFg = (cs.getTotalSessions() == 0) ? COLOR_MAIN_BLUE : (eligible ? new Color(0x06, 0x5F, 0x46) : new Color(0x99, 0x1B, 0x1B));
         String badgeText = (cs.getTotalSessions() == 0) ? "No Sessions" : (eligible ? "Eligible" : "At Risk (<80%)");
 
         JLabel badge = new JLabel("  " + badgeText + "  ");
-        badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        badge.setFont(new Font("Segoe UI", Font.BOLD, 12));
         badge.setBackground(badgeBg);
         badge.setForeground(badgeFg);
         badge.setOpaque(true);
         badge.setBorder(new LineBorder(badgeBg, 4, true));
-        topRow.add(badge, BorderLayout.EAST);
+        rightBox.add(badge);
 
+        topRow.add(rightBox, BorderLayout.EAST);
         card.add(topRow, BorderLayout.NORTH);
 
-        // Middle Row: Custom Progress Bar & Percentage
-        JPanel midRow = new JPanel(new BorderLayout(12, 0));
-        midRow.setOpaque(false);
-
-        Color barColor = eligible ? COLOR_SUCCESS : (pct >= 70.0 ? COLOR_WARNING : COLOR_DANGER);
-        JPanel progressBar = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                int w = getWidth();
-                int h = getHeight();
-                // Background track
-                g2.setColor(new Color(0xEE, 0xF2, 0xF6));
-                g2.fillRoundRect(0, (h - 8) / 2, w, 8, 8, 8);
-                // Fill
-                int fillW = (int) Math.round((Math.min(pct, 100.0) / 100.0) * w);
-                if (fillW > 0) {
-                    g2.setColor(barColor);
-                    g2.fillRoundRect(0, (h - 8) / 2, fillW, 8, 8, 8);
-                }
-                g2.dispose();
-            }
-        };
-        progressBar.setPreferredSize(new Dimension(150, 16));
-        progressBar.setOpaque(false);
-        midRow.add(progressBar, BorderLayout.CENTER);
-
-        JLabel pctLbl = new JLabel(String.format("%.1f%%", pct));
-        pctLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        pctLbl.setForeground(barColor);
-        midRow.add(pctLbl, BorderLayout.EAST);
-
-        card.add(midRow, BorderLayout.CENTER);
-
         // Bottom Row: Detailed counts (Total, Present, Absent, Medical)
-        JPanel statRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
+        JPanel statRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
         statRow.setOpaque(false);
         statRow.add(createMiniStat("Total", String.valueOf(cs.getTotalSessions()), COLOR_TEXT_PRIMARY));
         statRow.add(createMiniStat("Present", String.valueOf(cs.getAttendedSessions()), COLOR_SUCCESS));
@@ -493,14 +468,14 @@ public class UndergraduateAttendanceUI extends JPanel {
     }
 
     private JPanel createMiniStat(String label, String value, Color color) {
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         p.setOpaque(false);
         JLabel l = new JLabel(label + ":");
-        l.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        l.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         l.setForeground(COLOR_TEXT_MUTED);
 
         JLabel v = new JLabel(value);
-        v.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        v.setFont(new Font("Segoe UI", Font.BOLD, 14));
         v.setForeground(color);
 
         p.add(l);
