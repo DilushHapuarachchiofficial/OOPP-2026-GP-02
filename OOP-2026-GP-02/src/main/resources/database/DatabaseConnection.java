@@ -26,25 +26,29 @@ public class DatabaseConnection {
     public static Connection getConnection() {
         try {
             if (connection == null || connection.isClosed()) {
-                Class.forName("com.mysql.cj.jdbc.Driver");
                 try {
-                    connection = DriverManager.getConnection(URL, USER, DEFAULT_PASSWORD);
-                } catch (SQLException ex1) {
+                    Class.forName("com.mysql.cj.jdbc.Driver");
+                } catch (ClassNotFoundException ignored) {
+                    // Modern MySQL JDBC drivers auto-register via ServiceLoader
+                }
+
+                // Try common local MySQL passwords: blank (default), 1234, root
+                String[] candidatePasswords = {"", DEFAULT_PASSWORD, "root"};
+                for (String pwd : candidatePasswords) {
                     try {
-                        connection = DriverManager.getConnection(URL, USER, "");
-                    } catch (SQLException ex2) {
-                        try {
-                            connection = DriverManager.getConnection(URL, USER, "root");
-                        } catch (SQLException ex3) {
-                            System.err.println("DatabaseConnection: Could not connect to MySQL server (port 3306): " + ex3.getMessage());
-                            return null;
+                        connection = DriverManager.getConnection(URL, USER, pwd);
+                        if (connection != null && !connection.isClosed()) {
+                            break;
                         }
+                    } catch (SQLException ignored) {
                     }
                 }
+
+                if (connection == null || connection.isClosed()) {
+                    System.err.println("DatabaseConnection: Could not connect to MySQL server (port 3306) with root user.");
+                    return null;
+                }
             }
-        } catch (ClassNotFoundException e) {
-            System.err.println("DatabaseConnection: MySQL JDBC Driver not found: " + e.getMessage());
-            return null;
         } catch (SQLException e) {
             System.err.println("DatabaseConnection: SQL error: " + e.getMessage());
             return null;
