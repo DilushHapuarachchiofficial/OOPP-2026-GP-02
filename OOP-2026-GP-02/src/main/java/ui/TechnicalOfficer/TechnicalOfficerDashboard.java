@@ -340,7 +340,7 @@ public class TechnicalOfficerDashboard extends JFrame {
                 "Record student attendance for theory and practical sessions. Maintain session logs (15 sessions per component) and verify 80% examination eligibility.",
                 "📝",
                 "Open Attendance System",
-                () -> openSectionAction("Attendance Management", "Undergraduate Attendance Management section.\n(Theory and Practical Attendance, 15 Sessions Per Module)")
+                this::openAttendanceManagement
         ));
 
         // Card 2: Medical Records
@@ -455,9 +455,30 @@ public class TechnicalOfficerDashboard extends JFrame {
         return p;
     }
 
+    public void openAttendanceManagement() {
+        try {
+            AttendanceManagementForm form = new AttendanceManagementForm(this, currentOfficer);
+            form.setVisible(true);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to open Attendance Management: " + ex.getMessage(),
+                    "Navigation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
     public void openMedicalManagement() {
-        MedicalManagementForm form = new MedicalManagementForm(this, currentOfficer);
-        form.setVisible(true);
+        try {
+            MedicalManagementForm form = new MedicalManagementForm(this, currentOfficer);
+            form.setVisible(true);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to open Medical Records Management: " + ex.getMessage(),
+                    "Navigation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
     }
 
     public void openSectionAction(String title, String message) {
