@@ -67,7 +67,6 @@ public class UndergraduateAttendanceUI extends JPanel {
     private JComboBox<String> courseFilterCombo;
     private JComboBox<String> statusFilterCombo;
     private JComboBox<String> typeFilterCombo;
-    private JTextField searchField;
     private JLabel recordCountLabel;
 
     /**
@@ -162,7 +161,7 @@ public class UndergraduateAttendanceUI extends JPanel {
         // 5. Attendance Session Log Section (Filter & Table)
         scrollContent.add(createSectionTitle("Attendance Session History Log", "Complete history of lectures and practicals held"));
         scrollContent.add(Box.createVerticalStrut(10));
-        scrollContent.add(createFilterAndSearchPanel());
+        scrollContent.add(createFilterPanel());
         scrollContent.add(Box.createVerticalStrut(10));
         scrollContent.add(createTableCard());
         scrollContent.add(Box.createVerticalStrut(20));
@@ -510,9 +509,9 @@ public class UndergraduateAttendanceUI extends JPanel {
     }
 
     // ==========================================
-    // 5. FILTER & SEARCH CONTROLS
+    // 5. FILTER CONTROLS
     // ==========================================
-    private JPanel createFilterAndSearchPanel() {
+    private JPanel createFilterPanel() {
         JPanel filterCard = new JPanel(new BorderLayout());
         filterCard.setBackground(COLOR_WHITE);
         filterCard.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(10, 16, 10, 16)));
@@ -547,38 +546,6 @@ public class UndergraduateAttendanceUI extends JPanel {
         leftFilters.add(typeFilterCombo);
 
         filterCard.add(leftFilters, BorderLayout.WEST);
-
-        // Search Field on Right
-        JPanel rightSearch = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        rightSearch.setOpaque(false);
-
-        searchField = new JTextField();
-        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        searchField.setPreferredSize(new Dimension(180, 32));
-        searchField.putClientProperty("JTextField.placeholderText", "Search date or session...");
-        searchField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { applyTableFilters(); }
-            @Override public void removeUpdate(DocumentEvent e) { applyTableFilters(); }
-            @Override public void changedUpdate(DocumentEvent e) { applyTableFilters(); }
-        });
-        rightSearch.add(new JLabel("Search:"));
-        rightSearch.add(searchField);
-
-        JButton resetBtn = new JButton("Reset");
-        resetBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        resetBtn.setBackground(COLOR_WHITE);
-        resetBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(6, 12, 6, 12)));
-        resetBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        resetBtn.addActionListener(e -> {
-            courseFilterCombo.setSelectedIndex(0);
-            statusFilterCombo.setSelectedIndex(0);
-            typeFilterCombo.setSelectedIndex(0);
-            searchField.setText("");
-            applyTableFilters();
-        });
-        rightSearch.add(resetBtn);
-
-        filterCard.add(rightSearch, BorderLayout.EAST);
         return filterCard;
     }
 
@@ -886,14 +853,6 @@ public class UndergraduateAttendanceUI extends JPanel {
         if (typeFilterCombo != null && typeFilterCombo.getSelectedIndex() > 0) {
             String type = (String) typeFilterCombo.getSelectedItem();
             filters.add(RowFilter.regexFilter("(?i)" + type, 4));
-        }
-
-        // 4. Search Filter
-        if (searchField != null) {
-            String text = searchField.getText().trim();
-            if (!text.isEmpty()) {
-                filters.add(RowFilter.regexFilter("(?i)" + text));
-            }
         }
 
         if (filters.isEmpty()) {
