@@ -26,7 +26,7 @@ public class AttendanceDAO {
     public List<Attendance> getAttendanceRecords(String studentIdOrRegNo) {
         List<Attendance> list = new ArrayList<>();
         if (studentIdOrRegNo == null || studentIdOrRegNo.trim().isEmpty()) {
-            return getFallbackAttendanceRecords();
+            return list;
         }
 
         String sql = "SELECT " +
@@ -78,9 +78,6 @@ public class AttendanceDAO {
             closeQuietly(rs, stmt, conn);
         }
 
-        if (list.isEmpty()) {
-            return getFallbackAttendanceRecords();
-        }
         return list;
     }
 
@@ -93,7 +90,7 @@ public class AttendanceDAO {
     public List<CourseAttendanceSummary> getCourseAttendanceSummaries(String studentIdOrRegNo) {
         List<CourseAttendanceSummary> summaries = new ArrayList<>();
         if (studentIdOrRegNo == null || studentIdOrRegNo.trim().isEmpty()) {
-            return getFallbackCourseSummaries();
+            return summaries;
         }
 
         String sql = "SELECT " +
@@ -155,9 +152,6 @@ public class AttendanceDAO {
             closeQuietly(rs, stmt, conn);
         }
 
-        if (summaries.isEmpty()) {
-            return getFallbackCourseSummaries();
-        }
         return summaries;
     }
 
@@ -180,7 +174,7 @@ public class AttendanceDAO {
             return new AttendanceSummary(total, attended, medical);
         }
 
-        return new AttendanceSummary(15, 15, 0);
+        return new AttendanceSummary(0, 0, 0);
     }
 
     private int getApprovedMedicalsForCourse(Connection conn, String studentIdOrRegNo, int courseId) {
@@ -228,60 +222,5 @@ public class AttendanceDAO {
         try { if (rs != null) rs.close(); } catch (SQLException ignored) {}
         try { if (stmt != null) stmt.close(); } catch (SQLException ignored) {}
         DatabaseConnection.closeConnection(conn);
-    }
-
-    // ==========================================
-    // FALLBACK MOCK DATA (High fidelity preview)
-    // ==========================================
-    private List<Attendance> getFallbackAttendanceRecords() {
-        List<Attendance> list = new ArrayList<>();
-        String[] dates = {
-                "2024-02-05", "2024-02-12", "2024-02-19", "2024-02-26", "2024-03-04",
-                "2024-03-11", "2024-03-18", "2024-03-25", "2024-04-01", "2024-04-08",
-                "2024-04-15", "2024-04-22", "2024-04-29", "2024-05-06", "2024-05-13"
-        };
-
-        for (int i = 0; i < dates.length; i++) {
-            AttendanceStatus status = (i == 4) ? AttendanceStatus.ABSENT : (i == 10 ? AttendanceStatus.MEDICAL : AttendanceStatus.PRESENT);
-            list.add(new Attendance(
-                    i + 1,
-                    "ICT2132",
-                    "Object Oriented Programming Practicum",
-                    dates[i],
-                    status,
-                    (i % 2 == 0) ? SessionType.THEORY : SessionType.PRACTICAL,
-                    i + 1
-            ));
-        }
-
-        // Add some sessions for ICT2113
-        String[] dates2 = {"2024-02-07", "2024-02-14", "2024-02-21", "2024-02-28", "2024-03-06", "2024-03-13", "2024-03-20"};
-        for (int i = 0; i < dates2.length; i++) {
-            list.add(new Attendance(
-                    100 + i,
-                    "ICT2113",
-                    "Data Structures and Algorithms",
-                    dates2[i],
-                    AttendanceStatus.PRESENT,
-                    SessionType.THEORY,
-                    i + 1
-            ));
-        }
-
-        return list;
-    }
-
-    private List<CourseAttendanceSummary> getFallbackCourseSummaries() {
-        List<CourseAttendanceSummary> list = new ArrayList<>();
-        list.add(new CourseAttendanceSummary(1, "ICT2122", "Object Oriented Programming", 15, 14, 1, 0));
-        list.add(new CourseAttendanceSummary(2, "ICT2132", "Object Oriented Programming Practicum", 15, 15, 0, 0));
-        list.add(new CourseAttendanceSummary(3, "ICT2142", "E-Business Systems", 15, 14, 1, 0));
-        list.add(new CourseAttendanceSummary(4, "ICT2152", "Object Oriented Analysis and Design", 15, 14, 1, 0));
-        list.add(new CourseAttendanceSummary(5, "ICT2162", "Management Information Systems", 12, 11, 1, 0));
-        list.add(new CourseAttendanceSummary(6, "TCS2112", "Business Economics", 12, 12, 0, 0));
-        list.add(new CourseAttendanceSummary(7, "TCS2121", "Soft Skills", 10, 10, 0, 0));
-        list.add(new CourseAttendanceSummary(8, "TCS1212", "Fundamentals of Management", 15, 14, 1, 0));
-        list.add(new CourseAttendanceSummary(9, "TMS1233", "Discrete Mathematics", 15, 13, 2, 0));
-        return list;
     }
 }

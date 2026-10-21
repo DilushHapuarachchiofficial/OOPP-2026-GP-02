@@ -4,50 +4,49 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+/**
+ * Dedicated database connection manager for MySQL Server 8.0 (MySQL Workbench).
+ * Strictly connects to the local MySQL Server service on port 3306 (tecfams_db).
+ * All XAMPP fallback code has been permanently removed.
+ */
 public class DatabaseConnection {
-    // Database credentials and URL for TecFAMS (MySQL Server 8.0 / MySQL Workbench)
+    // MySQL Server 8.0 credentials & connection URL
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String USER = "root";
     private static final String PASSWORD = "1234";
 
-    // Singleton instance of Connection
-    private static Connection connection = null;
-
     public DatabaseConnection() {
     }
 
+    /**
+     * Connects directly and strictly to the MySQL Server 8.0 database (tecfams_db).
+     *
+     * @return Valid Connection object, or null if MySQL Server cannot be reached.
+     */
     public static Connection getConnection() {
         try {
-            if (connection == null || connection.isClosed()) {
-                Class.forName("com.mysql.cj.jdbc.Driver");
-                try {
-                    // 1. Try connecting with MySQL Workbench password
-                    connection = DriverManager.getConnection(URL, USER, PASSWORD);
-                } catch (SQLException ex) {
-                    // 2. Fallback to empty password (e.g. XAMPP default) or 'root'
-                    try {
-                        connection = DriverManager.getConnection(URL, USER, "");
-                    } catch (SQLException ex2) {
-                        connection = DriverManager.getConnection(URL, USER, "root");
-                    }
-                }
-                System.out.println("Database connection established successfully with MySQL Workbench (tecfams_db).");
-            }
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+            return conn;
         } catch (ClassNotFoundException e) {
-            System.err.println("MySQL JDBC Driver not found. Falling back to offline/mock data mode.");
+            System.err.println("[MySQL Server Error] Driver not found: " + e.getMessage());
+            return null;
         } catch (SQLException e) {
-            System.err.println("Failed to connect to MySQL database (" + e.getMessage() + "). Running with local/mock data.");
+            System.err.println("[MySQL Server Error] Connection to MySQL Server (tecfams_db) failed: " + e.getMessage());
+            return null;
         }
-        return connection;
     }
 
+    /**
+     * Safely closes a database connection.
+     *
+     * @param conn Connection to close.
+     */
     public static void closeConnection(Connection conn) {
         if (conn != null) {
             try {
                 conn.close();
             } catch (SQLException ignored) {
-            } finally {
-                connection = null;
             }
         }
     }
