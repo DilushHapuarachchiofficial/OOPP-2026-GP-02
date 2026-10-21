@@ -2646,32 +2646,5 @@ public class StudentDetailsEligibility extends JPanel {
         }
     }
 
-    // Standalone Runner for Development and Verification
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception ignored) {}
-
-            JFrame frame = new JFrame("TecFAMS - Student Details & Eligibility");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            // Default typical laptop resolution test (1200 x 720)
-            frame.setSize(1200, 720);
-            frame.setMinimumSize(new Dimension(860, 600));
-            frame.setLocationRelativeTo(null);
-
-            if (UserSession.getCurrentSession() == null) {
-                UserSession.setCurrentSession(new UserSession(
-                        4, "lec_chinthaka", "Lecturer",
-                        "Dr. Chinthaka Premachandra", "Senior Lecturer Gr. I",
-                        "Department of Information and Communication Technology",
-                        "chinthaka@fot.ruh.ac.lk"
-                ));
-            }
-
-            StudentDetailsEligibility view = new StudentDetailsEligibility();
-            frame.add(view);
-            frame.setVisible(true);
-        });
-    }
 }
+
