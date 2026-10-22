@@ -1,6 +1,6 @@
 -- =========================================================================
 -- TecFAMS - Lecturer Marks Management Database Migration Script
--- Faculty of Technology, University of Ruhuna
+-- Faculty of Technology
 -- =========================================================================
 
 USE `tecfams_db`;
@@ -175,7 +175,7 @@ SELECT
     weighted_ca_score,
     weighted_final_score,
     final_calculated_marks,
-    -- Faculty of Technology, University of Ruhuna Student Handbook By-Law No. 92-2025 Table 1 & Table 2
+    -- Faculty of Technology Student Handbook By-Law No. 92-2025 Table 1 & Table 2
     CASE 
         WHEN entered_ca_count < total_ca_components OR (total_final_components > 0 AND entered_final_count < total_final_components) THEN 'I'
         WHEN final_calculated_marks >= 85.00 THEN 'A+'

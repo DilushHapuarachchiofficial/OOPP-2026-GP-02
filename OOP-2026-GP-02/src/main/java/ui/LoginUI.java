@@ -135,7 +135,7 @@ public class LoginUI extends JFrame {
     private void initUI() {
         // Frame Settings
         frame = this;
-        setTitle("TecFAMS - Faculty of Technology | University of Ruhuna");
+        setTitle("TecFAMS");
         setSize(1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -471,7 +471,7 @@ public class LoginUI extends JFrame {
         passwordField.addActionListener(enterKeyListener);
 
         // Footer Text
-        footerLabel = new JLabel("Secure Access • Faculty of Technology, University of Ruhuna", SwingConstants.CENTER);
+        footerLabel = new JLabel("Secure Access • Faculty of Technology", SwingConstants.CENTER);
         footerLabel.setFont(FONT_FOOTER);
         footerLabel.setForeground(COLOR_SECONDARY_TEXT);
 

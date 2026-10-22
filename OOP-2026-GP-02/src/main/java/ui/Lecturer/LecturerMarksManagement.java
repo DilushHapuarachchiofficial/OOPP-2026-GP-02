@@ -35,10 +35,10 @@ import java.util.List;
 public class LecturerMarksManagement extends JPanel {
 
     // =========================================================================
-    // COLOR PALETTE (Faculty of Technology, University of Ruhuna Brand Theme)
+    // COLOR PALETTE (Faculty of Technology Brand Theme)
     // =========================================================================
     public static final Color COLOR_DEEP_NAVY      = new Color(8, 47, 90);     // #082F5A - Brand headers & primary dark
-    public static final Color COLOR_PRO_BLUE       = new Color(11, 79, 156);   // #0B4F9C - Ruhuna primary royal blue
+    public static final Color COLOR_PRO_BLUE       = new Color(11, 79, 156);   // #0B4F9C - Faculty primary royal blue
     public static final Color COLOR_TECH_BLUE      = new Color(40, 120, 208);  // #2878D0 - Active accents & pill buttons
     public static final Color COLOR_PAGE_BG        = new Color(244, 247, 251); // #F4F7FB - Soft canvas background
     public static final Color COLOR_WHITE          = Color.WHITE;              // Pure white cards & surfaces
@@ -1174,7 +1174,7 @@ public class LecturerMarksManagement extends JPanel {
         // Results JTable
         String[] resultCols = {
                 "Reg. Number", "Student Name", "CA Mark (100%)", "CA Eligibility",
-                "End Exam %", "CA Contrib.", "Final Contrib.", "Total Mark", "Ruhuna Grade", "GPV", "Handbook Status"
+                "End Exam %", "CA Contrib.", "Final Contrib.", "Total Mark", "Grade", "GPV", "Handbook Status"
         };
         resultsTableModel = new DefaultTableModel(resultCols, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }

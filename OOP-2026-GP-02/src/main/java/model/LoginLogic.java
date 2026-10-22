@@ -268,7 +268,7 @@ public class LoginLogic {
 
     public static void openLecturerDashboard() {
         javax.swing.SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("TecFAMS - Faculty of Technology Academic Management System");
+            JFrame frame = new JFrame("TecFAMS");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1100, 720);
             frame.setLayout(new java.awt.BorderLayout());
@@ -501,7 +501,7 @@ public class LoginLogic {
                         return true;
                     } else if (instance instanceof javax.swing.JComponent) {
                         // If their dashboard is a JPanel or JComponent, wrap in a JFrame
-                        JFrame frame = new JFrame("TecFAMS - " + clazz.getSimpleName());
+                        JFrame frame = new JFrame("TecFAMS");
                         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                         frame.setSize(1100, 720);
                         frame.setLocationRelativeTo(null);

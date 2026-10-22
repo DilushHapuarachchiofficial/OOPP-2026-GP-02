@@ -12,7 +12,7 @@ import java.util.List;
 
 public class TestMarksManagement {
     public static void main(String[] args) {
-        System.out.println("=== Testing Marks Management & Ruhuna By-Law Grading ===");
+        System.out.println("=== Testing Marks Management & By-Law Grading ===");
 
         // Test 1: MarksCalculationService verification
         System.out.println("Testing By-Law 92-2025 Table 1 Grade Mapping:");

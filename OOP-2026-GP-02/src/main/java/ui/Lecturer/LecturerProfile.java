@@ -302,7 +302,7 @@ public class LecturerProfile extends JPanel {
         bannerBar.setBorder(new EmptyBorder(12, 24, 0, 24));
         bannerBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 40));
 
-        JLabel facultyTag = new JLabel(" Faculty of Technology • University of Ruhuna");
+        JLabel facultyTag = new JLabel(" Faculty of Technology");
         facultyTag.setIcon(new ProfileVectorIcon(ProfileVectorIcon.Type.BUILDING, 13, new Color(224, 238, 255)));
         facultyTag.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 12));
         facultyTag.setForeground(new Color(235, 245, 255));

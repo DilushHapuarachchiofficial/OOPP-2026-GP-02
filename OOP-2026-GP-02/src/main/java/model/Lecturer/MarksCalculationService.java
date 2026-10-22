@@ -94,7 +94,7 @@ public class MarksCalculationService {
     }
 
     /**
-     * Determines the University of Ruhuna Faculty of Technology Official Letter Grade.
+     * Determines the Faculty of Technology Official Letter Grade.
      * Reference: Faculty Student Handbook (2026 / By-Law No. 92-2025, Section 3.19.2 Table 1).
      *
      * Marks Range | Grade | Grade Point Value (GPV)
@@ -133,7 +133,7 @@ public class MarksCalculationService {
     }
 
     /**
-     * Determines the University of Ruhuna Official Grade Point Value (GPV).
+     * Determines the Faculty of Technology Official Grade Point Value (GPV).
      * Reference: Faculty Student Handbook Table 1.
      *
      * @param finalMark Total final course mark (out of 100).
