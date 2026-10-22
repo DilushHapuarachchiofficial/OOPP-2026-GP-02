@@ -369,7 +369,7 @@ public class UndergraduateMedicalUI extends JPanel {
         startLbl.setForeground(COLOR_TEXT_PRIMARY);
         datesRow.add(startLbl);
 
-        startDateField = new JTextField("2024-03-18", 10);
+        startDateField = new JTextField("2026-10-13", 10);
         startDateField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         startDateField.setPreferredSize(new Dimension(110, 32));
         startDateField.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(4, 8, 4, 8)));
@@ -380,7 +380,7 @@ public class UndergraduateMedicalUI extends JPanel {
         endLbl.setForeground(COLOR_TEXT_PRIMARY);
         datesRow.add(endLbl);
 
-        endDateField = new JTextField("2024-03-22", 10);
+        endDateField = new JTextField("2026-10-15", 10);
         endDateField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         endDateField.setPreferredSize(new Dimension(110, 32));
         endDateField.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(4, 8, 4, 8)));
