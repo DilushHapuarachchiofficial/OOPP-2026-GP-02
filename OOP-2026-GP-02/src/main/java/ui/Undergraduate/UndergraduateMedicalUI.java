@@ -783,24 +783,13 @@ public class UndergraduateMedicalUI extends JPanel {
 
         if (primaryMedicalId > 0) {
             String referenceNumber = "MED-REF-" + String.format("%04d", primaryMedicalId);
-
-            StringBuilder coursesHtml = new StringBuilder();
-            if (coveredCourseNames.isEmpty()) {
-                coursesHtml.append("<li>General Medical Leave (No specific lectures selected)</li>");
-            } else {
-                for (String c : coveredCourseNames) {
-                    coursesHtml.append("<li><b>").append(c).append("</b></li>");
-                }
-            }
-
             String msg = "<html><body style='width: 360px; font-family: Segoe UI;'>" +
                     "<h3 style='color: #10B981; margin-bottom: 6px;'>✓ Medical Certificate Submitted Successfully!</h3>" +
                     "<p>Your medical certificate has been registered in the TecFAMS system.</p>" +
                     "<div style='background-color: #EAF2FF; padding: 10px; border: 1px solid #2563EB; border-radius: 4px; margin: 10px 0;'>" +
                     "<b>Reference Number: </b><span style='color: #2563EB; font-size: 14px; font-weight: bold;'>" + referenceNumber + "</span><br>" +
                     "<b>Medical Period: </b>" + startDate + " to " + endDate + "<br>" +
-                    "<b>Covered Lectures (" + (selectedSessionIds.isEmpty() ? 1 : selectedSessionIds.size()) + "):</b>" +
-                    "<ul style='margin-top: 4px; margin-bottom: 4px; padding-left: 18px;'>" + coursesHtml + "</ul>" +
+                    "<b>Covered Absent Sessions: </b>" + (selectedSessionIds.isEmpty() ? "General medical leave" : selectedSessionIds.size() + " session(s) in period") + "<br>" +
                     "<b>Status: </b><span style='color: #D97706; font-weight: bold;'>Pending Verification</span>" +
                     "</div>" +
                     "<p style='font-size: 11px; color: #718096;'>Please keep this Reference Number for official inquiries with the Medical Officer or Technical Officer.</p>" +
@@ -888,8 +877,8 @@ public class UndergraduateMedicalUI extends JPanel {
         tableSubHeader.add(tableCountLabel, BorderLayout.EAST);
         tableCard.add(tableSubHeader, BorderLayout.NORTH);
 
-        // Columns
-        String[] columns = {"Reference #", "Covered Lecture / Course", "Medical Period", "Illness Reason", "Certificate File", "Submitted On", "Status"};
+        // Columns (One row per medical certificate submission)
+        String[] columns = {"Reference #", "Medical Period", "Illness Reason", "Certificate File", "Submitted On", "Status"};
         historyTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
@@ -913,21 +902,21 @@ public class UndergraduateMedicalUI extends JPanel {
         th.setPreferredSize(new Dimension(0, 36));
 
         // Column widths
-        historyTable.getColumnModel().getColumn(0).setPreferredWidth(120); // Reference #
-        historyTable.getColumnModel().getColumn(1).setPreferredWidth(230); // Course & Session
-        historyTable.getColumnModel().getColumn(2).setPreferredWidth(160); // Period
-        historyTable.getColumnModel().getColumn(3).setPreferredWidth(190); // Reason
-        historyTable.getColumnModel().getColumn(4).setPreferredWidth(140); // Document
-        historyTable.getColumnModel().getColumn(5).setPreferredWidth(100); // Submitted On
-        historyTable.getColumnModel().getColumn(6).setPreferredWidth(110); // Status
+        historyTable.getColumnModel().getColumn(0).setPreferredWidth(130); // Reference #
+        historyTable.getColumnModel().getColumn(1).setPreferredWidth(180); // Medical Period
+        historyTable.getColumnModel().getColumn(2).setPreferredWidth(260); // Illness Reason
+        historyTable.getColumnModel().getColumn(3).setPreferredWidth(210); // Certificate File
+        historyTable.getColumnModel().getColumn(4).setPreferredWidth(120); // Submitted On
+        historyTable.getColumnModel().getColumn(5).setPreferredWidth(120); // Status
 
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         historyTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
-        historyTable.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
+        historyTable.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        historyTable.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
 
         // Status badge pill renderer
-        historyTable.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
+        historyTable.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
                 JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));
@@ -966,8 +955,11 @@ public class UndergraduateMedicalUI extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     int row = historyTable.getSelectedRow();
-                    if (row >= 0 && row < submittedMedicals.size()) {
-                        openDocumentFile(submittedMedicals.get(row).getDocumentPath());
+                    if (row >= 0) {
+                        int modelRow = historyTable.convertRowIndexToModel(row);
+                        if (modelRow >= 0 && modelRow < submittedMedicals.size()) {
+                            openDocumentFile(submittedMedicals.get(modelRow).getDocumentPath());
+                        }
                     }
                 }
             }
@@ -1074,11 +1066,6 @@ public class UndergraduateMedicalUI extends JPanel {
                             if (rec.getStatus() == MedicalStatus.APPROVED) approved++;
                             else if (rec.getStatus() == MedicalStatus.PENDING) pending++;
 
-                            String courseSession = (rec.getCourseCode() != null && !rec.getCourseCode().isEmpty())
-                                    ? rec.getCourseCode() + " - " + (rec.getCourseName() != null ? rec.getCourseName() : "") +
-                                      (rec.getSessionNumber() > 0 ? " (Sess #" + rec.getSessionNumber() + ")" : "")
-                                    : "General Medical Absence";
-
                             String period = (rec.getStartDate() != null ? rec.getStartDate() : "") +
                                     (rec.getEndDate() != null && !rec.getEndDate().equals(rec.getStartDate()) ? " to " + rec.getEndDate() : "");
 
@@ -1086,7 +1073,6 @@ public class UndergraduateMedicalUI extends JPanel {
 
                             historyTableModel.addRow(new Object[]{
                                     rec.getReferenceNo(),
-                                    courseSession,
                                     period,
                                     rec.getReason() != null ? rec.getReason() : "Medical illness",
                                     docName,

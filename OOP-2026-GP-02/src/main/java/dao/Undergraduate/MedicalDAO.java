@@ -161,10 +161,11 @@ public class MedicalDAO {
     }
 
     /**
-     * Submits a medical certificate covering one or more missed lecture sessions in the date range.
-     * Inserts an entry for each covered session so that course-wise attendance is credited properly.
+     * Submits a medical certificate covering the student's medical leave period.
+     * Inserts a single record into the medicals table with session_id = NULL,
+     * representing one official medical certificate for the entire date range.
      *
-     * @return Base medical_id used for the Reference Number, or -1 if failed.
+     * @return The medical_id used for the Reference Number, or -1 if failed.
      */
     public int submitMedicalForSessions(int studentId, List<Integer> sessionIds, String startDate, String endDate, String reason, String documentPath) {
         Connection conn = null;
@@ -186,43 +187,24 @@ public class MedicalDAO {
                 currentMax = rs.getInt(1);
             }
 
-            int primaryMedicalId = currentMax + 1;
+            int newMedicalId = currentMax + 1;
 
             String insertSql = "INSERT INTO medicals (medical_id, student_id, session_id, start_date, end_date, " +
                     "reason, document_path, submitted_date, approval_status, verified_by) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE(), 'Pending', NULL)";
+                    "VALUES (?, ?, NULL, ?, ?, ?, ?, CURDATE(), 'Pending', NULL)";
 
             insertStmt = conn.prepareStatement(insertSql);
+            insertStmt.setInt(1, newMedicalId);
+            insertStmt.setInt(2, studentId);
+            insertStmt.setString(3, startDate);
+            insertStmt.setString(4, endDate);
+            insertStmt.setString(5, reason);
+            insertStmt.setString(6, documentPath);
+            insertStmt.executeUpdate();
 
-            if (sessionIds == null || sessionIds.isEmpty()) {
-                // Single general medical record with no specific session
-                currentMax++;
-                insertStmt.setInt(1, currentMax);
-                insertStmt.setInt(2, studentId);
-                insertStmt.setNull(3, java.sql.Types.INTEGER);
-                insertStmt.setString(4, startDate);
-                insertStmt.setString(5, endDate);
-                insertStmt.setString(6, reason);
-                insertStmt.setString(7, documentPath);
-                insertStmt.executeUpdate();
-            } else {
-                // Insert a record for each missed lecture session in this period
-                for (int sessId : sessionIds) {
-                    currentMax++;
-                    insertStmt.setInt(1, currentMax);
-                    insertStmt.setInt(2, studentId);
-                    insertStmt.setInt(3, sessId);
-                    insertStmt.setString(4, startDate);
-                    insertStmt.setString(5, endDate);
-                    insertStmt.setString(6, reason);
-                    insertStmt.setString(7, documentPath);
-                    insertStmt.executeUpdate();
-                }
-            }
-
-            return primaryMedicalId;
+            return newMedicalId;
         } catch (SQLException e) {
-            System.err.println("Database Notice: Error inserting medical records: " + e.getMessage());
+            System.err.println("Database Notice: Error inserting medical record: " + e.getMessage());
         } finally {
             closeQuietly(rs, maxStmt, null);
             closeQuietly(null, insertStmt, conn);
@@ -234,11 +216,7 @@ public class MedicalDAO {
      * Submits a single medical record (legacy helper).
      */
     public int submitMedical(int studentId, Integer sessionId, String startDate, String endDate, String reason, String documentPath) {
-        List<Integer> list = new ArrayList<>();
-        if (sessionId != null && sessionId > 0) {
-            list.add(sessionId);
-        }
-        return submitMedicalForSessions(studentId, list, startDate, endDate, reason, documentPath);
+        return submitMedicalForSessions(studentId, null, startDate, endDate, reason, documentPath);
     }
 
     /**

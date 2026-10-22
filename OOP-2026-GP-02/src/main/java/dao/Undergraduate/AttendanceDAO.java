@@ -180,7 +180,7 @@ public class AttendanceDAO {
     private int getApprovedMedicalsForCourse(Connection conn, String studentIdOrRegNo, int courseId) {
         String sql = "SELECT COUNT(*) FROM medicals m " +
                 "INNER JOIN students s ON m.student_id = s.student_id " +
-                "INNER JOIN attendance_sessions atts ON m.session_id = atts.session_id " +
+                "INNER JOIN attendance_sessions atts ON (m.session_id = atts.session_id OR (m.session_id IS NULL AND atts.session_date >= m.start_date AND atts.session_date <= m.end_date)) " +
                 "WHERE (s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ?) " +
                 "AND atts.course_id = ? AND m.approval_status = 'Approved'";
         PreparedStatement stmt = null;
