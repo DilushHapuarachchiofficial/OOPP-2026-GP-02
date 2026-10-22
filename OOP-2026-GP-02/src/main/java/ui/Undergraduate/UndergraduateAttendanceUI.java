@@ -997,35 +997,4 @@ public class UndergraduateAttendanceUI extends JPanel {
         });
         return avatar;
     }
-
-    // ==========================================
-    // STANDALONE LAUNCHER / PREVIEW
-    // ==========================================
-    public static void main(String[] args) {
-        System.setProperty("awt.useSystemAAFontSettings", "on");
-        System.setProperty("swing.aatext", "true");
-
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception ignored) {}
-
-            JFrame frame = new JFrame("TecFAMS - Undergraduate Attendance");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1240, 800);
-            frame.setMinimumSize(new Dimension(1000, 680));
-            frame.setLocationRelativeTo(null);
-
-            Undergraduate sampleStudent = new Undergraduate(
-                    "USR-1085", "tg2085", "", "H.D.W.B. Hapuarachchi",
-                    "tg2085@fot.ruh.ac.lk", "+94 77 123 4567", "",
-                    "STU-2085", "TG/2024/2085", "2023/2024",
-                    "Department of Information and Communication Technology", 2024
-            );
-
-            UndergraduateAttendanceUI page = new UndergraduateAttendanceUI(sampleStudent, null);
-            frame.setContentPane(page);
-            frame.setVisible(true);
-        });
-    }
 }
