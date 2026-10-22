@@ -153,27 +153,27 @@ public class UndergraduateMedicalUI extends JPanel {
         scrollContent = new ScrollablePanel();
         scrollContent.setLayout(new BoxLayout(scrollContent, BoxLayout.Y_AXIS));
         scrollContent.setBackground(COLOR_BG);
-        scrollContent.setBorder(new EmptyBorder(14, 20, 20, 20));
+        scrollContent.setBorder(new EmptyBorder(16, 24, 24, 24));
 
         // 1. Top Header Bar
         scrollContent.add(createHeaderPanel());
-        scrollContent.add(Box.createVerticalStrut(10));
+        scrollContent.add(Box.createVerticalStrut(16));
 
         // 2. Student Info Ribbon
         scrollContent.add(createStudentInfoRibbon());
-        scrollContent.add(Box.createVerticalStrut(10));
+        scrollContent.add(Box.createVerticalStrut(16));
 
         // 3. Metric Summary Cards
         scrollContent.add(createMetricCardsRow());
-        scrollContent.add(Box.createVerticalStrut(14));
+        scrollContent.add(Box.createVerticalStrut(20));
 
         // 4. Submission Form Card (Multi-session date range)
         scrollContent.add(createSubmissionFormCard());
-        scrollContent.add(Box.createVerticalStrut(16));
+        scrollContent.add(Box.createVerticalStrut(20));
 
         // 5. History Table Card
         scrollContent.add(createHistoryTableCard());
-        scrollContent.add(Box.createVerticalStrut(16));
+        scrollContent.add(Box.createVerticalStrut(20));
 
         // 6. Faculty Policy Notice Card
         scrollContent.add(createPolicyNoticeCard());
@@ -233,11 +233,10 @@ public class UndergraduateMedicalUI extends JPanel {
     private JPanel createStudentInfoRibbon() {
         JPanel ribbon = new JPanel(new BorderLayout());
         ribbon.setBackground(COLOR_WHITE);
-        ribbon.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(8, 14, 8, 14)));
-        ribbon.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        ribbon.setAlignmentX(Component.LEFT_ALIGNMENT);
+        ribbon.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(12, 16, 12, 16)));
+        ribbon.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
 
-        JPanel leftBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        JPanel leftBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0));
         leftBox.setOpaque(false);
 
         String studentName = (loggedInStudent != null && loggedInStudent.getName() != null)
@@ -248,16 +247,16 @@ public class UndergraduateMedicalUI extends JPanel {
         String batch = (loggedInStudent != null && loggedInStudent.getBatch() != null)
                 ? loggedInStudent.getBatch() : "Batch 2023/2024";
 
-        leftBox.add(createAvatarIcon(34, studentName));
+        leftBox.add(createAvatarIcon(38, studentName));
 
-        JPanel details = new JPanel(new GridLayout(2, 1, 0, 1));
+        JPanel details = new JPanel(new GridLayout(2, 1, 0, 2));
         details.setOpaque(false);
         JLabel nameLbl = new JLabel(studentName + "  (" + regNo + ")");
-        nameLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        nameLbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
         nameLbl.setForeground(COLOR_TEXT_PRIMARY);
 
         JLabel metaLbl = new JLabel(dept + "  •  " + batch + "  •  Undergraduate Portal");
-        metaLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        metaLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         metaLbl.setForeground(COLOR_TEXT_MUTED);
 
         details.add(nameLbl);
@@ -268,9 +267,9 @@ public class UndergraduateMedicalUI extends JPanel {
 
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy"));
         JLabel dateBadge = new JLabel("Academic Session 2026  |  " + today);
-        dateBadge.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        dateBadge.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         dateBadge.setForeground(COLOR_PRIMARY_NAVY);
-        dateBadge.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(4, 10, 4, 10)));
+        dateBadge.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(6, 12, 6, 12)));
         ribbon.add(dateBadge, BorderLayout.EAST);
 
         return ribbon;
@@ -280,10 +279,9 @@ public class UndergraduateMedicalUI extends JPanel {
     // 3. METRIC CARDS ROW
     // ==========================================
     private JPanel createMetricCardsRow() {
-        JPanel row = new JPanel(new GridLayout(1, 4, 12, 0));
+        JPanel row = new JPanel(new GridLayout(1, 4, 14, 0));
         row.setOpaque(false);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 65));
-        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 75));
 
         totalSubmissionsLabel = new JLabel("0");
         approvedCountLabel = new JLabel("0");
@@ -328,13 +326,12 @@ public class UndergraduateMedicalUI extends JPanel {
     // 4. SUBMISSION FORM CARD (MULTI-SESSION)
     // ==========================================
     private JPanel createSubmissionFormCard() {
-        JPanel card = new JPanel(new BorderLayout(0, 12));
+        JPanel card = new JPanel(new BorderLayout(0, 14));
         card.setBackground(COLOR_WHITE);
         card.setBorder(new CompoundBorder(
                 new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(16, 18, 16, 18)
+                new EmptyBorder(18, 20, 18, 20)
         ));
-        card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Form Title & Subtitle
         JPanel formHeader = new JPanel(new BorderLayout());
