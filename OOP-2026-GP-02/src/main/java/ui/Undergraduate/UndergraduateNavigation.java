@@ -193,6 +193,11 @@ public class UndergraduateNavigation extends JPanel {
                 if (parentDashboard != null) {
                     parentDashboard.openAttendance();
                 }
+            } else if ("MEDICAL".equals(moduleKey)) {
+                highlightButton("MEDICAL");
+                if (parentDashboard != null) {
+                    parentDashboard.openMedical();
+                }
             } else {
                 if (parentDashboard != null) {
                     parentDashboard.showModulePlaceholder(title);
