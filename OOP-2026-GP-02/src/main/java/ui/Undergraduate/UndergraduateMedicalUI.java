@@ -27,20 +27,22 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * TecFAMS - Faculty of Technology Academic Management System
  * Undergraduate Medical Details UI Page.
  *
- * Allows students to submit medical certificates for missed lectures,
- * attach a photo or scan of their medical certificate,
- * generates a unique reference number for tracking,
- * and maintains an official registry of submitted medicals.
+ * Allows students to submit a medical certificate covering a date range
+ * (dawas gana), automatically detects all lectures/sessions missed during
+ * that period, allows attaching a medical photo/document, generates a
+ * unique reference number, and saves directly to the existing database schema.
  */
 public class UndergraduateMedicalUI extends JPanel {
 
-    // Palette Colors matching TecFAMS theme
+    // Theme Color Palette
     private static final Color COLOR_PRIMARY_NAVY = new Color(0x12, 0x3B, 0x70);
     private static final Color COLOR_MAIN_BLUE    = new Color(0x25, 0x63, 0xEB);
     private static final Color COLOR_LIGHT_BLUE   = new Color(0xEA, 0xF2, 0xFF);
@@ -53,32 +55,40 @@ public class UndergraduateMedicalUI extends JPanel {
     private static final Color COLOR_DANGER       = new Color(0xEF, 0x44, 0x44);
     private static final Color COLOR_WARNING      = new Color(0xF5, 0x9E, 0x0B);
 
-    // Context & DAO references
+    // References
     private final Undergraduate loggedInStudent;
     private final UndergraduateDashboard parentDashboard;
     private final String studentIdentifier;
     private final MedicalDAO medicalDAO;
 
     // Form inputs
-    private JComboBox<Object> sessionComboBox;
     private JTextField startDateField;
     private JTextField endDateField;
+    private JPanel absentQuickPickRow;
+    private JPanel sessionsChecklistContainer;
+    private JLabel sessionsFoundCountLabel;
     private JTextField reasonField;
     private JLabel selectedFileLabel;
     private JLabel photoPreviewLabel;
     private File chosenMedicalFile = null;
 
-    // Table & counts
-    private DefaultTableModel historyTableModel;
-    private JTable historyTable;
+    // Checkbox list for missed sessions found in range
+    private final List<JCheckBox> sessionCheckBoxes = new ArrayList<>();
+    private final List<MissedSession> currentRangeSessions = new ArrayList<>();
+
+    // Metric Labels
     private JLabel totalSubmissionsLabel;
     private JLabel approvedCountLabel;
     private JLabel pendingCountLabel;
     private JLabel missedSessionsCountLabel;
+
+    // History Table
+    private DefaultTableModel historyTableModel;
+    private JTable historyTable;
     private JLabel tableCountLabel;
 
-    // Stored records
-    private List<MissedSession> absentSessions = new ArrayList<>();
+    // Data Cache
+    private List<MissedSession> allAbsentSessions = new ArrayList<>();
     private List<MedicalRecord> submittedMedicals = new ArrayList<>();
 
     public UndergraduateMedicalUI(Undergraduate student, UndergraduateDashboard parentDashboard) {
@@ -145,7 +155,7 @@ public class UndergraduateMedicalUI extends JPanel {
         scrollContent.setBackground(COLOR_BG);
         scrollContent.setBorder(new EmptyBorder(16, 24, 24, 24));
 
-        // 1. Header Bar
+        // 1. Top Header Bar
         scrollContent.add(createHeaderPanel());
         scrollContent.add(Box.createVerticalStrut(16));
 
@@ -153,15 +163,15 @@ public class UndergraduateMedicalUI extends JPanel {
         scrollContent.add(createStudentInfoRibbon());
         scrollContent.add(Box.createVerticalStrut(16));
 
-        // 3. Summary Metric Cards Row
+        // 3. Metric Summary Cards
         scrollContent.add(createMetricCardsRow());
         scrollContent.add(Box.createVerticalStrut(20));
 
-        // 4. Submission Form Card
+        // 4. Submission Form Card (Multi-session date range)
         scrollContent.add(createSubmissionFormCard());
         scrollContent.add(Box.createVerticalStrut(20));
 
-        // 5. Medical History Table Card
+        // 5. History Table Card
         scrollContent.add(createHistoryTableCard());
         scrollContent.add(Box.createVerticalStrut(20));
 
@@ -190,7 +200,7 @@ public class UndergraduateMedicalUI extends JPanel {
         titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 22));
         titleLbl.setForeground(COLOR_PRIMARY_NAVY);
 
-        JLabel subtitleLbl = new JLabel("Submit medical certificates for missed lectures and track official verification status.");
+        JLabel subtitleLbl = new JLabel("Submit a medical certificate covering your absent days and all missed lectures.");
         subtitleLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         subtitleLbl.setForeground(COLOR_TEXT_MUTED);
 
@@ -266,7 +276,7 @@ public class UndergraduateMedicalUI extends JPanel {
     }
 
     // ==========================================
-    // 3. METRIC OVERVIEW CARDS
+    // 3. METRIC CARDS ROW
     // ==========================================
     private JPanel createMetricCardsRow() {
         JPanel row = new JPanel(new GridLayout(1, 4, 14, 0));
@@ -314,7 +324,7 @@ public class UndergraduateMedicalUI extends JPanel {
     }
 
     // ==========================================
-    // 4. SUBMISSION FORM CARD
+    // 4. SUBMISSION FORM CARD (MULTI-SESSION)
     // ==========================================
     private JPanel createSubmissionFormCard() {
         JPanel card = new JPanel(new BorderLayout(0, 14));
@@ -324,152 +334,148 @@ public class UndergraduateMedicalUI extends JPanel {
                 new EmptyBorder(18, 20, 18, 20)
         ));
 
-        // Header
+        // Form Title & Subtitle
         JPanel formHeader = new JPanel(new BorderLayout());
         formHeader.setOpaque(false);
-        JLabel title = new JLabel("Submit Medical Certificate for Missed Lecture");
+        JLabel title = new JLabel("Submit Medical Certificate for Absent Days & Missed Lectures");
         title.setFont(new Font("Segoe UI", Font.BOLD, 15));
         title.setForeground(COLOR_PRIMARY_NAVY);
-        JLabel hint = new JLabel("Select the absent session, provide the illness reason, and attach your medical photo/document.");
+
+        JLabel hint = new JLabel("Select your medical leave date range (start & end dates). The system will detect all lectures missed during that period.");
         hint.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         hint.setForeground(COLOR_TEXT_MUTED);
+
         formHeader.add(title, BorderLayout.NORTH);
         formHeader.add(hint, BorderLayout.SOUTH);
         card.add(formHeader, BorderLayout.NORTH);
 
-        // Form Fields Container
-        JPanel fieldsPanel = new JPanel(new GridBagLayout());
+        // Form Fields Grid
+        JPanel fieldsPanel = new JPanel();
+        fieldsPanel.setLayout(new BoxLayout(fieldsPanel, BoxLayout.Y_AXIS));
         fieldsPanel.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(6, 6, 6, 6);
 
-        // Row 1: Missed Lecture Dropdown
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 0.25;
-        JLabel sessionLbl = new JLabel("Missed Lecture / Session:*");
-        sessionLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        sessionLbl.setForeground(COLOR_TEXT_PRIMARY);
-        fieldsPanel.add(sessionLbl, gbc);
+        // 1. Quick Absent Dates Strip (helper to easily set dates)
+        absentQuickPickRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+        absentQuickPickRow.setOpaque(false);
+        fieldsPanel.add(absentQuickPickRow);
+        fieldsPanel.add(Box.createVerticalStrut(8));
 
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        gbc.weightx = 0.75;
-        gbc.gridwidth = 2;
-        sessionComboBox = new JComboBox<>();
-        sessionComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        sessionComboBox.setPreferredSize(new Dimension(0, 34));
-        sessionComboBox.addActionListener(e -> onSessionSelected());
-        fieldsPanel.add(sessionComboBox, gbc);
+        // 2. Date Range Input Row
+        JPanel datesRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        datesRow.setOpaque(false);
 
-        // Row 2: Medical Start Date & End Date
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.weightx = 0.25;
-        gbc.gridwidth = 1;
-        JLabel datesLbl = new JLabel("Medical Period (Start - End):*");
-        datesLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        datesLbl.setForeground(COLOR_TEXT_PRIMARY);
-        fieldsPanel.add(datesLbl, gbc);
+        JLabel startLbl = new JLabel("From Date:*");
+        startLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        startLbl.setForeground(COLOR_TEXT_PRIMARY);
+        datesRow.add(startLbl);
 
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        gbc.weightx = 0.35;
-        startDateField = new JTextField(LocalDate.now().toString());
+        startDateField = new JTextField("2024-03-18", 10);
         startDateField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        startDateField.setPreferredSize(new Dimension(0, 32));
+        startDateField.setPreferredSize(new Dimension(110, 32));
         startDateField.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(4, 8, 4, 8)));
-        fieldsPanel.add(startDateField, gbc);
+        datesRow.add(startDateField);
 
-        gbc.gridx = 2;
-        gbc.gridy = 1;
-        gbc.weightx = 0.40;
-        endDateField = new JTextField(LocalDate.now().toString());
+        JLabel endLbl = new JLabel("To Date:*");
+        endLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        endLbl.setForeground(COLOR_TEXT_PRIMARY);
+        datesRow.add(endLbl);
+
+        endDateField = new JTextField("2024-03-22", 10);
         endDateField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        endDateField.setPreferredSize(new Dimension(0, 32));
+        endDateField.setPreferredSize(new Dimension(110, 32));
         endDateField.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(4, 8, 4, 8)));
-        fieldsPanel.add(endDateField, gbc);
+        datesRow.add(endDateField);
 
-        // Row 3: Illness Reason / Diagnosis
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.weightx = 0.25;
-        gbc.gridwidth = 1;
+        JButton checkSessionsBtn = new JButton("🔍 Find Missed Lectures in Period");
+        checkSessionsBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        checkSessionsBtn.setForeground(COLOR_MAIN_BLUE);
+        checkSessionsBtn.setBackground(COLOR_LIGHT_BLUE);
+        checkSessionsBtn.setFocusPainted(false);
+        checkSessionsBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        checkSessionsBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_MAIN_BLUE, 1, true), new EmptyBorder(6, 12, 6, 12)));
+        checkSessionsBtn.addActionListener(e -> findMissedLecturesForRange());
+        datesRow.add(checkSessionsBtn);
+
+        fieldsPanel.add(datesRow);
+        fieldsPanel.add(Box.createVerticalStrut(12));
+
+        // 3. Detected Missed Lectures Checklist Container
+        JPanel detectedBox = new JPanel(new BorderLayout(0, 6));
+        detectedBox.setBackground(new Color(0xF8, 0xFA, 0xFC));
+        detectedBox.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(10, 14, 10, 14)));
+
+        sessionsFoundCountLabel = new JLabel("Missed Lectures Detected during this period (Select all covered by your certificate):");
+        sessionsFoundCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        sessionsFoundCountLabel.setForeground(COLOR_PRIMARY_NAVY);
+        detectedBox.add(sessionsFoundCountLabel, BorderLayout.NORTH);
+
+        sessionsChecklistContainer = new JPanel();
+        sessionsChecklistContainer.setLayout(new BoxLayout(sessionsChecklistContainer, BoxLayout.Y_AXIS));
+        sessionsChecklistContainer.setOpaque(false);
+        detectedBox.add(sessionsChecklistContainer, BorderLayout.CENTER);
+
+        fieldsPanel.add(detectedBox);
+        fieldsPanel.add(Box.createVerticalStrut(14));
+
+        // 4. Illness Reason Input
+        JPanel reasonRow = new JPanel(new BorderLayout(10, 4));
+        reasonRow.setOpaque(false);
+
         JLabel reasonLbl = new JLabel("Illness Reason / Diagnosis:*");
         reasonLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         reasonLbl.setForeground(COLOR_TEXT_PRIMARY);
-        fieldsPanel.add(reasonLbl, gbc);
 
-        gbc.gridx = 1;
-        gbc.gridy = 2;
-        gbc.weightx = 0.75;
-        gbc.gridwidth = 2;
         reasonField = new JTextField();
         reasonField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         reasonField.setPreferredSize(new Dimension(0, 32));
         reasonField.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(4, 8, 4, 8)));
-        fieldsPanel.add(reasonField, gbc);
 
-        // Row 4: Attach Photo / Certificate
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.weightx = 0.25;
-        gbc.gridwidth = 1;
+        reasonRow.add(reasonLbl, BorderLayout.WEST);
+        reasonRow.add(reasonField, BorderLayout.CENTER);
+        fieldsPanel.add(reasonRow);
+        fieldsPanel.add(Box.createVerticalStrut(14));
+
+        // 5. File Upload Row & Photo Preview
+        JPanel uploadSection = new JPanel(new BorderLayout(14, 0));
+        uploadSection.setOpaque(false);
+
+        JPanel uploadLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        uploadLeft.setOpaque(false);
+
         JLabel uploadLbl = new JLabel("Medical Certificate Photo:*");
         uploadLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         uploadLbl.setForeground(COLOR_TEXT_PRIMARY);
-        fieldsPanel.add(uploadLbl, gbc);
+        uploadLeft.add(uploadLbl);
 
-        gbc.gridx = 1;
-        gbc.gridy = 3;
-        gbc.weightx = 0.75;
-        gbc.gridwidth = 2;
-
-        JPanel uploadRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        uploadRow.setOpaque(false);
-
-        JButton chooseFileBtn = new JButton("📁 Choose Photo / Certificate...");
-        chooseFileBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        JButton chooseFileBtn = new JButton("📁 Choose Photo / Certificate (PNG, JPG, PDF)...");
+        chooseFileBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
         chooseFileBtn.setForeground(COLOR_MAIN_BLUE);
         chooseFileBtn.setBackground(COLOR_LIGHT_BLUE);
         chooseFileBtn.setFocusPainted(false);
         chooseFileBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        chooseFileBtn.setBorder(new CompoundBorder(
-                new LineBorder(COLOR_MAIN_BLUE, 1, true),
-                new EmptyBorder(6, 12, 6, 12)
-        ));
+        chooseFileBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_MAIN_BLUE, 1, true), new EmptyBorder(6, 12, 6, 12)));
         chooseFileBtn.addActionListener(e -> chooseMedicalFile());
-        uploadRow.add(chooseFileBtn);
+        uploadLeft.add(chooseFileBtn);
 
-        selectedFileLabel = new JLabel("No file chosen yet (JPG, PNG, PDF accepted)");
+        selectedFileLabel = new JLabel("No file chosen yet");
         selectedFileLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         selectedFileLabel.setForeground(COLOR_TEXT_MUTED);
-        uploadRow.add(selectedFileLabel);
+        uploadLeft.add(selectedFileLabel);
+        uploadSection.add(uploadLeft, BorderLayout.CENTER);
 
-        fieldsPanel.add(uploadRow, gbc);
-
-        // Row 5: Photo preview area
-        gbc.gridx = 1;
-        gbc.gridy = 4;
-        gbc.weightx = 0.75;
-        gbc.gridwidth = 2;
-        photoPreviewLabel = new JLabel();
-        photoPreviewLabel.setPreferredSize(new Dimension(140, 90));
+        photoPreviewLabel = new JLabel("No photo preview");
+        photoPreviewLabel.setPreferredSize(new Dimension(130, 80));
         photoPreviewLabel.setBorder(new LineBorder(COLOR_BORDER, 1, true));
         photoPreviewLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        photoPreviewLabel.setText("No photo preview");
         photoPreviewLabel.setForeground(COLOR_TEXT_MUTED);
-        photoPreviewLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        fieldsPanel.add(photoPreviewLabel, gbc);
+        photoPreviewLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        uploadSection.add(photoPreviewLabel, BorderLayout.EAST);
 
-        // Row 6: Submit Button & Status Hint
-        gbc.gridx = 1;
-        gbc.gridy = 5;
-        gbc.weightx = 0.75;
-        gbc.gridwidth = 2;
+        fieldsPanel.add(uploadSection);
+        fieldsPanel.add(Box.createVerticalStrut(16));
 
-        JPanel actionRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
+        // 6. Action Buttons (Submit & Clear)
+        JPanel actionRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         actionRow.setOpaque(false);
 
         JButton submitBtn = new JButton("Submit Medical Certificate");
@@ -478,10 +484,7 @@ public class UndergraduateMedicalUI extends JPanel {
         submitBtn.setBackground(COLOR_MAIN_BLUE);
         submitBtn.setFocusPainted(false);
         submitBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        submitBtn.setBorder(new CompoundBorder(
-                new LineBorder(COLOR_MAIN_BLUE, 1, true),
-                new EmptyBorder(8, 18, 8, 18)
-        ));
+        submitBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_MAIN_BLUE, 1, true), new EmptyBorder(8, 20, 8, 20)));
         submitBtn.addActionListener(e -> submitMedicalForm());
         actionRow.add(submitBtn);
 
@@ -491,33 +494,19 @@ public class UndergraduateMedicalUI extends JPanel {
         clearBtn.setBackground(COLOR_WHITE);
         clearBtn.setFocusPainted(false);
         clearBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        clearBtn.setBorder(new CompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(8, 14, 8, 14)
-        ));
+        clearBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(8, 14, 8, 14)));
         clearBtn.addActionListener(e -> resetForm());
         actionRow.add(clearBtn);
 
-        fieldsPanel.add(actionRow, gbc);
+        fieldsPanel.add(actionRow);
 
         card.add(fieldsPanel, BorderLayout.CENTER);
         return card;
     }
 
-    private void onSessionSelected() {
-        Object item = sessionComboBox.getSelectedItem();
-        if (item instanceof MissedSession) {
-            MissedSession ms = (MissedSession) item;
-            if (ms.getSessionDate() != null && !ms.getSessionDate().isEmpty()) {
-                startDateField.setText(ms.getSessionDate());
-                endDateField.setText(ms.getSessionDate());
-            }
-        }
-    }
-
     private void chooseMedicalFile() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Select Medical Certificate Photo / Document");
+        fileChooser.setDialogTitle("Select Medical Certificate Photo or Document");
         fileChooser.setFileFilter(new FileNameExtensionFilter("Medical Certificates (Images & PDF)", "jpg", "jpeg", "png", "gif", "pdf"));
 
         int res = fileChooser.showOpenDialog(this);
@@ -526,19 +515,18 @@ public class UndergraduateMedicalUI extends JPanel {
             selectedFileLabel.setText(chosenMedicalFile.getName() + " (" + (chosenMedicalFile.length() / 1024) + " KB)");
             selectedFileLabel.setForeground(COLOR_PRIMARY_NAVY);
 
-            // Thumbnail Preview if image
             String name = chosenMedicalFile.getName().toLowerCase();
             if (name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif")) {
                 try {
                     BufferedImage img = ImageIO.read(chosenMedicalFile);
                     if (img != null) {
-                        Image scaled = img.getScaledInstance(130, 80, Image.SCALE_SMOOTH);
+                        Image scaled = img.getScaledInstance(120, 75, Image.SCALE_SMOOTH);
                         photoPreviewLabel.setIcon(new ImageIcon(scaled));
                         photoPreviewLabel.setText("");
                     }
                 } catch (Exception ex) {
                     photoPreviewLabel.setIcon(null);
-                    photoPreviewLabel.setText("Preview unavailable");
+                    photoPreviewLabel.setText("Preview error");
                 }
             } else {
                 photoPreviewLabel.setIcon(null);
@@ -547,14 +535,53 @@ public class UndergraduateMedicalUI extends JPanel {
         }
     }
 
-    private void submitMedicalForm() {
-        // 1. Validation
-        Object selectedSession = sessionComboBox.getSelectedItem();
-        Integer sessionId = null;
-        if (selectedSession instanceof MissedSession) {
-            sessionId = ((MissedSession) selectedSession).getSessionId();
+    /**
+     * Finds all lectures/sessions where the student was marked absent between the chosen dates.
+     */
+    private void findMissedLecturesForRange() {
+        String startDate = startDateField.getText().trim();
+        String endDate = endDateField.getText().trim();
+
+        if (startDate.isEmpty() || endDate.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter both Start Date and End Date.", "Validation", JOptionPane.WARNING_MESSAGE);
+            return;
         }
 
+        sessionsChecklistContainer.removeAll();
+        sessionCheckBoxes.clear();
+        currentRangeSessions.clear();
+
+        List<MissedSession> found = medicalDAO.getAbsentSessionsBetweenDates(studentIdentifier, startDate, endDate);
+        currentRangeSessions.addAll(found);
+
+        if (found.isEmpty()) {
+            sessionsFoundCountLabel.setText("Missed Lectures Detected: 0 sessions found in this date range");
+            JLabel emptyLbl = new JLabel("<html><i>No absent lectures recorded between " + startDate + " and " + endDate +
+                    ". If you were absent, Technical Officer may not have uploaded attendance yet, but you can still submit.</i></html>");
+            emptyLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            emptyLbl.setForeground(COLOR_TEXT_MUTED);
+            sessionsChecklistContainer.add(emptyLbl);
+        } else {
+            sessionsFoundCountLabel.setText("Missed Lectures Detected: " + found.size() + " session(s) in this period (Select covered lectures):");
+            for (MissedSession ms : found) {
+                String text = "<html><b>" + ms.getCourseCode() + " - " + ms.getCourseName() + "</b>  |  Session #" +
+                        ms.getSessionNumber() + "  |  Date: <font color='#2563EB'><b>" + ms.getSessionDate() +
+                        "</b></font> (" + ms.getSessionType() + ")</html>";
+                JCheckBox cb = new JCheckBox(text, true); // checked by default
+                cb.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                cb.setOpaque(false);
+                cb.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                sessionCheckBoxes.add(cb);
+                sessionsChecklistContainer.add(cb);
+                sessionsChecklistContainer.add(Box.createVerticalStrut(4));
+            }
+        }
+
+        sessionsChecklistContainer.revalidate();
+        sessionsChecklistContainer.repaint();
+    }
+
+    private void submitMedicalForm() {
         String startDate = startDateField.getText().trim();
         String endDate = endDateField.getText().trim();
         String reason = reasonField.getText().trim();
@@ -574,27 +601,47 @@ public class UndergraduateMedicalUI extends JPanel {
             return;
         }
 
-        // 2. Resolve numeric student id from database
-        int studentNumericId = medicalDAO.getStudentNumericId(studentIdentifier);
+        // Collect checked sessions
+        List<Integer> selectedSessionIds = new ArrayList<>();
+        List<String> coveredCourseNames = new ArrayList<>();
 
-        // 3. Save copy of the medical photo to 'medicals/' directory
+        for (int i = 0; i < sessionCheckBoxes.size(); i++) {
+            if (sessionCheckBoxes.get(i).isSelected()) {
+                MissedSession ms = currentRangeSessions.get(i);
+                selectedSessionIds.add(ms.getSessionId());
+                coveredCourseNames.add(ms.getCourseCode() + " (Sess #" + ms.getSessionNumber() + " on " + ms.getSessionDate() + ")");
+            }
+        }
+
+        int studentNumericId = medicalDAO.getStudentNumericId(studentIdentifier);
         String savedDocPath = saveMedicalFile(chosenMedicalFile, studentNumericId);
 
-        // 4. Submit to database via DAO
-        int generatedMedicalId = medicalDAO.submitMedical(studentNumericId, sessionId, startDate, endDate, reason, savedDocPath);
+        // Submit to database covering all selected sessions!
+        int primaryMedicalId = medicalDAO.submitMedicalForSessions(studentNumericId, selectedSessionIds, startDate, endDate, reason, savedDocPath);
 
-        if (generatedMedicalId > 0) {
-            String referenceNumber = "MED-REF-" + String.format("%04d", generatedMedicalId);
+        if (primaryMedicalId > 0) {
+            String referenceNumber = "MED-REF-" + String.format("%04d", primaryMedicalId);
 
-            // Beautiful success message displaying the Reference Number!
-            String msg = "<html><body style='width: 320px; font-family: Segoe UI;'>" +
-                    "<h3 style='color: #10B981; margin-bottom: 6px;'>✓ Medical Submitted Successfully!</h3>" +
+            StringBuilder coursesHtml = new StringBuilder();
+            if (coveredCourseNames.isEmpty()) {
+                coursesHtml.append("<li>General Medical Leave (No specific lectures selected)</li>");
+            } else {
+                for (String c : coveredCourseNames) {
+                    coursesHtml.append("<li><b>").append(c).append("</b></li>");
+                }
+            }
+
+            String msg = "<html><body style='width: 360px; font-family: Segoe UI;'>" +
+                    "<h3 style='color: #10B981; margin-bottom: 6px;'>✓ Medical Certificate Submitted Successfully!</h3>" +
                     "<p>Your medical certificate has been registered in the TecFAMS system.</p>" +
                     "<div style='background-color: #EAF2FF; padding: 10px; border: 1px solid #2563EB; border-radius: 4px; margin: 10px 0;'>" +
                     "<b>Reference Number: </b><span style='color: #2563EB; font-size: 14px; font-weight: bold;'>" + referenceNumber + "</span><br>" +
-                    "<b>Status: </b><span style='color: #D97706; font-weight: bold;'>Pending Verification</span><br>" +
-                    "<b>Attached File: </b>" + savedDocPath + "</div>" +
-                    "<p style='font-size: 11px; color: #718096;'>Please note this Reference Number for official inquiries with the Faculty Medical Centre or Dean's Office.</p>" +
+                    "<b>Medical Period: </b>" + startDate + " to " + endDate + "<br>" +
+                    "<b>Covered Lectures (" + (selectedSessionIds.isEmpty() ? 1 : selectedSessionIds.size()) + "):</b>" +
+                    "<ul style='margin-top: 4px; margin-bottom: 4px; padding-left: 18px;'>" + coursesHtml + "</ul>" +
+                    "<b>Status: </b><span style='color: #D97706; font-weight: bold;'>Pending Verification</span>" +
+                    "</div>" +
+                    "<p style='font-size: 11px; color: #718096;'>Please keep this Reference Number for official inquiries with the Medical Officer or Technical Officer.</p>" +
                     "</body></html>";
 
             JOptionPane.showMessageDialog(this, msg, "Medical Submission Confirmed", JOptionPane.INFORMATION_MESSAGE);
@@ -643,17 +690,13 @@ public class UndergraduateMedicalUI extends JPanel {
     }
 
     private void resetForm() {
-        if (sessionComboBox != null && sessionComboBox.getItemCount() > 0) {
-            sessionComboBox.setSelectedIndex(0);
-        }
-        startDateField.setText(LocalDate.now().toString());
-        endDateField.setText(LocalDate.now().toString());
         reasonField.setText("");
         chosenMedicalFile = null;
-        selectedFileLabel.setText("No file chosen yet (JPG, PNG, PDF accepted)");
+        selectedFileLabel.setText("No file chosen yet");
         selectedFileLabel.setForeground(COLOR_TEXT_MUTED);
         photoPreviewLabel.setIcon(null);
         photoPreviewLabel.setText("No photo preview");
+        findMissedLecturesForRange();
     }
 
     // ==========================================
@@ -682,7 +725,7 @@ public class UndergraduateMedicalUI extends JPanel {
         tableCard.add(tableSubHeader, BorderLayout.NORTH);
 
         // Columns
-        String[] columns = {"Reference #", "Course & Session", "Medical Period", "Illness Reason", "Certificate File", "Submitted On", "Status"};
+        String[] columns = {"Reference #", "Covered Lecture / Course", "Medical Period", "Illness Reason", "Certificate File", "Submitted On", "Status"};
         historyTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
@@ -707,14 +750,13 @@ public class UndergraduateMedicalUI extends JPanel {
 
         // Column widths
         historyTable.getColumnModel().getColumn(0).setPreferredWidth(120); // Reference #
-        historyTable.getColumnModel().getColumn(1).setPreferredWidth(210); // Course & Session
+        historyTable.getColumnModel().getColumn(1).setPreferredWidth(230); // Course & Session
         historyTable.getColumnModel().getColumn(2).setPreferredWidth(160); // Period
-        historyTable.getColumnModel().getColumn(3).setPreferredWidth(200); // Reason
+        historyTable.getColumnModel().getColumn(3).setPreferredWidth(190); // Reason
         historyTable.getColumnModel().getColumn(4).setPreferredWidth(140); // Document
         historyTable.getColumnModel().getColumn(5).setPreferredWidth(100); // Submitted On
         historyTable.getColumnModel().getColumn(6).setPreferredWidth(110); // Status
 
-        // Align center for Reference and Submitted Date
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         historyTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
@@ -754,7 +796,7 @@ public class UndergraduateMedicalUI extends JPanel {
             }
         });
 
-        // Click to view photo/file
+        // Double-click to view photo/file
         historyTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -826,7 +868,7 @@ public class UndergraduateMedicalUI extends JPanel {
         h.setFont(new Font("Segoe UI", Font.BOLD, 12));
         h.setForeground(COLOR_PRIMARY_NAVY);
 
-        JLabel b = new JLabel("<html>Under University regulations, medical certificates must be submitted within <b>14 days</b> of the absent lecture session. Only medical certificates approved and endorsed by the <b>University Medical Officer (UMO)</b> will be credited towards the mandatory 80% attendance requirement for semester examinations.</html>");
+        JLabel b = new JLabel("<html>Under University regulations, medical certificates must be submitted within <b>14 days</b> of the absent lecture session. A single medical certificate can cover multiple missed lectures across its valid date range. Only certificates certified by the <b>University Medical Officer (UMO)</b> will be credited towards the 80% attendance rule.</html>");
         b.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         b.setForeground(COLOR_TEXT_PRIMARY);
 
@@ -842,12 +884,12 @@ public class UndergraduateMedicalUI extends JPanel {
     // ==========================================
     public void loadMedicalData() {
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
-            List<MissedSession> sessions;
+            List<MissedSession> absent;
             List<MedicalRecord> records;
 
             @Override
             protected Void doInBackground() {
-                sessions = medicalDAO.getAbsentSessions(studentIdentifier);
+                absent = medicalDAO.getAbsentSessions(studentIdentifier);
                 records = medicalDAO.getMedicalRecords(studentIdentifier);
                 return null;
             }
@@ -855,22 +897,16 @@ public class UndergraduateMedicalUI extends JPanel {
             @Override
             protected void done() {
                 try {
-                    absentSessions = (sessions != null) ? sessions : new ArrayList<>();
+                    allAbsentSessions = (absent != null) ? absent : new ArrayList<>();
                     submittedMedicals = (records != null) ? records : new ArrayList<>();
 
-                    // 1. Populate Dropdown
-                    if (sessionComboBox != null) {
-                        sessionComboBox.removeAllItems();
-                        if (absentSessions.isEmpty()) {
-                            sessionComboBox.addItem("No recorded absent sessions (or select to enter manually)");
-                        } else {
-                            for (MissedSession ms : absentSessions) {
-                                sessionComboBox.addItem(ms);
-                            }
-                        }
-                    }
+                    // 1. Build Quick-Pick Absent Dates Strip
+                    buildAbsentQuickPickStrip();
 
-                    // 2. Populate History Table
+                    // 2. Load Missed Lectures for current date range
+                    findMissedLecturesForRange();
+
+                    // 3. Populate History Table
                     if (historyTableModel != null) {
                         historyTableModel.setRowCount(0);
                         int approved = 0;
@@ -901,12 +937,12 @@ public class UndergraduateMedicalUI extends JPanel {
                             });
                         }
 
-                        // 3. Update Metric Counts
+                        // 4. Update Metric Counts
                         if (totalSubmissionsLabel != null) totalSubmissionsLabel.setText(String.valueOf(submittedMedicals.size()));
                         if (approvedCountLabel != null) approvedCountLabel.setText(String.valueOf(approved));
                         if (pendingCountLabel != null) pendingCountLabel.setText(String.valueOf(pending));
-                        if (missedSessionsCountLabel != null) missedSessionsCountLabel.setText(String.valueOf(absentSessions.size()));
-                        if (tableCountLabel != null) tableCountLabel.setText("Showing " + submittedMedicals.size() + " submitted certificate(s)");
+                        if (missedSessionsCountLabel != null) missedSessionsCountLabel.setText(String.valueOf(allAbsentSessions.size()));
+                        if (tableCountLabel != null) tableCountLabel.setText("Showing " + submittedMedicals.size() + " submitted certificate record(s)");
                     }
                 } catch (Exception e) {
                     System.err.println("Notice: Could not finish medical data update: " + e.getMessage());
@@ -914,6 +950,87 @@ public class UndergraduateMedicalUI extends JPanel {
             }
         };
         worker.execute();
+    }
+
+    /**
+     * Builds interactive chips for absent dates, allowing one-click date range filling.
+     */
+    private void buildAbsentQuickPickStrip() {
+        if (absentQuickPickRow == null) return;
+        absentQuickPickRow.removeAll();
+
+        JLabel stripLbl = new JLabel("Your Recorded Absent Dates (Click to auto-set dates): ");
+        stripLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        stripLbl.setForeground(COLOR_TEXT_PRIMARY);
+        absentQuickPickRow.add(stripLbl);
+
+        if (allAbsentSessions.isEmpty()) {
+            JLabel noAbsent = new JLabel("None recorded (All lectures attended or up to date)");
+            noAbsent.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+            noAbsent.setForeground(COLOR_SUCCESS);
+            absentQuickPickRow.add(noAbsent);
+        } else {
+            // Group unique dates
+            Map<String, List<MissedSession>> dateMap = new LinkedHashMap<>();
+            for (MissedSession ms : allAbsentSessions) {
+                String d = ms.getSessionDate();
+                dateMap.computeIfAbsent(d, k -> new ArrayList<>()).add(ms);
+            }
+
+            for (Map.Entry<String, List<MissedSession>> entry : dateMap.entrySet()) {
+                String d = entry.getKey();
+                int sessCount = entry.getValue().size();
+
+                JButton chip = new JButton(d + " (" + sessCount + " lecture" + (sessCount > 1 ? "s" : "") + ")");
+                chip.setFont(new Font("Segoe UI", Font.BOLD, 10));
+                chip.setForeground(COLOR_PRIMARY_NAVY);
+                chip.setBackground(new Color(0xFE, 0xE2, 0xE2));
+                chip.setFocusPainted(false);
+                chip.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                chip.setBorder(new CompoundBorder(
+                        new LineBorder(new Color(0xFC, 0xA5, 0xA5), 1, true),
+                        new EmptyBorder(3, 8, 3, 8)
+                ));
+                chip.addActionListener(e -> {
+                    startDateField.setText(d);
+                    endDateField.setText(d);
+                    findMissedLecturesForRange();
+                });
+                absentQuickPickRow.add(chip);
+            }
+
+            // If multiple dates exist, add a "Select All Absent Range" button
+            if (dateMap.size() > 1) {
+                List<String> dates = new ArrayList<>(dateMap.keySet());
+                String earliest = dates.get(dates.size() - 1);
+                String latest = dates.get(0);
+                if (earliest.compareTo(latest) > 0) {
+                    String tmp = earliest; earliest = latest; latest = tmp;
+                }
+                final String fEarly = earliest;
+                final String fLate = latest;
+
+                JButton allRangeBtn = new JButton("Cover Full Range (" + fEarly + " to " + fLate + ")");
+                allRangeBtn.setFont(new Font("Segoe UI", Font.BOLD, 10));
+                allRangeBtn.setForeground(COLOR_MAIN_BLUE);
+                allRangeBtn.setBackground(COLOR_LIGHT_BLUE);
+                allRangeBtn.setFocusPainted(false);
+                allRangeBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                allRangeBtn.setBorder(new CompoundBorder(
+                        new LineBorder(new Color(0xBF, 0xDB, 0xFE), 1, true),
+                        new EmptyBorder(3, 8, 3, 8)
+                ));
+                allRangeBtn.addActionListener(e -> {
+                    startDateField.setText(fEarly);
+                    endDateField.setText(fLate);
+                    findMissedLecturesForRange();
+                });
+                absentQuickPickRow.add(allRangeBtn);
+            }
+        }
+
+        absentQuickPickRow.revalidate();
+        absentQuickPickRow.repaint();
     }
 
     private JLabel createAvatarIcon(int size, String name) {

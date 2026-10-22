@@ -106,12 +106,67 @@ public class MedicalDAO {
     }
 
     /**
-     * Submits a new medical record into the medicals table in the database.
-     * Computes the next medical_id to comply with the existing database structure.
-     *
-     * @return Generated medical_id, or -1 if the submission failed.
+     * Retrieves all missed / absent lecture sessions for the student between the specified dates.
      */
-    public int submitMedical(int studentId, Integer sessionId, String startDate, String endDate, String reason, String documentPath) {
+    public List<MissedSession> getAbsentSessionsBetweenDates(String studentIdOrRegNo, String startDate, String endDate) {
+        List<MissedSession> list = new ArrayList<>();
+        if (studentIdOrRegNo == null || studentIdOrRegNo.trim().isEmpty() || startDate == null || endDate == null) {
+            return list;
+        }
+
+        String sql = "SELECT a.session_id, s.session_number, " +
+                "DATE_FORMAT(s.session_date, '%Y-%m-%d') AS formatted_date, " +
+                "s.session_type, c.course_code, c.course_name " +
+                "FROM attendances a " +
+                "INNER JOIN attendance_sessions s ON a.session_id = s.session_id " +
+                "INNER JOIN courses c ON s.course_id = c.course_id " +
+                "INNER JOIN students stu ON a.student_id = stu.student_id " +
+                "WHERE (stu.student_reg_no = ? OR CAST(stu.student_id AS CHAR) = ?) " +
+                "AND a.attendance_status = 'Absent' " +
+                "AND s.session_date >= ? AND s.session_date <= ? " +
+                "ORDER BY s.session_date ASC, c.course_code ASC";
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            if (conn != null) {
+                stmt = conn.prepareStatement(sql);
+                stmt.setString(1, studentIdOrRegNo.trim());
+                stmt.setString(2, studentIdOrRegNo.trim());
+                stmt.setString(3, startDate.trim());
+                stmt.setString(4, endDate.trim());
+                rs = stmt.executeQuery();
+
+                while (rs.next()) {
+                    MissedSession item = new MissedSession(
+                            rs.getInt("session_id"),
+                            rs.getString("course_code"),
+                            rs.getString("course_name"),
+                            rs.getInt("session_number"),
+                            rs.getString("formatted_date"),
+                            rs.getString("session_type")
+                    );
+                    list.add(item);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Database Notice: Could not retrieve absent sessions for date range: " + e.getMessage());
+        } finally {
+            closeQuietly(rs, stmt, conn);
+        }
+        return list;
+    }
+
+    /**
+     * Submits a medical certificate covering one or more missed lecture sessions in the date range.
+     * Inserts an entry for each covered session so that course-wise attendance is credited properly.
+     *
+     * @return Base medical_id used for the Reference Number, or -1 if failed.
+     */
+    public int submitMedicalForSessions(int studentId, List<Integer> sessionIds, String startDate, String endDate, String reason, String documentPath) {
         Connection conn = null;
         Statement maxStmt = null;
         PreparedStatement insertStmt = null;
@@ -123,45 +178,67 @@ public class MedicalDAO {
                 return -1;
             }
 
-            // 1. Calculate the next medical_id (since table does not use auto_increment)
-            int nextMedicalId = 1;
+            // Find current MAX(medical_id)
+            int currentMax = 0;
             maxStmt = conn.createStatement();
-            rs = maxStmt.executeQuery("SELECT COALESCE(MAX(medical_id), 0) + 1 FROM medicals");
+            rs = maxStmt.executeQuery("SELECT COALESCE(MAX(medical_id), 0) FROM medicals");
             if (rs.next()) {
-                nextMedicalId = rs.getInt(1);
+                currentMax = rs.getInt(1);
             }
 
-            // 2. Insert the medical record
+            int primaryMedicalId = currentMax + 1;
+
             String insertSql = "INSERT INTO medicals (medical_id, student_id, session_id, start_date, end_date, " +
                     "reason, document_path, submitted_date, approval_status, verified_by) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE(), 'Pending', NULL)";
 
             insertStmt = conn.prepareStatement(insertSql);
-            insertStmt.setInt(1, nextMedicalId);
-            insertStmt.setInt(2, studentId);
 
-            if (sessionId != null && sessionId > 0) {
-                insertStmt.setInt(3, sessionId);
-            } else {
+            if (sessionIds == null || sessionIds.isEmpty()) {
+                // Single general medical record with no specific session
+                currentMax++;
+                insertStmt.setInt(1, currentMax);
+                insertStmt.setInt(2, studentId);
                 insertStmt.setNull(3, java.sql.Types.INTEGER);
+                insertStmt.setString(4, startDate);
+                insertStmt.setString(5, endDate);
+                insertStmt.setString(6, reason);
+                insertStmt.setString(7, documentPath);
+                insertStmt.executeUpdate();
+            } else {
+                // Insert a record for each missed lecture session in this period
+                for (int sessId : sessionIds) {
+                    currentMax++;
+                    insertStmt.setInt(1, currentMax);
+                    insertStmt.setInt(2, studentId);
+                    insertStmt.setInt(3, sessId);
+                    insertStmt.setString(4, startDate);
+                    insertStmt.setString(5, endDate);
+                    insertStmt.setString(6, reason);
+                    insertStmt.setString(7, documentPath);
+                    insertStmt.executeUpdate();
+                }
             }
 
-            insertStmt.setString(4, startDate);
-            insertStmt.setString(5, endDate);
-            insertStmt.setString(6, reason);
-            insertStmt.setString(7, documentPath);
-
-            int affected = insertStmt.executeUpdate();
-            if (affected > 0) {
-                return nextMedicalId;
-            }
+            return primaryMedicalId;
         } catch (SQLException e) {
-            System.err.println("Database Notice: Error inserting medical record: " + e.getMessage());
+            System.err.println("Database Notice: Error inserting medical records: " + e.getMessage());
         } finally {
             closeQuietly(rs, maxStmt, null);
             closeQuietly(null, insertStmt, conn);
         }
         return -1;
+    }
+
+    /**
+     * Submits a single medical record (legacy helper).
+     */
+    public int submitMedical(int studentId, Integer sessionId, String startDate, String endDate, String reason, String documentPath) {
+        List<Integer> list = new ArrayList<>();
+        if (sessionId != null && sessionId > 0) {
+            list.add(sessionId);
+        }
+        return submitMedicalForSessions(studentId, list, startDate, endDate, reason, documentPath);
     }
 
     /**
