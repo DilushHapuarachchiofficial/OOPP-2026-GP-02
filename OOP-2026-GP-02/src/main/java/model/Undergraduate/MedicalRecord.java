@@ -12,6 +12,17 @@ public class MedicalRecord {
     private String documentPath;
     private MedicalStatus status;
 
+    // Additional display and submission details
+    private String referenceNo;
+    private int sessionId;
+    private String startDate;
+    private String endDate;
+    private String submittedDate;
+    private String courseCode;
+    private String courseName;
+    private int sessionNumber;
+    private String sessionType;
+
     public MedicalRecord() {
         this.status = MedicalStatus.PENDING;
     }
@@ -24,6 +35,7 @@ public class MedicalRecord {
         this.reason = reason;
         this.documentPath = documentPath;
         this.status = (status != null) ? status : MedicalStatus.PENDING;
+        this.referenceNo = "MED-REF-" + String.format("%04d", medicalId);
     }
 
     // UML Methods
@@ -46,6 +58,20 @@ public class MedicalRecord {
 
     public void setMedicalId(int medicalId) {
         this.medicalId = medicalId;
+        if (this.referenceNo == null || this.referenceNo.isEmpty()) {
+            this.referenceNo = "MED-REF-" + String.format("%04d", medicalId);
+        }
+    }
+
+    public String getReferenceNo() {
+        if (referenceNo != null && !referenceNo.isEmpty()) {
+            return referenceNo;
+        }
+        return "MED-REF-" + String.format("%04d", medicalId);
+    }
+
+    public void setReferenceNo(String referenceNo) {
+        this.referenceNo = referenceNo;
     }
 
     public String getStudentId() {
@@ -86,5 +112,69 @@ public class MedicalRecord {
 
     public void setStatus(MedicalStatus status) {
         this.status = status;
+    }
+
+    public int getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(int sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getSubmittedDate() {
+        return submittedDate;
+    }
+
+    public void setSubmittedDate(String submittedDate) {
+        this.submittedDate = submittedDate;
+    }
+
+    public String getCourseCode() {
+        return courseCode;
+    }
+
+    public void setCourseCode(String courseCode) {
+        this.courseCode = courseCode;
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public int getSessionNumber() {
+        return sessionNumber;
+    }
+
+    public void setSessionNumber(int sessionNumber) {
+        this.sessionNumber = sessionNumber;
+    }
+
+    public String getSessionType() {
+        return sessionType;
+    }
+
+    public void setSessionType(String sessionType) {
+        this.sessionType = sessionType;
     }
 }
