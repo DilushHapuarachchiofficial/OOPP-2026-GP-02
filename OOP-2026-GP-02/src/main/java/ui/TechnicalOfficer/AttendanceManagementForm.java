@@ -313,7 +313,7 @@ public class AttendanceManagementForm extends JFrame {
         right.setOpaque(false);
         btnClear = createSecondaryButton("Clear");
         btnClear.addActionListener(e -> clearForm());
-        btnUpdateAttendance = createSecondaryButton("Update Attendance");
+        btnUpdateAttendance = createPrimaryButton("Update Attendance");
         btnUpdateAttendance.addActionListener(e -> saveOrUpdateAttendance(true));
         btnSaveAttendance = createPrimaryButton("Save Attendance");
         btnSaveAttendance.addActionListener(e -> saveOrUpdateAttendance(false));
