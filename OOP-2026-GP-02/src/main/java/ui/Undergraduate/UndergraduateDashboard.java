@@ -49,6 +49,7 @@ public class UndergraduateDashboard extends JFrame {
     private UndergraduateLectureNotesUI lectureNotesPanel;
     private UndergraduateAttendanceUI attendancePanel;
     private UndergraduateMedicalUI medicalPanel;
+    private UndergraduateCourseDetailsUI courseDetailsPanel;
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
@@ -88,11 +89,13 @@ public class UndergraduateDashboard extends JFrame {
         lectureNotesPanel = new UndergraduateLectureNotesUI(currentStudent, this);
         attendancePanel = new UndergraduateAttendanceUI(currentStudent, this);
         medicalPanel = new UndergraduateMedicalUI(currentStudent, this);
+        courseDetailsPanel = new UndergraduateCourseDetailsUI(currentStudent, this);
 
         mainContentArea.add(dashboardOverviewPanel, "DASHBOARD");
         mainContentArea.add(lectureNotesPanel, "LECTURE_NOTES");
         mainContentArea.add(attendancePanel, "ATTENDANCE");
         mainContentArea.add(medicalPanel, "MEDICAL");
+        mainContentArea.add(courseDetailsPanel, "COURSES");
 
         rootPanel.add(topContainer, BorderLayout.NORTH);
         rootPanel.add(mainContentArea, BorderLayout.CENTER);
@@ -753,6 +756,18 @@ public class UndergraduateDashboard extends JFrame {
         }
     }
 
+    public void openCourseDetails() {
+        if (navigationPanel != null) {
+            navigationPanel.highlightButton("COURSES");
+        }
+        if (courseDetailsPanel != null) {
+            courseDetailsPanel.loadCourseData();
+        }
+        if (contentCardLayout != null && mainContentArea != null) {
+            contentCardLayout.show(mainContentArea, "COURSES");
+        }
+    }
+
     public void showModulePlaceholder(String moduleName) {
         if ("Lecturer Notes".equalsIgnoreCase(moduleName) || "Course Materials".equalsIgnoreCase(moduleName) || "MATERIALS".equalsIgnoreCase(moduleName)) {
             openLectureNotes();
@@ -764,6 +779,10 @@ public class UndergraduateDashboard extends JFrame {
         }
         if ("Medical Details".equalsIgnoreCase(moduleName) || "Medical".equalsIgnoreCase(moduleName) || "MEDICAL".equalsIgnoreCase(moduleName)) {
             openMedical();
+            return;
+        }
+        if ("Course Details".equalsIgnoreCase(moduleName) || "Courses".equalsIgnoreCase(moduleName) || "COURSES".equalsIgnoreCase(moduleName)) {
+            openCourseDetails();
             return;
         }
         JOptionPane.showMessageDialog(
