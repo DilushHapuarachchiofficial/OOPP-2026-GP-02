@@ -14,10 +14,18 @@ public class Course {
     private int credits;
     private String department;
     private String description;
+    private String courseType;
+    private int semester;
+    private int academicYear;
+    private String status;
     private List<CourseMaterial> materials;
 
     public Course() {
         this.materials = new ArrayList<>();
+        this.courseType = "Theory_and_Practical";
+        this.semester = 1;
+        this.academicYear = 2;
+        this.status = "Registered";
     }
 
     public Course(int courseId, String courseCode, String courseName, int credits, String department, String description) {
@@ -27,6 +35,25 @@ public class Course {
         this.credits = credits;
         this.department = department;
         this.description = description;
+        this.courseType = (description != null && !description.isEmpty()) ? description : "Theory_and_Practical";
+        this.semester = 1;
+        this.academicYear = 2;
+        this.status = "Registered";
+        this.materials = new ArrayList<>();
+    }
+
+    public Course(int courseId, String courseCode, String courseName, int credits, String department,
+                  String description, String courseType, int semester, int academicYear, String status) {
+        this.courseId = courseId;
+        this.courseCode = courseCode;
+        this.courseName = courseName;
+        this.credits = credits;
+        this.department = department;
+        this.description = description;
+        this.courseType = (courseType != null && !courseType.isEmpty()) ? courseType : "Theory_and_Practical";
+        this.semester = semester > 0 ? semester : 1;
+        this.academicYear = academicYear > 0 ? academicYear : 2;
+        this.status = (status != null && !status.isEmpty()) ? status : "Registered";
         this.materials = new ArrayList<>();
     }
 
@@ -95,5 +122,37 @@ public class Course {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getCourseType() {
+        return courseType != null ? courseType : "Theory_and_Practical";
+    }
+
+    public void setCourseType(String courseType) {
+        this.courseType = courseType;
+    }
+
+    public int getSemester() {
+        return semester;
+    }
+
+    public void setSemester(int semester) {
+        this.semester = semester;
+    }
+
+    public int getAcademicYear() {
+        return academicYear;
+    }
+
+    public void setAcademicYear(int academicYear) {
+        this.academicYear = academicYear;
+    }
+
+    public String getStatus() {
+        return status != null ? status : "Registered";
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

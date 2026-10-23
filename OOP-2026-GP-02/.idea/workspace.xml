@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="" />
+    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/Undergraduate/Course.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Undergraduate/Course.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateDashboard.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateNavigation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateNavigation.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -41,7 +46,7 @@
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;b__Undergraduate__version5&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;b__Undergraduate__version6&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;D:/group project/OOP Mini project/OOPP-2026-GP-02/OOP-2026-GP-02&quot;,
