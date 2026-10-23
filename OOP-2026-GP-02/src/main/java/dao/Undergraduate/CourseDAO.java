@@ -35,8 +35,8 @@ public class CourseDAO {
         }
 
         String sql = "SELECT c.course_id, c.course_code, c.course_name, c.credit, c.course_type, " +
-                "COALESCE(cr.semester, c.semester, 1) AS course_sem, " +
-                "COALESCE(cr.academic_year, c.academic_year, 2) AS course_year, " +
+                "COALESCE(c.semester, cr.semester, 1) AS course_sem, " +
+                "COALESCE(c.academic_year, 2) AS course_year, " +
                 "COALESCE(d.department_code, 'ICT') AS dept_code, " +
                 "COALESCE(d.department_name, 'Department of Information and Communication Technology') AS dept_name, " +
                 "COALESCE(cr.registration_status, 'Registered') AS reg_status " +
@@ -71,6 +71,13 @@ public class CourseDAO {
                 String type = rs.getString("course_type");
                 int sem = rs.getInt("course_sem");
                 int year = rs.getInt("course_year");
+                if (year > 10) {
+                    if (code != null && code.length() >= 4 && Character.isDigit(code.charAt(3))) {
+                        year = Character.getNumericValue(code.charAt(3));
+                    } else {
+                        year = 2;
+                    }
+                }
                 String dept = rs.getString("dept_code");
                 String status = rs.getString("reg_status");
 

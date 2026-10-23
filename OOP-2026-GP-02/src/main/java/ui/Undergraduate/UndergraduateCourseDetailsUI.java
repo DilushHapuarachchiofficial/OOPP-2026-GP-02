@@ -64,10 +64,7 @@ public class UndergraduateCourseDetailsUI extends JPanel {
     private JTable coursesTable;
     private DefaultTableModel tableModel;
     private TableRowSorter<DefaultTableModel> tableSorter;
-    private JTextField searchField;
-    private JComboBox<String> semesterFilterCombo;
-    private JComboBox<String> typeFilterCombo;
-    private JComboBox<String> deptFilterCombo;
+    private JScrollPane tableScroll;
     private JLabel tableTallyLabel;
 
     /**
@@ -173,10 +170,8 @@ public class UndergraduateCourseDetailsUI extends JPanel {
         scrollContent.add(summaryCardsRow);
         scrollContent.add(Box.createVerticalStrut(20));
 
-        // 4. Section Title & Search/Filter Control Bar
-        scrollContent.add(createSectionTitle("Registered Course Catalog", "Official registered modules, credit weightages & delivery format"));
-        scrollContent.add(Box.createVerticalStrut(10));
-        scrollContent.add(createFilterPanel());
+        // 4. Section Title
+        scrollContent.add(createSectionTitle("Registered Course Catalog", "Official registered modules, credit weightages & academic load"));
         scrollContent.add(Box.createVerticalStrut(12));
 
         // 5. Course Details Table Card
@@ -422,102 +417,6 @@ public class UndergraduateCourseDetailsUI extends JPanel {
         return card;
     }
 
-    // ==========================================
-    // 4. FILTER & SEARCH PANEL
-    // ==========================================
-    private JPanel createFilterPanel() {
-        JPanel filterCard = new JPanel(new BorderLayout(12, 0));
-        filterCard.setBackground(COLOR_WHITE);
-        filterCard.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(10, 16, 10, 16)));
-        filterCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
-
-        // Left: Search Field
-        JPanel leftBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        leftBox.setOpaque(false);
-
-        JLabel searchIconLbl = new JLabel("🔍 Search:");
-        searchIconLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        searchIconLbl.setForeground(COLOR_PRIMARY_NAVY);
-        leftBox.add(searchIconLbl);
-
-        searchField = new JTextField(18);
-        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        searchField.setToolTipText("Filter by course code or course name");
-        searchField.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(6, 8, 6, 8)));
-        searchField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { applyFilters(); }
-            @Override public void removeUpdate(DocumentEvent e) { applyFilters(); }
-            @Override public void changedUpdate(DocumentEvent e) { applyFilters(); }
-        });
-        leftBox.add(searchField);
-
-        filterCard.add(leftBox, BorderLayout.WEST);
-
-        // Right: Dropdown Filters & Clear
-        JPanel rightBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        rightBox.setOpaque(false);
-
-        // Semester Filter
-        JLabel semLbl = new JLabel("Semester:");
-        semLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        semLbl.setForeground(COLOR_TEXT_MUTED);
-        rightBox.add(semLbl);
-
-        semesterFilterCombo = new JComboBox<>(new String[]{"All Semesters", "Level II - Semester 1", "Level I - Semester 2"});
-        styleFilterCombo(semesterFilterCombo);
-        semesterFilterCombo.addActionListener(e -> applyFilters());
-        rightBox.add(semesterFilterCombo);
-
-        // Course Type Filter
-        JLabel typeLbl = new JLabel("Type:");
-        typeLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        typeLbl.setForeground(COLOR_TEXT_MUTED);
-        rightBox.add(typeLbl);
-
-        typeFilterCombo = new JComboBox<>(new String[]{"All Types", "Theory & Practical", "Theory Only", "Practical Only"});
-        styleFilterCombo(typeFilterCombo);
-        typeFilterCombo.addActionListener(e -> applyFilters());
-        rightBox.add(typeFilterCombo);
-
-        // Department Filter
-        JLabel deptLbl = new JLabel("Dept:");
-        deptLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        deptLbl.setForeground(COLOR_TEXT_MUTED);
-        rightBox.add(deptLbl);
-
-        deptFilterCombo = new JComboBox<>(new String[]{"All Departments", "ICT", "MDS"});
-        styleFilterCombo(deptFilterCombo);
-        deptFilterCombo.addActionListener(e -> applyFilters());
-        rightBox.add(deptFilterCombo);
-
-        // Reset Filter Button
-        JButton resetBtn = new JButton("Reset");
-        resetBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        resetBtn.setForeground(COLOR_MAIN_BLUE);
-        resetBtn.setBackground(COLOR_WHITE);
-        resetBtn.setFocusPainted(false);
-        resetBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        resetBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(5, 10, 5, 10)));
-        resetBtn.addActionListener(e -> {
-            searchField.setText("");
-            semesterFilterCombo.setSelectedIndex(0);
-            typeFilterCombo.setSelectedIndex(0);
-            deptFilterCombo.setSelectedIndex(0);
-            applyFilters();
-        });
-        rightBox.add(resetBtn);
-
-        filterCard.add(rightBox, BorderLayout.EAST);
-        return filterCard;
-    }
-
-    private void styleFilterCombo(JComboBox<String> combo) {
-        combo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        combo.setBackground(COLOR_WHITE);
-        combo.setForeground(COLOR_TEXT_PRIMARY);
-        combo.setBorder(new LineBorder(COLOR_BORDER, 1, true));
-        combo.setPreferredSize(new Dimension(combo.getPreferredSize().width + 10, 30));
-    }
 
     // ==========================================
     // 5. COURSE DETAILS TABLE CARD
@@ -731,10 +630,12 @@ public class UndergraduateCourseDetailsUI extends JPanel {
         tableSorter = new TableRowSorter<>(tableModel);
         coursesTable.setRowSorter(tableSorter);
 
-        JScrollPane tableScroll = new JScrollPane(coursesTable);
+        tableScroll = new JScrollPane(coursesTable);
         tableScroll.setBorder(null);
         tableScroll.getViewport().setBackground(COLOR_WHITE);
-        tableScroll.setPreferredSize(new Dimension(0, 360));
+        tableScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        tableScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        tableScroll.setPreferredSize(new Dimension(0, 504)); // Fits all 11 courses without internal scroll
         card.add(tableScroll, BorderLayout.CENTER);
 
         // Table Footer Summary Bar
@@ -854,82 +755,21 @@ public class UndergraduateCourseDetailsUI extends JPanel {
 
                 // Update Labels
                 statusSubtitleLabel.setText("Student Registration: " + studentIdentifier + "  •  " + totalCount + " Enrolled Modules  •  Total Academic Weight: " + totalCredits + " Credits");
-                tableTallyLabel.setText("Showing " + totalCount + " of " + totalCount + " courses  |  Total: " + totalCredits + " Credits");
+                tableTallyLabel.setText("Total Registered Modules: " + totalCount + "  |  Total: " + totalCredits + " Credits");
 
-                applyFilters();
+                // Auto-expand table height so ALL courses are fully visible without internal scrolling
+                int rowCount = tableModel.getRowCount();
+                int headerHeight = 38;
+                int rowHeight = coursesTable.getRowHeight();
+                int tableHeight = headerHeight + (Math.max(rowCount, 1) * rowHeight) + 4;
+                if (tableScroll != null) {
+                    tableScroll.setPreferredSize(new Dimension(0, tableHeight));
+                    tableScroll.revalidate();
+                }
             } catch (Exception e) {
                 statusSubtitleLabel.setText("Notice: Displaying cached curriculum data: " + e.getMessage());
             }
         });
-    }
-
-    // ==========================================
-    // 8. FILTERING LOGIC
-    // ==========================================
-    private void applyFilters() {
-        if (tableSorter == null) return;
-
-        List<RowFilter<Object, Object>> filters = new ArrayList<>();
-
-        // Text Search Filter (Course code or title or department)
-        String searchText = searchField != null ? searchField.getText().trim() : "";
-        if (!searchText.isEmpty()) {
-            filters.add(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(searchText), 1, 2, 5));
-        }
-
-        // Semester Filter
-        if (semesterFilterCombo != null && semesterFilterCombo.getSelectedIndex() > 0) {
-            String selectedSem = (String) semesterFilterCombo.getSelectedItem();
-            if (selectedSem != null) {
-                if (selectedSem.contains("Level II - Semester 1")) {
-                    filters.add(RowFilter.regexFilter("(?i)Level II - Sem 1", 6));
-                } else if (selectedSem.contains("Level I - Semester 2")) {
-                    filters.add(RowFilter.regexFilter("(?i)Level I - Sem 2", 6));
-                }
-            }
-        }
-
-        // Course Type Filter
-        if (typeFilterCombo != null && typeFilterCombo.getSelectedIndex() > 0) {
-            String selectedType = (String) typeFilterCombo.getSelectedItem();
-            if (selectedType != null) {
-                if (selectedType.equalsIgnoreCase("Theory & Practical")) {
-                    filters.add(RowFilter.regexFilter("(?i)Theory & Practical", 4));
-                } else if (selectedType.equalsIgnoreCase("Theory Only")) {
-                    filters.add(RowFilter.regexFilter("(?i)Theory Only", 4));
-                } else if (selectedType.equalsIgnoreCase("Practical Only")) {
-                    filters.add(RowFilter.regexFilter("(?i)Practical Only", 4));
-                }
-            }
-        }
-
-        // Department Filter
-        if (deptFilterCombo != null && deptFilterCombo.getSelectedIndex() > 0) {
-            String selectedDept = (String) deptFilterCombo.getSelectedItem();
-            if (selectedDept != null && !selectedDept.equalsIgnoreCase("All Departments")) {
-                filters.add(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(selectedDept), 5));
-            }
-        }
-
-        if (filters.isEmpty()) {
-            tableSorter.setRowFilter(null);
-        } else {
-            tableSorter.setRowFilter(RowFilter.andFilter(filters));
-        }
-
-        // Update count tally
-        int visibleCount = coursesTable.getRowCount();
-        int visibleCredits = 0;
-        for (int i = 0; i < visibleCount; i++) {
-            int modelIdx = coursesTable.convertRowIndexToModel(i);
-            String crStr = tableModel.getValueAt(modelIdx, 3).toString();
-            try {
-                int cr = Integer.parseInt(crStr.split(" ")[0]);
-                visibleCredits += cr;
-            } catch (Exception ignored) {}
-        }
-
-        tableTallyLabel.setText("Showing " + visibleCount + " of " + allCourses.size() + " courses  |  Enrolled: " + visibleCredits + " Credits");
     }
 
     private String formatTypeDisplay(String raw) {
@@ -948,7 +788,7 @@ public class UndergraduateCourseDetailsUI extends JPanel {
         Course course = allCourses.get(modelRow);
 
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Course Module Details - " + course.getCourseCode(), Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(520, 480);
+        dialog.setSize(540, 500);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
@@ -1026,16 +866,28 @@ public class UndergraduateCourseDetailsUI extends JPanel {
 
         root.add(centerContainer, BorderLayout.CENTER);
 
-        // Bottom Close Button
+        // Bottom Close Button (Solid Navy with crisp white text for guaranteed visibility on Windows)
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         bottom.setOpaque(false);
-        JButton closeBtn = new JButton("Close");
+        JButton closeBtn = new JButton("Close") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getModel().isRollover() ? COLOR_MAIN_BLUE : COLOR_PRIMARY_NAVY);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         closeBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         closeBtn.setForeground(COLOR_WHITE);
-        closeBtn.setBackground(COLOR_PRIMARY_NAVY);
+        closeBtn.setContentAreaFilled(false);
+        closeBtn.setBorderPainted(false);
         closeBtn.setFocusPainted(false);
+        closeBtn.setOpaque(false);
         closeBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        closeBtn.setBorder(new EmptyBorder(8, 20, 8, 20));
+        closeBtn.setPreferredSize(new Dimension(100, 36));
         closeBtn.addActionListener(e -> dialog.dispose());
         bottom.add(closeBtn);
         root.add(bottom, BorderLayout.SOUTH);
