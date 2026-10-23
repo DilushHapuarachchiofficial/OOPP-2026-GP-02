@@ -27,9 +27,11 @@ import java.time.format.DateTimeFormatter;
  */
 public class TechnicalOfficerDashboard extends JFrame {
 
-    // TecFAMS Specified Color Palette
+    // TecFAMS Specified Color Palette - Primary button standardized to #1565C0
     public static final Color PRIMARY_NAVY   = Color.decode("#123B70");
-    public static final Color MAIN_BLUE      = Color.decode("#2563EB");
+    public static final Color PRIMARY_BLUE   = Color.decode("#1565C0");
+    public static final Color PRIMARY_BLUE_HOVER = Color.decode("#0D47A1");
+    public static final Color MAIN_BLUE      = PRIMARY_BLUE;
     public static final Color LIGHT_BLUE     = Color.decode("#EAF2FF");
     public static final Color WHITE          = Color.decode("#FFFFFF");
     public static final Color BG_COLOR       = Color.decode("#F5F8FD");
@@ -38,7 +40,7 @@ public class TechnicalOfficerDashboard extends JFrame {
     public static final Color BORDER_COLOR   = Color.decode("#E2E8F0");
     public static final Color SIDEBAR_BG     = Color.decode("#0F294D");
     public static final Color SIDEBAR_HOVER  = Color.decode("#1A3E70");
-    public static final Color SIDEBAR_ACTIVE = Color.decode("#2563EB");
+    public static final Color SIDEBAR_ACTIVE = PRIMARY_BLUE;
     public static final Color SUCCESS_GREEN  = Color.decode("#10B981");
     public static final Color WARNING_AMBER  = Color.decode("#F59E0B");
 
@@ -491,80 +493,17 @@ public class TechnicalOfficerDashboard extends JFrame {
     }
 
     /**
-     * Profile dialog adhering to SRS FR-04:
-     * "The system shall allow technical officers to update their profiles except username and password."
+     * Opens the Technical Officer Profile Form to view and edit profile details,
+     * upload/preview profile photos, and change passwords.
      */
     public void showProfileDialog() {
-        JDialog dialog = new JDialog(this, "My Profile - Technical Officer", true);
-        dialog.setSize(480, 420);
-        dialog.setLocationRelativeTo(this);
-        dialog.setLayout(new BorderLayout());
-
-        JPanel form = new JPanel(new GridLayout(6, 2, 10, 14));
-        form.setBorder(new EmptyBorder(20, 24, 20, 24));
-        form.setBackground(WHITE);
-
-        JTextField idField = new JTextField(currentOfficer.getOfficerId());
-        idField.setEditable(false);
-        idField.setBackground(Color.decode("#F1F5F9"));
-
-        JTextField userField = new JTextField(currentOfficer.getUsername() + " 🔒 (Fixed)");
-        userField.setEditable(false);
-        userField.setBackground(Color.decode("#F1F5F9"));
-        userField.setToolTipText("Username cannot be modified as per university security policy");
-
-        JTextField nameField = new JTextField(currentOfficer.getName());
-        JTextField emailField = new JTextField(currentOfficer.getEmail());
-        JTextField phoneField = new JTextField(currentOfficer.getPhone());
-
-        JTextField deptField = new JTextField(currentOfficer.getDepartment());
-        deptField.setEditable(false);
-        deptField.setBackground(Color.decode("#F1F5F9"));
-
-        form.add(new JLabel("Officer ID:")); form.add(idField);
-        form.add(new JLabel("Username (Fixed):")); form.add(userField);
-        form.add(new JLabel("Full Name:")); form.add(nameField);
-        form.add(new JLabel("Official Email:")); form.add(emailField);
-        form.add(new JLabel("Contact Phone:")); form.add(phoneField);
-        form.add(new JLabel("Department:")); form.add(deptField);
-
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
-        btnPanel.setBackground(BG_COLOR);
-
-        JButton saveBtn = createPrimaryButton("Save Profile Changes");
-        JButton cancelBtn = createSecondaryButton("Cancel");
-
-        saveBtn.addActionListener(e -> {
-            String newName = nameField.getText().trim();
-            String newEmail = emailField.getText().trim();
-            String newPhone = phoneField.getText().trim();
-
-            if (newName.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "Name cannot be left empty.", "Validation Error", JOptionPane.WARNING_MESSAGE);
-                return;
+        TechnicalOfficerProfileForm form = new TechnicalOfficerProfileForm(this, currentOfficer, dao);
+        form.setOnProfileSavedCallback(() -> {
+            if (currentOfficer != null && headerWelcomeLabel != null) {
+                headerWelcomeLabel.setText("Welcome back, " + currentOfficer.getName() + "!");
             }
-            if (!newEmail.contains("@") || !newEmail.contains(".")) {
-                JOptionPane.showMessageDialog(dialog, "Please enter a valid email address.", "Validation Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            if (newPhone.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "Contact phone number is required.", "Validation Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            dao.updateProfile(newName, newEmail, newPhone);
-            headerWelcomeLabel.setText("Welcome back, " + newName + "!");
-            JOptionPane.showMessageDialog(dialog, "Profile contact information updated successfully!", "Saved", JOptionPane.INFORMATION_MESSAGE);
-            dialog.dispose();
         });
-
-        cancelBtn.addActionListener(e -> dialog.dispose());
-        btnPanel.add(cancelBtn);
-        btnPanel.add(saveBtn);
-
-        dialog.add(form, BorderLayout.CENTER);
-        dialog.add(btnPanel, BorderLayout.SOUTH);
-        dialog.setVisible(true);
+        form.setVisible(true);
     }
 
     public void handleLogout() {
@@ -598,7 +537,7 @@ public class TechnicalOfficerDashboard extends JFrame {
         JButton button = new JButton(text);
         button.setFont(FONT_MEDIUM);
         button.setForeground(WHITE);
-        button.setBackground(MAIN_BLUE);
+        button.setBackground(PRIMARY_BLUE);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -607,12 +546,12 @@ public class TechnicalOfficerDashboard extends JFrame {
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                button.setBackground(Color.decode("#1D4ED8"));
+                button.setBackground(PRIMARY_BLUE_HOVER);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                button.setBackground(MAIN_BLUE);
+                button.setBackground(PRIMARY_BLUE);
             }
         });
         return button;
