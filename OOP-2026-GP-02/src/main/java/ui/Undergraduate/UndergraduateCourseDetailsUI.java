@@ -17,6 +17,7 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelListener;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -64,7 +65,7 @@ public class UndergraduateCourseDetailsUI extends JPanel {
     private JTable coursesTable;
     private DefaultTableModel tableModel;
     private TableRowSorter<DefaultTableModel> tableSorter;
-    private JScrollPane tableScroll;
+    private JPanel tableCard;
     private JLabel tableTallyLabel;
 
     /**
@@ -630,13 +631,31 @@ public class UndergraduateCourseDetailsUI extends JPanel {
         tableSorter = new TableRowSorter<>(tableModel);
         coursesTable.setRowSorter(tableSorter);
 
-        tableScroll = new JScrollPane(coursesTable);
-        tableScroll.setBorder(null);
-        tableScroll.getViewport().setBackground(COLOR_WHITE);
-        tableScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-        tableScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        tableScroll.setPreferredSize(new Dimension(0, 504)); // Fits all 11 courses without internal scroll
-        card.add(tableScroll, BorderLayout.CENTER);
+        tableCard = card;
+
+        // Table Wrapper: shows Table Header and Table Body continuously downwards without internal scrolling
+        JPanel tableWrapper = new JPanel(new BorderLayout());
+        tableWrapper.setBackground(COLOR_WHITE);
+        tableWrapper.add(coursesTable.getTableHeader(), BorderLayout.NORTH);
+        tableWrapper.add(coursesTable, BorderLayout.CENTER);
+        card.add(tableWrapper, BorderLayout.CENTER);
+
+        // Forward mouse wheel events anywhere over the table, header, or card directly to the main page scroll pane
+        MouseWheelListener pageWheelListener = e -> {
+            JScrollPane parentScroll = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, coursesTable);
+            if (parentScroll != null) {
+                JScrollBar vBar = parentScroll.getVerticalScrollBar();
+                if (vBar != null) {
+                    int units = e.getUnitsToScroll();
+                    int increment = vBar.getUnitIncrement();
+                    vBar.setValue(vBar.getValue() + units * increment);
+                }
+            }
+        };
+        coursesTable.addMouseWheelListener(pageWheelListener);
+        coursesTable.getTableHeader().addMouseWheelListener(pageWheelListener);
+        tableWrapper.addMouseWheelListener(pageWheelListener);
+        card.addMouseWheelListener(pageWheelListener);
 
         // Table Footer Summary Bar
         JPanel tableFooter = new JPanel(new BorderLayout());
@@ -757,14 +776,10 @@ public class UndergraduateCourseDetailsUI extends JPanel {
                 statusSubtitleLabel.setText("Student Registration: " + studentIdentifier + "  •  " + totalCount + " Enrolled Modules  •  Total Academic Weight: " + totalCredits + " Credits");
                 tableTallyLabel.setText("Total Registered Modules: " + totalCount + "  |  Total: " + totalCredits + " Credits");
 
-                // Auto-expand table height so ALL courses are fully visible without internal scrolling
-                int rowCount = tableModel.getRowCount();
-                int headerHeight = 38;
-                int rowHeight = coursesTable.getRowHeight();
-                int tableHeight = headerHeight + (Math.max(rowCount, 1) * rowHeight) + 4;
-                if (tableScroll != null) {
-                    tableScroll.setPreferredSize(new Dimension(0, tableHeight));
-                    tableScroll.revalidate();
+                // Refresh table card so entire list of courses is fully laid out continuously
+                if (tableCard != null) {
+                    tableCard.revalidate();
+                    tableCard.repaint();
                 }
             } catch (Exception e) {
                 statusSubtitleLabel.setText("Notice: Displaying cached curriculum data: " + e.getMessage());
