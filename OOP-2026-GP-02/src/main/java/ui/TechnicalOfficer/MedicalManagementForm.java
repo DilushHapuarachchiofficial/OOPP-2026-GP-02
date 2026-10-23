@@ -6,7 +6,6 @@ import main.resources.database.DatabaseConnection;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -27,7 +26,6 @@ import static main.java.ui.TechnicalOfficer.TechnicalOfficerDashboard.*;
  * Faculty of Technology - University of Ruhuna.
  * 
  * Features:
- * - TecFAMS header with Officer badge and Back to Dashboard button
  * - Summary metric cards (Total, Pending, Approved, Rejected)
  * - Filter & Search bar (Reg No/Name, Status, Date range, Search & Reset)
  * - Medical Records table with DB columns, status badges, and details trigger
@@ -47,26 +45,20 @@ public class MedicalManagementForm extends JFrame {
     private JComboBox<String> cmbStatusFilter;
     private JButton btnSearch, btnResetFilter;
 
-    // Left Side: Records Table
+    // Table Controls
     private JTable tblMedicals;
     private DefaultTableModel tableModel;
     private JLabel lblTableInfo;
 
-    // Right Side: Details Controls
-    private JLabel lblDetailsBadge;
+    // Details Controls
+    private JLabel lblDetailsBadge, lblSessionDisplay, lblVerifiedBy;
     private JComboBox<StudentItem> cmbStudentSelect;
-    private JTextField txtStudentRegNo, txtStudentName, txtStudentLevel, txtStudentContact;
-    private JTextField txtStartDate, txtEndDate, txtSubmittedDate;
-    private JTextArea txtReason;
     private JComboBox<SessionItem> cmbSessionSelect;
-    private JLabel lblSessionDisplay;
-    private JTextField txtDocumentPath;
-    private JButton btnBrowseDoc, btnViewDoc;
     private JComboBox<String> cmbApprovalStatus;
-    private JLabel lblVerifiedBy;
-
-    // Action Buttons
-    private JButton btnSaveNew, btnUpdate, btnClear, btnRefresh;
+    private JTextField txtStudentRegNo, txtStudentName, txtStudentLevel, txtStudentContact;
+    private JTextField txtStartDate, txtEndDate, txtSubmittedDate, txtDocumentPath;
+    private JTextArea txtReason;
+    private JButton btnBrowseDoc, btnViewDoc, btnSaveNew, btnUpdate, btnClear, btnRefresh;
 
     // State
     private int currentMedicalId = -1;
@@ -125,11 +117,8 @@ public class MedicalManagementForm extends JFrame {
                 BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR),
                 new EmptyBorder(12, 24, 12, 24)));
 
-        JPanel leftBrand = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0));
+        JPanel leftBrand = new JPanel(new GridLayout(2, 1, 0, 2));
         leftBrand.setOpaque(false);
-        JPanel titleBlock = new JPanel(new GridLayout(2, 1, 0, 2));
-        titleBlock.setOpaque(false);
-
         JLabel brandTitle = new JLabel("TecFAMS  •  Medical Records Management");
         brandTitle.setFont(FONT_HEADER_LARGE);
         brandTitle.setForeground(PRIMARY_NAVY);
@@ -137,10 +126,8 @@ public class MedicalManagementForm extends JFrame {
         JLabel brandSubtitle = new JLabel("Faculty of Technology • University of Ruhuna | Technical Officer Absence Verification");
         brandSubtitle.setFont(FONT_SMALL);
         brandSubtitle.setForeground(TEXT_SECONDARY);
-
-        titleBlock.add(brandTitle);
-        titleBlock.add(brandSubtitle);
-        leftBrand.add(titleBlock);
+        leftBrand.add(brandTitle);
+        leftBrand.add(brandSubtitle);
 
         JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         rightActions.setOpaque(false);
@@ -172,7 +159,7 @@ public class MedicalManagementForm extends JFrame {
         lblApprovedCount = new JLabel("0");
         lblRejectedCount = new JLabel("0");
 
-        row.add(createMetricCard("Total Medical Records", lblTotalCount, "All registered submissions", "📋", MAIN_BLUE));
+        row.add(createMetricCard("Total Medical Records", lblTotalCount, "All registered submissions", "📋", PRIMARY_BLUE));
         row.add(createMetricCard("Pending Approval", lblPendingCount, "Awaiting officer review", "⏳", WARNING_AMBER));
         row.add(createMetricCard("Approved Records", lblApprovedCount, "Absence verified & granted", "✅", SUCCESS_GREEN));
         row.add(createMetricCard("Rejected Records", lblRejectedCount, "Declined / invalid submissions", "❌", Color.decode("#EF4444")));
@@ -220,13 +207,17 @@ public class MedicalManagementForm extends JFrame {
         JPanel filtersRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 4));
         filtersRow.setOpaque(false);
 
-        txtSearch = createInputField(16, "Enter Student Reg No (e.g., TG/2024/2012) or Name", null);
+        txtSearch = new JTextField(16);
+        txtSearch.setFont(FONT_REGULAR);
+
         cmbStatusFilter = new JComboBox<>(new String[]{"All Statuses", "Pending", "Approved", "Rejected"});
         cmbStatusFilter.setFont(FONT_REGULAR);
         cmbStatusFilter.setPreferredSize(new Dimension(135, 32));
 
-        txtDateFrom = createInputField(9, "Format: YYYY-MM-DD", null);
-        txtDateTo = createInputField(9, "Format: YYYY-MM-DD", null);
+        txtDateFrom = new JTextField(9);
+        txtDateFrom.setFont(FONT_REGULAR);
+        txtDateTo = new JTextField(9);
+        txtDateTo.setFont(FONT_REGULAR);
 
         btnSearch = createPrimaryButton("🔍 Search");
         btnSearch.addActionListener(e -> applyFilters());
@@ -242,14 +233,6 @@ public class MedicalManagementForm extends JFrame {
 
         card.add(filtersRow, BorderLayout.CENTER);
         return card;
-    }
-
-    private JTextField createInputField(int columns, String tooltip, String text) {
-        JTextField tf = new JTextField(columns);
-        tf.setFont(FONT_REGULAR);
-        if (tooltip != null) tf.setToolTipText(tooltip);
-        if (text != null) tf.setText(text);
-        return tf;
     }
 
     private JPanel createInlineField(String labelText, JComponent comp) {
@@ -281,7 +264,6 @@ public class MedicalManagementForm extends JFrame {
 
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
-
         JLabel title = new JLabel("Submitted Medical Records");
         title.setFont(FONT_HEADER_MEDIUM);
         title.setForeground(PRIMARY_NAVY);
@@ -289,7 +271,6 @@ public class MedicalManagementForm extends JFrame {
         lblTableInfo = new JLabel("Loading database records...");
         lblTableInfo.setFont(FONT_SMALL);
         lblTableInfo.setForeground(TEXT_SECONDARY);
-
         headerPanel.add(title, BorderLayout.WEST);
         headerPanel.add(lblTableInfo, BorderLayout.EAST);
         card.add(headerPanel, BorderLayout.NORTH);
@@ -352,13 +333,13 @@ public class MedicalManagementForm extends JFrame {
                 JLabel l = (JLabel) super.getTableCellRendererComponent(table, val, isSelected, hasFocus, row, col);
                 l.setHorizontalAlignment(SwingConstants.CENTER);
                 l.setFont(FONT_MEDIUM);
-                l.setForeground(MAIN_BLUE);
+                l.setForeground(PRIMARY_BLUE);
                 l.setText("View Details ➔");
                 return l;
             }
         });
 
-        tblMedicals.getSelectionModel().addListSelectionListener((ListSelectionEvent e) -> {
+        tblMedicals.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int row = tblMedicals.getSelectedRow();
                 if (row >= 0) loadMedicalDetails((Integer) tableModel.getValueAt(row, 1));
@@ -384,7 +365,7 @@ public class MedicalManagementForm extends JFrame {
 
         lblDetailsBadge = new JLabel("Mode: New Record");
         lblDetailsBadge.setFont(FONT_SMALL);
-        lblDetailsBadge.setForeground(MAIN_BLUE);
+        lblDetailsBadge.setForeground(PRIMARY_BLUE);
         lblDetailsBadge.setBackground(LIGHT_BLUE);
         lblDetailsBadge.setOpaque(true);
         lblDetailsBadge.setBorder(BorderFactory.createCompoundBorder(
@@ -409,7 +390,7 @@ public class MedicalManagementForm extends JFrame {
             }
         });
 
-        JPanel studentGrid = new JPanel(new GridLayout(2, 2, 10, 6));
+        JPanel studentGrid = new JPanel(new GridLayout(2, 2, 10, 8));
         studentGrid.setOpaque(false);
         txtStudentRegNo = createReadOnlyField();
         txtStudentName = createReadOnlyField();
@@ -425,9 +406,12 @@ public class MedicalManagementForm extends JFrame {
         JPanel datesGrid = new JPanel(new GridLayout(1, 3, 10, 0));
         datesGrid.setOpaque(false);
         String today = LocalDate.now().toString();
-        txtStartDate = createInputField(0, null, today);
-        txtEndDate = createInputField(0, null, today);
-        txtSubmittedDate = createInputField(0, null, today);
+        txtStartDate = new JTextField(today);
+        txtStartDate.setFont(FONT_REGULAR);
+        txtEndDate = new JTextField(today);
+        txtEndDate.setFont(FONT_REGULAR);
+        txtSubmittedDate = new JTextField(today);
+        txtSubmittedDate.setFont(FONT_REGULAR);
         datesGrid.add(createFieldWrapper("Start Date (YYYY-MM-DD):", txtStartDate));
         datesGrid.add(createFieldWrapper("End Date (YYYY-MM-DD):", txtEndDate));
         datesGrid.add(createFieldWrapper("Submitted Date:", txtSubmittedDate));
@@ -457,11 +441,12 @@ public class MedicalManagementForm extends JFrame {
         // 4. Medical Certificate Document
         JPanel docRow = new JPanel(new BorderLayout(8, 0));
         docRow.setOpaque(false);
-        txtDocumentPath = createInputField(0, null, "medicals/certificate_sample.pdf");
+        txtDocumentPath = new JTextField("medicals/certificate_sample.pdf");
+        txtDocumentPath.setFont(FONT_REGULAR);
 
         JPanel docBtnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         docBtnRow.setOpaque(false);
-        btnBrowseDoc = createSecondaryButton("📁 Browse...");
+        btnBrowseDoc = createPrimaryButton("📁 Browse...");
         btnBrowseDoc.addActionListener(e -> browseDocument());
         btnViewDoc = createPrimaryButton("👁 View Document");
         btnViewDoc.addActionListener(e -> viewDocument());
@@ -472,7 +457,7 @@ public class MedicalManagementForm extends JFrame {
         docRow.add(docBtnRow, BorderLayout.EAST);
         addSection(formBody, "4. Medical Certificate Document", createFieldWrapper("Certificate File Path (PDF / Image):", docRow));
 
-        // 5. Verification & Approval Status (Kept as requested)
+        // 5. Verification & Approval Status
         JPanel statusGrid = new JPanel(new GridLayout(1, 2, 10, 0));
         statusGrid.setOpaque(false);
         cmbApprovalStatus = new JComboBox<>(new String[]{"Pending", "Approved", "Rejected"});
@@ -484,7 +469,7 @@ public class MedicalManagementForm extends JFrame {
         statusGrid.add(createFieldWrapper("Verified By:", lblVerifiedBy));
         addSection(formBody, "5. Verification & Approval Status", statusGrid);
 
-        // 6. Action Buttons Bar (Simplified: Save New, Update, Clear, Refresh)
+        // 6. Action Buttons Bar
         formBody.add(createActionButtonsSection());
 
         JScrollPane formScroll = new JScrollPane(formBody);
@@ -496,32 +481,28 @@ public class MedicalManagementForm extends JFrame {
     }
 
     private void addSection(JPanel parent, String title, JComponent... comps) {
-        parent.add(createSectionTitle(title));
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(FONT_HEADER_SMALL);
+        titleLabel.setForeground(PRIMARY_NAVY);
+        parent.add(titleLabel);
         parent.add(Box.createVerticalStrut(6));
         for (JComponent c : comps) {
             parent.add(c);
             parent.add(Box.createVerticalStrut(6));
         }
-        parent.add(Box.createVerticalStrut(8));
+        parent.add(Box.createVerticalStrut(6));
     }
 
-    /**
-     * Simplified Action Buttons Section:
-     * Contains Save New, Update (persisting Approval Status), Clear, and Refresh.
-     */
     private JPanel createActionButtonsSection() {
         JPanel mgmtRow = new JPanel(new GridLayout(1, 4, 8, 0));
         mgmtRow.setOpaque(false);
 
         btnSaveNew = createPrimaryButton("💾 Save New");
         btnSaveNew.addActionListener(e -> saveMedicalRecord(false));
-
-        btnUpdate = createSecondaryButton("🔄 Update");
+        btnUpdate = createPrimaryButton("🔄 Update");
         btnUpdate.addActionListener(e -> saveMedicalRecord(true));
-
         btnClear = createSecondaryButton("🧹 Clear");
         btnClear.addActionListener(e -> clearDetailsPanel());
-
         btnRefresh = createSecondaryButton("↺ Refresh");
         btnRefresh.addActionListener(e -> refreshAll());
 
@@ -529,15 +510,7 @@ public class MedicalManagementForm extends JFrame {
         mgmtRow.add(btnUpdate);
         mgmtRow.add(btnClear);
         mgmtRow.add(btnRefresh);
-
         return mgmtRow;
-    }
-
-    private JLabel createSectionTitle(String text) {
-        JLabel l = new JLabel(text);
-        l.setFont(FONT_HEADER_SMALL);
-        l.setForeground(PRIMARY_NAVY);
-        return l;
     }
 
     private JTextField createReadOnlyField() {
@@ -545,14 +518,12 @@ public class MedicalManagementForm extends JFrame {
         tf.setEditable(false);
         tf.setFont(FONT_REGULAR);
         tf.setBackground(Color.decode("#F8FAFC"));
-        tf.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BORDER_COLOR, 1),
-                new EmptyBorder(4, 6, 4, 6)));
+        tf.setBorder(BorderFactory.createCompoundBorder(new LineBorder(BORDER_COLOR, 1), new EmptyBorder(4, 6, 4, 6)));
         return tf;
     }
 
     private JPanel createFieldWrapper(String labelText, JComponent comp) {
-        JPanel p = new JPanel(new BorderLayout(0, 3));
+        JPanel p = new JPanel(new BorderLayout(0, 4));
         p.setOpaque(false);
         JLabel l = new JLabel(labelText);
         l.setFont(FONT_SMALL);
@@ -600,7 +571,6 @@ public class MedicalManagementForm extends JFrame {
     private void loadStudentsList() {
         allStudents.clear();
         cmbStudentSelect.removeAllItems();
-
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) return;
 
@@ -629,9 +599,8 @@ public class MedicalManagementForm extends JFrame {
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) return;
 
-        String sql = "SELECT s.session_id, s.session_number, s.session_type, s.session_date, c.course_code, c.course_name " +
+        String sql = "SELECT s.session_id, s.session_number, s.session_type, s.session_date, c.course_code " +
                 "FROM attendance_sessions s JOIN courses c ON s.course_id = c.course_id ORDER BY s.session_date DESC, s.session_number ASC";
-
         try (Statement s = conn.createStatement(); ResultSet rs = s.executeQuery(sql)) {
             while (rs.next()) {
                 int sId = rs.getInt("session_id");
@@ -650,7 +619,6 @@ public class MedicalManagementForm extends JFrame {
 
     public void loadMedicalRecords(String keyword, String status, String dateFrom, String dateTo) {
         tableModel.setRowCount(0);
-
         StringBuilder sql = new StringBuilder(
                 "SELECT m.medical_id, m.student_id, s.student_reg_no, s.full_name, " +
                 "m.start_date, m.end_date, m.reason, m.submitted_date, m.approval_status " +
@@ -662,24 +630,20 @@ public class MedicalManagementForm extends JFrame {
             sql.append("AND (LOWER(s.student_reg_no) LIKE ? OR LOWER(s.full_name) LIKE ?) ");
             params.add(kw); params.add(kw);
         }
-
         if (status != null && !status.equalsIgnoreCase("All Statuses") && !status.trim().isEmpty()) {
             sql.append("AND m.approval_status = ? ");
             params.add(status.trim());
         }
-
         LocalDate fromDate = parseLocalDate(dateFrom);
         if (fromDate != null) {
             sql.append("AND m.start_date >= ? ");
             params.add(Date.valueOf(fromDate));
         }
-
         LocalDate toDate = parseLocalDate(dateTo);
         if (toDate != null) {
             sql.append("AND m.end_date <= ? ");
             params.add(Date.valueOf(toDate));
         }
-
         sql.append("ORDER BY m.medical_id DESC");
 
         Connection conn = DatabaseConnection.getConnection();
@@ -690,7 +654,6 @@ public class MedicalManagementForm extends JFrame {
 
         try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
-
             try (ResultSet rs = ps.executeQuery()) {
                 int rowNum = 1;
                 while (rs.next()) {
@@ -698,7 +661,6 @@ public class MedicalManagementForm extends JFrame {
                     String name = rs.getString("full_name");
                     String reason = rs.getString("reason");
                     String appStatus = rs.getString("approval_status");
-
                     tableModel.addRow(new Object[]{
                             rowNum++, rs.getInt("medical_id"),
                             regNo != null ? regNo : "N/A", name != null ? name : "N/A",
@@ -719,12 +681,10 @@ public class MedicalManagementForm extends JFrame {
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) return;
 
-        String sql = "SELECT m.medical_id, m.student_id, s.student_reg_no, s.full_name, s.email, s.phone, s.academic_year, " +
-                "m.session_id, sess.session_number, sess.session_type, sess.session_date, c.course_code, c.course_name, " +
-                "m.start_date, m.end_date, m.reason, m.document_path, m.submitted_date, m.approval_status, " +
+        String sql = "SELECT m.medical_id, m.student_id, m.session_id, sess.session_number, sess.session_type, sess.session_date, " +
+                "c.course_code, m.start_date, m.end_date, m.reason, m.document_path, m.submitted_date, m.approval_status, " +
                 "m.verified_by, to_off.officer_name as verified_by_name " +
                 "FROM medicals m " +
-                "LEFT JOIN students s ON m.student_id = s.student_id " +
                 "LEFT JOIN attendance_sessions sess ON m.session_id = sess.session_id " +
                 "LEFT JOIN courses c ON sess.course_id = c.course_id " +
                 "LEFT JOIN technical_officers to_off ON m.verified_by = to_off.officer_id " +
@@ -763,10 +723,9 @@ public class MedicalManagementForm extends JFrame {
                             }
                         }
                         String cCode = rs.getString("course_code");
-                        String sType = rs.getString("session_type");
-                        int sNum = rs.getInt("session_number");
-                        Date sDate = rs.getDate("session_date");
-                        lblSessionDisplay.setText(String.format("Session #%d (%s) - %s [%s]", sNum, sType, cCode != null ? cCode : "", formatDate(sDate)));
+                        lblSessionDisplay.setText(String.format("Session #%d (%s) - %s [%s]",
+                                rs.getInt("session_number"), rs.getString("session_type"),
+                                cCode != null ? cCode : "", formatDate(rs.getDate("session_date"))));
                     } else {
                         cmbSessionSelect.setSelectedIndex(0);
                         lblSessionDisplay.setText("No specific session associated (General Medical Absence)");
@@ -811,12 +770,8 @@ public class MedicalManagementForm extends JFrame {
         ps.setDate(offset + 6, Date.valueOf(submittedDate));
         ps.setString(offset + 7, status);
 
-        if ("Approved".equalsIgnoreCase(status) || "Rejected".equalsIgnoreCase(status)) {
-            if (officerId > 0) {
-                ps.setInt(offset + 8, officerId);
-            } else {
-                ps.setNull(offset + 8, Types.INTEGER);
-            }
+        if (("Approved".equalsIgnoreCase(status) || "Rejected".equalsIgnoreCase(status)) && officerId > 0) {
+            ps.setInt(offset + 8, officerId);
         } else {
             ps.setNull(offset + 8, Types.INTEGER);
         }
@@ -870,7 +825,6 @@ public class MedicalManagementForm extends JFrame {
             return;
         }
 
-        // Confirmation safety prompt if an existing record is being set to Rejected
         if (isUpdate && "Rejected".equalsIgnoreCase(status)) {
             int conf = JOptionPane.showConfirmDialog(
                     this,
@@ -895,8 +849,6 @@ public class MedicalManagementForm extends JFrame {
 
         try {
             int officerId = resolveTechnicalOfficerId(conn);
-
-            // Authorization check: cannot approve/reject without an identified officer account
             if (("Approved".equalsIgnoreCase(status) || "Rejected".equalsIgnoreCase(status)) && officerId <= 0) {
                 JOptionPane.showMessageDialog(this, "Could not identify Technical Officer account in database for verification.", "Authentication Error", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -981,14 +933,11 @@ public class MedicalManagementForm extends JFrame {
 
     private File resolveDocumentFile(String path) {
         if (path == null || path.trim().isEmpty()) return null;
-
         File direct = new File(path);
         if (direct.exists()) return direct;
-
         String userDir = System.getProperty("user.dir");
         File rel = new File(userDir, path);
         if (rel.exists()) return rel;
-
         File medDir = new File(userDir, "medicals" + File.separator + new File(path).getName());
         return medDir.exists() ? medDir : null;
     }
@@ -1047,25 +996,24 @@ public class MedicalManagementForm extends JFrame {
     private int resolveTechnicalOfficerId(Connection conn) {
         try {
             String rawId = currentOfficer.getOfficerId();
-            if (rawId != null && rawId.matches("\\d+")) {
-                return Integer.parseInt(rawId);
-            }
-            if (currentOfficer.getEmail() != null && !currentOfficer.getEmail().trim().isEmpty()) {
-                try (PreparedStatement ps = conn.prepareStatement("SELECT officer_id FROM technical_officers WHERE email = ? LIMIT 1")) {
-                    ps.setString(1, currentOfficer.getEmail().trim());
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) return rs.getInt("officer_id");
+            if (rawId != null && rawId.matches("\\d+")) return Integer.parseInt(rawId);
+
+            String[][] lookupParams = {
+                {"SELECT officer_id FROM technical_officers WHERE email = ? LIMIT 1", currentOfficer.getEmail()},
+                {"SELECT officer_id FROM technical_officers WHERE officer_name = ? LIMIT 1", currentOfficer.getName()}
+            };
+
+            for (String[] lp : lookupParams) {
+                if (lp[1] != null && !lp[1].trim().isEmpty()) {
+                    try (PreparedStatement ps = conn.prepareStatement(lp[0])) {
+                        ps.setString(1, lp[1].trim());
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) return rs.getInt("officer_id");
+                        }
                     }
                 }
             }
-            if (currentOfficer.getName() != null && !currentOfficer.getName().trim().isEmpty()) {
-                try (PreparedStatement ps = conn.prepareStatement("SELECT officer_id FROM technical_officers WHERE officer_name = ? LIMIT 1")) {
-                    ps.setString(1, currentOfficer.getName().trim());
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) return rs.getInt("officer_id");
-                    }
-                }
-            }
+
             try (Statement s = conn.createStatement();
                  ResultSet rs = s.executeQuery("SELECT officer_id FROM technical_officers LIMIT 1")) {
                 if (rs.next()) return rs.getInt("officer_id");
@@ -1192,3 +1140,4 @@ public class MedicalManagementForm extends JFrame {
         });
     }
 }
+
