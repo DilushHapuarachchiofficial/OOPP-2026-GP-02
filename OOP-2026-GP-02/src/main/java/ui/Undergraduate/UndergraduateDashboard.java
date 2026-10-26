@@ -50,6 +50,7 @@ public class UndergraduateDashboard extends JFrame {
     private UndergraduateAttendanceUI attendancePanel;
     private UndergraduateMedicalUI medicalPanel;
     private UndergraduateCourseDetailsUI courseDetailsPanel;
+    private UndergraduateGradesUI gradesPanel;
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
@@ -90,12 +91,14 @@ public class UndergraduateDashboard extends JFrame {
         attendancePanel = new UndergraduateAttendanceUI(currentStudent, this);
         medicalPanel = new UndergraduateMedicalUI(currentStudent, this);
         courseDetailsPanel = new UndergraduateCourseDetailsUI(currentStudent, this);
+        gradesPanel = new UndergraduateGradesUI(currentStudent, this);
 
         mainContentArea.add(dashboardOverviewPanel, "DASHBOARD");
         mainContentArea.add(lectureNotesPanel, "LECTURE_NOTES");
         mainContentArea.add(attendancePanel, "ATTENDANCE");
         mainContentArea.add(medicalPanel, "MEDICAL");
         mainContentArea.add(courseDetailsPanel, "COURSES");
+        mainContentArea.add(gradesPanel, "GRADES");
 
         rootPanel.add(topContainer, BorderLayout.NORTH);
         rootPanel.add(mainContentArea, BorderLayout.CENTER);
@@ -376,18 +379,26 @@ public class UndergraduateDashboard extends JFrame {
         }
         row.add(profileCard);
 
-        // Card 2: Current GPA
+        // Card 2: Current GPA (Clickable to open Grades & GPA UI)
         GPA gpa = currentStudent.viewGPA();
         String gpaStr = (gpa != null && (gpa.getSGPA() > 0 || gpa.getCGPA() > 0))
                 ? String.format("SGPA: %.2f | CGPA: %.2f", gpa.getSGPA(), gpa.getCGPA())
                 : "Not available";
-        row.add(createMetricCard(
+        JPanel gpaCard = createMetricCard(
                 "CURRENT GPA",
                 gpaStr,
                 "Grading: UGC Circular 12-2024",
-                gpa != null && gpa.getCGPA() >= 3.0 ? "Standing: Good" : "Status: Active",
+                gpa != null && gpa.getCGPA() >= 3.0 ? "Standing: Good (Click to view)" : "Status: Active (Click to view)",
                 new Color(0x7C, 0x3A, 0xED)
-        ));
+        );
+        gpaCard.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        gpaCard.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                openGrades();
+            }
+        });
+        row.add(gpaCard);
 
         // Card 3: Attendance Overview
         AttendanceSummary att = currentStudent.getAttendanceSummary();
@@ -768,6 +779,18 @@ public class UndergraduateDashboard extends JFrame {
         }
     }
 
+    public void openGrades() {
+        if (navigationPanel != null) {
+            navigationPanel.highlightButton("GRADES");
+        }
+        if (gradesPanel != null) {
+            gradesPanel.loadGradesData();
+        }
+        if (contentCardLayout != null && mainContentArea != null) {
+            contentCardLayout.show(mainContentArea, "GRADES");
+        }
+    }
+
     public void showModulePlaceholder(String moduleName) {
         if ("Lecturer Notes".equalsIgnoreCase(moduleName) || "Course Materials".equalsIgnoreCase(moduleName) || "MATERIALS".equalsIgnoreCase(moduleName)) {
             openLectureNotes();
@@ -783,6 +806,10 @@ public class UndergraduateDashboard extends JFrame {
         }
         if ("Course Details".equalsIgnoreCase(moduleName) || "Courses".equalsIgnoreCase(moduleName) || "COURSES".equalsIgnoreCase(moduleName)) {
             openCourseDetails();
+            return;
+        }
+        if ("Grades & GPA".equalsIgnoreCase(moduleName) || "Grades".equalsIgnoreCase(moduleName) || "GPA".equalsIgnoreCase(moduleName) || "GRADES".equalsIgnoreCase(moduleName)) {
+            openGrades();
             return;
         }
         JOptionPane.showMessageDialog(
