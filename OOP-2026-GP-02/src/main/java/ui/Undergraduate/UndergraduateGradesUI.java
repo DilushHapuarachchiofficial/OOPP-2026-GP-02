@@ -14,12 +14,12 @@ import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.awt.event.MouseMotionAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,8 +28,8 @@ import java.util.List;
  * Undergraduate Grades & GPA UI Page.
  *
  * Displays student course units, letter grades (A+, A, etc.), and grade points (GP).
- * Includes an interactive "View Marks" action for every subject that opens a clean modal popup
- * showing the full breakdown: Quizzes, Assignments, Mid Exam, CA Total (40%), and End Exam (60%).
+ * Includes an interactive "View Marks ➔" button for every subject that opens a clean modal popup
+ * showing the full evaluation breakdown: Quizzes, Assignments, Mid Exam, CA Total (40%), and End Exam (60%).
  *
  * Defaults to Level I - Semester II (L1.S2) with a simple dropdown to switch between semesters.
  * Built with clean, beginner-friendly Java Swing code.
@@ -151,7 +151,7 @@ public class UndergraduateGradesUI extends JPanel {
         contentPanel.setBackground(COLOR_BG);
         contentPanel.setBorder(new EmptyBorder(18, 24, 24, 24));
 
-        // 1. Top Header Bar
+        // 1. Top Header Bar (With Back to Dashboard only, Refresh & Transcript removed)
         contentPanel.add(createHeaderBar());
         contentPanel.add(Box.createVerticalStrut(16));
 
@@ -195,24 +195,9 @@ public class UndergraduateGradesUI extends JPanel {
         leftBox.add(studentSubtitleLabel);
         header.add(leftBox, BorderLayout.WEST);
 
-        // Right actions box (Refresh, Print/Export, Back to Dashboard)
+        // Right actions box (Back to Dashboard button only)
         JPanel rightBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         rightBox.setOpaque(false);
-
-        JButton refreshBtn = createActionButton("Refresh Data", COLOR_MAIN_BLUE, COLOR_WHITE);
-        refreshBtn.addActionListener(e -> {
-            loadGradesData();
-            JOptionPane.showMessageDialog(this,
-                    "Academic results refreshed successfully from MySQL database.",
-                    "TecFAMS - Sync Complete",
-                    JOptionPane.INFORMATION_MESSAGE);
-        });
-        rightBox.add(refreshBtn);
-
-        JButton printBtn = createActionButton("Print Transcript", COLOR_WHITE, COLOR_TEXT_PRIMARY);
-        printBtn.setBorder(new LineBorder(COLOR_BORDER, 1, true));
-        printBtn.addActionListener(e -> showTranscriptDialog());
-        rightBox.add(printBtn);
 
         if (parentDashboard != null) {
             JButton backBtn = createActionButton("← Back to Dashboard", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
@@ -441,7 +426,7 @@ public class UndergraduateGradesUI extends JPanel {
         };
 
         gradesTable = new JTable(gradesTableModel);
-        gradesTable.setRowHeight(38);
+        gradesTable.setRowHeight(40);
         gradesTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         gradesTable.setSelectionBackground(COLOR_LIGHT_BLUE);
         gradesTable.setSelectionForeground(COLOR_TEXT_PRIMARY);
@@ -466,7 +451,7 @@ public class UndergraduateGradesUI extends JPanel {
         gradesTable.getColumnModel().getColumn(4).setPreferredWidth(95);   // Grade
         gradesTable.getColumnModel().getColumn(5).setPreferredWidth(80);   // GP
         gradesTable.getColumnModel().getColumn(6).setPreferredWidth(120);  // Status
-        gradesTable.getColumnModel().getColumn(7).setPreferredWidth(130);  // Action Button
+        gradesTable.getColumnModel().getColumn(7).setPreferredWidth(140);  // Action Button
 
         // Cell Renderers
         DefaultTableCellRenderer centerRender = new DefaultTableCellRenderer();
@@ -480,21 +465,30 @@ public class UndergraduateGradesUI extends JPanel {
         gradesTable.getColumnModel().getColumn(6).setCellRenderer(new StatusBadgeCellRenderer());
         gradesTable.getColumnModel().getColumn(7).setCellRenderer(new ActionButtonRenderer());
 
+        // Mouse motion listener to show hand cursor on hover over the action button
+        gradesTable.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                int col = gradesTable.columnAtPoint(e.getPoint());
+                if (col == 7) {
+                    gradesTable.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                } else {
+                    gradesTable.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                }
+            }
+        });
+
         // Mouse click listener to open popup modal on button click or row double-click
         gradesTable.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mousePressed(MouseEvent e) {
                 int viewRow = gradesTable.rowAtPoint(e.getPoint());
                 if (viewRow < 0) return;
                 int viewCol = gradesTable.columnAtPoint(e.getPoint());
-                int modelRow = gradesTable.convertRowIndexToModel(viewRow);
 
-                if (modelRow >= 0 && modelRow < courseGradesList.size()) {
-                    CourseGradeItem item = courseGradesList.get(modelRow);
-                    // Click on the Action button column (col 7) or double click anywhere on the row
-                    if (viewCol == 7 || e.getClickCount() == 2) {
-                        showCourseBreakdownDialog(item);
-                    }
+                // Click on Action button (col 7) or double click any row
+                if (viewCol == 7 || e.getClickCount() == 2) {
+                    triggerCourseBreakdown(viewRow);
                 }
             }
         });
@@ -531,6 +525,21 @@ public class UndergraduateGradesUI extends JPanel {
         loadGradesData();
     }
 
+    private void triggerCourseBreakdown(int viewRow) {
+        if (viewRow < 0 || viewRow >= gradesTable.getRowCount()) return;
+        String courseCode = (String) gradesTable.getValueAt(viewRow, 1);
+        CourseGradeItem targetItem = null;
+        for (CourseGradeItem c : courseGradesList) {
+            if (c.getCourseCode() != null && c.getCourseCode().equalsIgnoreCase(courseCode)) {
+                targetItem = c;
+                break;
+            }
+        }
+        if (targetItem != null) {
+            showCourseBreakdownDialog(targetItem);
+        }
+    }
+
     // ==========================================
     // 4. POPUP MODAL: COURSE MARKS BREAKDOWN
     // ==========================================
@@ -538,20 +547,23 @@ public class UndergraduateGradesUI extends JPanel {
      * Opens a dedicated modal panel showing the complete evaluation breakdown
      * for the selected course unit: Quizzes, Assignments, Mid Exam, CA Total (40%),
      * End Semester Exam (60%), Overall Mark, and Final Grade.
+     * Includes a permanently visible, custom-painted Close button at the bottom.
      */
     private void showCourseBreakdownDialog(CourseGradeItem item) {
         if (item == null) return;
 
         Window parentWindow = SwingUtilities.getWindowAncestor(this);
         JDialog dialog = new JDialog(parentWindow, "Evaluation Breakdown: " + item.getCourseCode(), Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(560, 560);
+        dialog.setSize(600, 620);
+        dialog.setMinimumSize(new Dimension(540, 520));
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
-        JPanel root = new JPanel();
-        root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
-        root.setBackground(COLOR_BG);
-        root.setBorder(new EmptyBorder(18, 20, 18, 20));
+        // CENTER: Scrollable content with all the evaluation cards
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBackground(COLOR_BG);
+        content.setBorder(new EmptyBorder(16, 20, 16, 20));
 
         // 1. Course Header Card
         JPanel courseHeader = new JPanel(new BorderLayout(10, 4));
@@ -582,8 +594,8 @@ public class UndergraduateGradesUI extends JPanel {
         gradeBadge.setBorder(new EmptyBorder(4, 10, 4, 10));
         courseHeader.add(gradeBadge, BorderLayout.EAST);
 
-        root.add(courseHeader);
-        root.add(Box.createVerticalStrut(14));
+        content.add(courseHeader);
+        content.add(Box.createVerticalStrut(14));
 
         // 2. Continuous Assessment (CA) Breakdown Box (40%)
         JPanel caBox = new JPanel();
@@ -630,8 +642,8 @@ public class UndergraduateGradesUI extends JPanel {
         caTotalRow.add(caTotVal, BorderLayout.EAST);
         caBox.add(caTotalRow);
 
-        root.add(caBox);
-        root.add(Box.createVerticalStrut(12));
+        content.add(caBox);
+        content.add(Box.createVerticalStrut(12));
 
         // 3. Final / End Semester Exam Box (60%)
         JPanel endExamBox = new JPanel();
@@ -668,8 +680,8 @@ public class UndergraduateGradesUI extends JPanel {
         endTotalRow.add(endTotVal, BorderLayout.EAST);
         endExamBox.add(endTotalRow);
 
-        root.add(endExamBox);
-        root.add(Box.createVerticalStrut(12));
+        content.add(endExamBox);
+        content.add(Box.createVerticalStrut(12));
 
         // 4. Overall Final Mark & Result Summary Card
         JPanel finalCard = new JPanel(new GridLayout(1, 3, 10, 0));
@@ -679,18 +691,56 @@ public class UndergraduateGradesUI extends JPanel {
         finalCard.add(createMiniSummaryBox("UGC Letter Grade", item.getGrade() + " (GP: " + item.getFormattedGradePoint() + ")", COLOR_MAIN_BLUE));
         finalCard.add(createMiniSummaryBox("Status", item.getStatus(), COLOR_SUCCESS));
 
-        root.add(finalCard);
-        root.add(Box.createVerticalStrut(16));
+        content.add(finalCard);
+        content.add(Box.createVerticalStrut(10));
 
-        // Close button
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        btnPanel.setOpaque(false);
-        JButton closeBtn = createActionButton("Close", COLOR_PRIMARY_NAVY, COLOR_WHITE);
+        JScrollPane scrollPane = new JScrollPane(content);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        dialog.add(scrollPane, BorderLayout.CENTER);
+
+        // SOUTH: Dedicated, Permanently Visible Bottom Bar with Custom-Painted Close Button
+        JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 18, 12));
+        bottomBar.setBackground(COLOR_WHITE);
+        bottomBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, COLOR_BORDER));
+
+        JButton closeBtn = new JButton("Close Details") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(COLOR_PRIMARY_NAVY.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(COLOR_MAIN_BLUE);
+                } else {
+                    g2.setColor(COLOR_PRIMARY_NAVY);
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        closeBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        closeBtn.setForeground(COLOR_WHITE);
+        closeBtn.setPreferredSize(new Dimension(150, 38));
+        closeBtn.setContentAreaFilled(false);
+        closeBtn.setOpaque(false);
+        closeBtn.setBorderPainted(false);
+        closeBtn.setFocusPainted(false);
+        closeBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         closeBtn.addActionListener(e -> dialog.dispose());
-        btnPanel.add(closeBtn);
-        root.add(btnPanel);
+        bottomBar.add(closeBtn);
 
-        dialog.setContentPane(root);
+        dialog.add(bottomBar, BorderLayout.SOUTH);
+
+        // Allow ESC key to close dialog
+        dialog.getRootPane().registerKeyboardAction(
+                e -> dialog.dispose(),
+                KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+                JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+
         dialog.setVisible(true);
     }
 
@@ -912,7 +962,7 @@ public class UndergraduateGradesUI extends JPanel {
                     item.getGrade(),
                     item.getFormattedGradePoint(),
                     item.getStatus(),
-                    "View Marks"
+                    "View Marks >"
             });
         }
         filterGradesTable();
@@ -1030,98 +1080,71 @@ public class UndergraduateGradesUI extends JPanel {
         }
     }
 
-    private static class ActionButtonRenderer extends DefaultTableCellRenderer {
-        private final JButton btn = new JButton("View Marks ➔");
+    /**
+     * Custom TableCellRenderer that renders a crisp, high-visibility rounded Action button.
+     */
+    private static class ActionButtonRenderer implements TableCellRenderer {
+        private final JPanel panel = new JPanel(new GridBagLayout());
+        private final JLabel btnLabel = new JLabel("View Marks >") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(COLOR_MAIN_BLUE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
 
         public ActionButtonRenderer() {
-            btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            btn.setForeground(COLOR_WHITE);
-            btn.setBackground(COLOR_MAIN_BLUE);
-            btn.setFocusPainted(false);
-            btn.setBorder(new EmptyBorder(4, 10, 4, 10));
-            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            panel.setOpaque(true);
+            btnLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            btnLabel.setForeground(COLOR_WHITE);
+            btnLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            btnLabel.setBorder(new EmptyBorder(6, 14, 6, 14));
+            panel.add(btnLabel);
         }
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
-            JPanel p = new JPanel(new GridBagLayout());
-            p.setOpaque(true);
-            p.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
-            p.add(btn);
-            return p;
+            panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+            return panel;
         }
-    }
-
-    // ==========================================
-    // 8. TRANSCRIPT DIALOG & HELPERS
-    // ==========================================
-    private void showTranscriptDialog() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("========================================================================================\n");
-        sb.append("                 FACULTY OF TECHNOLOGY - OFFICIAL ACADEMIC TRANSCRIPT                   \n");
-        sb.append("========================================================================================\n\n");
-        sb.append("Student Name       : ").append(loggedInStudent != null && loggedInStudent.getName() != null ? loggedInStudent.getName() : "H.D.W.B Hapuarachchi").append("\n");
-        sb.append("Registration No    : ").append(studentIdentifier).append("\n");
-        sb.append("Department         : Department of Information and Communication Technology\n");
-        sb.append("Report Scope       : ").append(gpaSummary.getPeriodLabel()).append("\n");
-        sb.append("Date Generated     : ").append(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))).append("\n\n");
-        sb.append("----------------------------------------------------------------------------------------\n");
-        sb.append(String.format("%-10s %-34s %-6s %-8s %-6s %-12s\n",
-                "CODE", "COURSE UNIT NAME", "CRED", "MARK", "GRADE", "STATUS"));
-        sb.append("----------------------------------------------------------------------------------------\n");
-
-        for (CourseGradeItem c : courseGradesList) {
-            String cName = c.getCourseName();
-            if (cName.length() > 32) cName = cName.substring(0, 29) + "...";
-            sb.append(String.format("%-10s %-34s %-6d %-8s %-6s %-12s\n",
-                    c.getCourseCode(), cName, c.getCredit(),
-                    c.getFormattedMark(), c.getGrade(), c.getStatus()));
-        }
-
-        sb.append("----------------------------------------------------------------------------------------\n");
-        sb.append(String.format("Total Period Credits  : %d Registered  |  %d Evaluated & Completed\n",
-                gpaSummary.getTotalRegisteredCredits(), gpaSummary.getTotalCompletedCredits()));
-        sb.append(String.format("Grade Point Average   : %.2f (%s)\n", gpaSummary.getCgpa(), gpaSummary.getPeriodLabel()));
-        sb.append(String.format("Degree Honours Class  : %s\n", gpaSummary.getDegreeClassification()));
-        sb.append("Academic Standing     : ").append(gpaSummary.getStandingStatus()).append("\n");
-        sb.append("========================================================================================\n");
-
-        JTextArea textArea = new JTextArea(sb.toString());
-        textArea.setFont(new Font("Consolas", Font.PLAIN, 12));
-        textArea.setEditable(false);
-        textArea.setCaretPosition(0);
-
-        JScrollPane sp = new JScrollPane(textArea);
-        sp.setPreferredSize(new Dimension(750, 480));
-
-        JOptionPane.showMessageDialog(this, sp, "Academic Transcript Summary", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private JButton createActionButton(String text, Color bg, Color fg) {
-        JButton btn = new JButton(text);
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(bg.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(bg.darker());
+                } else {
+                    g2.setColor(bg);
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setBackground(bg);
         btn.setForeground(fg);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(false);
+        btn.setBorderPainted(false);
         btn.setFocusPainted(false);
-        btn.setBorder(new EmptyBorder(8, 14, 8, 14));
+        btn.setBorder(new EmptyBorder(8, 16, 8, 16));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                btn.setBackground(bg.darker());
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                btn.setBackground(bg);
-            }
-        });
         return btn;
     }
 
     // ==========================================
-    // 9. STANDALONE MAIN METHOD
+    // 8. STANDALONE MAIN METHOD
     // ==========================================
     public static void main(String[] args) {
         System.setProperty("awt.useSystemAAFontSettings", "on");
