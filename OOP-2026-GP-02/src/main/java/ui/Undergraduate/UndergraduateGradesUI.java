@@ -2,7 +2,6 @@ package main.java.ui.Undergraduate;
 
 import main.java.dao.Undergraduate.GradesDAO;
 import main.java.model.Undergraduate.CourseGradeItem;
-import main.java.model.Undergraduate.ExamMarkItem;
 import main.java.model.Undergraduate.StudentGPASummary;
 import main.java.model.Undergraduate.Undergraduate;
 
@@ -28,14 +27,16 @@ import java.util.List;
  * TecFAMS - Faculty of Technology Academic Management System
  * Undergraduate Grades & GPA UI Page.
  *
- * Displays live, comprehensive exam marks, continuous assessment (CA) scores,
- * course grades, and Cumulative Grade Point Average (CGPA) for the logged-in student.
+ * Displays student course units, letter grades (A+, A, etc.), and grade points (GP).
+ * Includes an interactive "View Marks" action for every subject that opens a clean modal popup
+ * showing the full breakdown: Quizzes, Assignments, Mid Exam, CA Total (40%), and End Exam (60%).
  *
- * Built with clean, beginner-friendly Java Swing code and rich professional design.
+ * Defaults to Level I - Semester II (L1.S2) with a simple dropdown to switch between semesters.
+ * Built with clean, beginner-friendly Java Swing code.
  */
 public class UndergraduateGradesUI extends JPanel {
 
-    // TecFAMS Theme Palette
+    // TecFAMS Primary Theme Palette
     private static final Color COLOR_PRIMARY_NAVY = new Color(0x12, 0x3B, 0x70); // #123B70
     private static final Color COLOR_MAIN_BLUE    = new Color(0x25, 0x63, 0xEB); // #2563EB
     private static final Color COLOR_LIGHT_BLUE   = new Color(0xEA, 0xF2, 0xFF); // #EAF2FF
@@ -45,8 +46,6 @@ public class UndergraduateGradesUI extends JPanel {
     private static final Color COLOR_TEXT_MUTED   = new Color(0x71, 0x80, 0x96); // #718096
     private static final Color COLOR_BORDER       = new Color(0xE2, 0xE8, 0xF0); // #E2E8F0
     private static final Color COLOR_SUCCESS      = new Color(0x10, 0xB9, 0x81); // #10B981
-    private static final Color COLOR_WARNING      = new Color(0xF5, 0x9E, 0x0B); // #F59E0B
-    private static final Color COLOR_PURPLE       = new Color(0x8B, 0x5C, 0xF6); // #8B5CF6
     private static final Color COLOR_DANGER       = new Color(0xEF, 0x44, 0x44); // #EF4444
 
     // Data references
@@ -55,31 +54,26 @@ public class UndergraduateGradesUI extends JPanel {
     private final String studentIdentifier;
     private final GradesDAO gradesDAO;
 
+    // Filter state (Defaults to Level I - Semester II: Year 1, Sem 2)
+    private Integer selectedYear = 1;
+    private Integer selectedSem = 2;
+
     // Loaded Data Models
     private List<CourseGradeItem> courseGradesList = new ArrayList<>();
-    private List<ExamMarkItem> examMarksList = new ArrayList<>();
     private StudentGPASummary gpaSummary = new StudentGPASummary();
 
     // UI Dynamic Components
     private JLabel studentSubtitleLabel;
     private JPanel summaryCardsRow;
 
-    // Course Grades Table (Tab 1)
+    // Table controls
+    private JComboBox<String> periodFilterCombo;
     private JTable gradesTable;
     private DefaultTableModel gradesTableModel;
     private TableRowSorter<DefaultTableModel> gradesTableSorter;
-    private JLabel gradesTallyLabel;
-
-    // Exam Components Table (Tab 2)
-    private JTable examMarksTable;
-    private DefaultTableModel examMarksTableModel;
-    private TableRowSorter<DefaultTableModel> examMarksTableSorter;
-    private JLabel examMarksTallyLabel;
-
-    // Search and filter controls
+    private JLabel tableTallyLabel;
     private JTextField searchField;
     private JComboBox<String> statusFilterCombo;
-    private JComboBox<String> componentTypeFilterCombo;
 
     /**
      * Main constructor for embedding inside UndergraduateDashboard.
@@ -89,6 +83,10 @@ public class UndergraduateGradesUI extends JPanel {
         this.parentDashboard = parentDashboard;
         this.studentIdentifier = resolveStudentIdentifier(student);
         this.gradesDAO = new GradesDAO();
+
+        // Default to Level 1, Semester 2 (L1.S2)
+        this.selectedYear = 1;
+        this.selectedSem = 2;
 
         initializeUI();
         loadGradesData();
@@ -111,6 +109,10 @@ public class UndergraduateGradesUI extends JPanel {
                 ? studentIdOrRegNo.trim()
                 : "TG/2024/2085";
         this.gradesDAO = new GradesDAO();
+
+        // Default to Level 1, Semester 2 (L1.S2)
+        this.selectedYear = 1;
+        this.selectedSem = 2;
 
         initializeUI();
         loadGradesData();
@@ -147,18 +149,18 @@ public class UndergraduateGradesUI extends JPanel {
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBackground(COLOR_BG);
-        contentPanel.setBorder(new EmptyBorder(20, 24, 24, 24));
+        contentPanel.setBorder(new EmptyBorder(18, 24, 24, 24));
 
-        // 1. Header Bar
+        // 1. Top Header Bar
         contentPanel.add(createHeaderBar());
-        contentPanel.add(Box.createVerticalStrut(18));
+        contentPanel.add(Box.createVerticalStrut(16));
 
-        // 2. Summary Metric Cards Row (CGPA, SGPA, Credits, Status)
+        // 2. Summary Metric Cards Row (GPA, Credits, Courses, Status)
         summaryCardsRow = createSummaryCardsRow();
         contentPanel.add(summaryCardsRow);
-        contentPanel.add(Box.createVerticalStrut(20));
+        contentPanel.add(Box.createVerticalStrut(18));
 
-        // 3. Tabbed Pane: Course Grades, Exam Marks, UGC Reference Guide
+        // 3. Tabbed Pane: Course Grades and UGC Reference Guide
         JTabbedPane tabbedPane = createStyledTabbedPane();
         contentPanel.add(tabbedPane);
 
@@ -228,61 +230,60 @@ public class UndergraduateGradesUI extends JPanel {
     private JPanel createSummaryCardsRow() {
         JPanel row = new JPanel(new GridLayout(1, 4, 16, 0));
         row.setOpaque(false);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
-        row.setPreferredSize(new Dimension(0, 130));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 125));
+        row.setPreferredSize(new Dimension(0, 125));
 
-        // Populated dynamically in updateSummaryCards()
         return row;
     }
 
     private void updateSummaryCards() {
         summaryCardsRow.removeAll();
 
-        // 1. Cumulative GPA (CGPA) Card
-        String cgpaStr = gpaSummary.getFormattedCGPA();
+        // 1. GPA Card (SGPA for selected semester or CGPA for all semesters)
+        String gpaValue = gpaSummary.getFormattedCGPA();
         String classTitle = gpaSummary.getDegreeClassification();
-        Color cgpaColor = (gpaSummary.getCgpa() >= 3.70) ? new Color(0x7C, 0x3A, 0xED) : COLOR_MAIN_BLUE;
+        Color gpaColor = (gpaSummary.getCgpa() >= 3.70) ? new Color(0x7C, 0x3A, 0xED) : COLOR_MAIN_BLUE;
+        String gpaTitle = (selectedYear == null && selectedSem == null) ? "CUMULATIVE GPA (CGPA)" : "SEMESTER GPA (SGPA)";
+
         summaryCardsRow.add(createMetricCard(
-                "CUMULATIVE GPA (CGPA)",
-                cgpaStr,
+                gpaTitle,
+                gpaValue,
                 classTitle,
-                "UGC Circular 12-2024 Standard",
-                cgpaColor
+                gpaSummary.getPeriodLabel(),
+                gpaColor
         ));
 
-        // 2. Semester GPA (SGPA) Card
-        String sgpaStr = gpaSummary.getFormattedSGPA();
-        String standingStr = (gpaSummary.getSgpa() >= 3.0) ? "Outstanding" : "Satisfactory";
-        summaryCardsRow.add(createMetricCard(
-                "SEMESTER GPA (SGPA)",
-                sgpaStr,
-                standingStr,
-                "Level II Semester I (Current)",
-                COLOR_MAIN_BLUE
-        ));
-
-        // 3. Evaluated Academic Credits Card
+        // 2. Evaluated Academic Credits Card
         int compCred = gpaSummary.getTotalCompletedCredits();
         int regCred = gpaSummary.getTotalRegisteredCredits();
         String credRatio = compCred + " / " + regCred + " Credits";
         int pct = (regCred > 0) ? (compCred * 100 / regCred) : 0;
         summaryCardsRow.add(createMetricCard(
-                "EVALUATED CREDITS",
+                "COMPLETED CREDITS",
                 credRatio,
                 pct + "% Completed",
-                compCred + " credits earned toward degree",
+                compCred + " credits earned in this period",
                 COLOR_SUCCESS
+        ));
+
+        // 3. Evaluated Courses Card
+        int evalCourses = gpaSummary.getEvaluatedCourses();
+        int regCourses = gpaSummary.getTotalRegisteredCourses();
+        summaryCardsRow.add(createMetricCard(
+                "EVALUATED COURSES",
+                evalCourses + " / " + regCourses + " Courses",
+                "Results Published",
+                "Course units calculated",
+                COLOR_MAIN_BLUE
         ));
 
         // 4. Academic Standing Card
         String standing = gpaSummary.getStandingStatus();
-        int evalCourses = gpaSummary.getEvaluatedCourses();
-        int regCourses = gpaSummary.getTotalRegisteredCourses();
         summaryCardsRow.add(createMetricCard(
                 "ACADEMIC STATUS",
                 standing,
-                evalCourses + " / " + regCourses + " Courses Released",
-                "Minimum GPA 2.00 requirement met",
+                "Good Standing",
+                "Minimum GPA requirement satisfied",
                 COLOR_PRIMARY_NAVY
         ));
 
@@ -307,7 +308,7 @@ public class UndergraduateGradesUI extends JPanel {
         card.setOpaque(false);
         card.setBorder(new CompoundBorder(
                 new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(14, 16, 14, 16)
+                new EmptyBorder(12, 16, 12, 16)
         ));
 
         // Top Row: Title + Badge
@@ -333,7 +334,7 @@ public class UndergraduateGradesUI extends JPanel {
         valLbl.setForeground(COLOR_TEXT_PRIMARY);
         card.add(valLbl, BorderLayout.CENTER);
 
-        // Bottom: Explanatory Subtext
+        // Bottom: Subtext
         JLabel subLbl = new JLabel(subText);
         subLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         subLbl.setForeground(COLOR_TEXT_MUTED);
@@ -343,27 +344,24 @@ public class UndergraduateGradesUI extends JPanel {
     }
 
     // ==========================================
-    // 3. TABBED SECTION (COURSES, EXAMS, SCALE)
+    // 3. TABBED SECTION (COURSES & SCALE)
     // ==========================================
     private JTabbedPane createStyledTabbedPane() {
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(new Font("Segoe UI", Font.BOLD, 13));
         tabs.setBackground(COLOR_WHITE);
 
-        // Tab 1: Overall Course Grades
-        tabs.addTab("Semester Course Grades", createCourseGradesTabPanel());
+        // Tab 1: Clean Course Grades Table
+        tabs.addTab("Course Unit Results & Grades", createCourseGradesTabPanel());
 
-        // Tab 2: Detailed Exam & Assessment Breakdown
-        tabs.addTab("Exam & Assessment Breakdown", createExamMarksTabPanel());
-
-        // Tab 3: UGC Grading Scale & Reference
-        tabs.addTab("Grading Scale & GPA Guide", createGradingReferenceTabPanel());
+        // Tab 2: UGC Grading Scale Reference
+        tabs.addTab("UGC Grading Scale Guide", createGradingReferenceTabPanel());
 
         return tabs;
     }
 
     // ------------------------------------------
-    // TAB 1: COURSE GRADES PANEL
+    // TAB 1: CLEAN COURSE GRADES PANEL
     // ------------------------------------------
     private JPanel createCourseGradesTabPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 14));
@@ -373,21 +371,41 @@ public class UndergraduateGradesUI extends JPanel {
                 new EmptyBorder(16, 18, 16, 18)
         ));
 
-        // Filter / Search Toolbar
+        // Toolbar with Semester Dropdown, Search, and Status Filter
         JPanel toolbar = new JPanel(new BorderLayout(12, 0));
         toolbar.setOpaque(false);
 
         JPanel leftFilters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         leftFilters.setOpaque(false);
 
-        JLabel searchLbl = new JLabel("Search Course:");
+        // 1. Select Year / Semester Dropdown (Defaults to Level I - Semester II)
+        JLabel periodLbl = new JLabel("Select Semester:");
+        periodLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        periodLbl.setForeground(COLOR_PRIMARY_NAVY);
+        leftFilters.add(periodLbl);
+
+        String[] periods = {
+                "Level I - Semester II (L1.S2)",
+                "Level I - Semester I (L1.S1)",
+                "Level II - Semester I (L2.S1)",
+                "All Semesters (Cumulative CGPA)"
+        };
+        periodFilterCombo = new JComboBox<>(periods);
+        periodFilterCombo.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        periodFilterCombo.setPreferredSize(new Dimension(230, 32));
+        periodFilterCombo.setSelectedIndex(0); // Level I - Semester II by default!
+        periodFilterCombo.addActionListener(e -> onPeriodFilterChanged());
+        leftFilters.add(periodFilterCombo);
+
+        // 2. Search Field
+        JLabel searchLbl = new JLabel("Search:");
         searchLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         searchLbl.setForeground(COLOR_TEXT_PRIMARY);
         leftFilters.add(searchLbl);
 
-        searchField = new JTextField(16);
+        searchField = new JTextField(12);
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        searchField.setPreferredSize(new Dimension(180, 32));
+        searchField.setPreferredSize(new Dimension(130, 32));
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { filterGradesTable(); }
             @Override public void removeUpdate(DocumentEvent e) { filterGradesTable(); }
@@ -395,28 +413,26 @@ public class UndergraduateGradesUI extends JPanel {
         });
         leftFilters.add(searchField);
 
-        JLabel statusLbl = new JLabel("Status:");
-        statusLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        statusLbl.setForeground(COLOR_TEXT_PRIMARY);
-        leftFilters.add(statusLbl);
-
-        statusFilterCombo = new JComboBox<>(new String[]{"All Courses", "Completed / Released", "Pending Results"});
+        // 3. Status Filter
+        statusFilterCombo = new JComboBox<>(new String[]{"All Statuses", "Completed", "Pending"});
         statusFilterCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        statusFilterCombo.setPreferredSize(new Dimension(160, 32));
+        statusFilterCombo.setPreferredSize(new Dimension(120, 32));
         statusFilterCombo.addActionListener(e -> filterGradesTable());
         leftFilters.add(statusFilterCombo);
 
         toolbar.add(leftFilters, BorderLayout.WEST);
 
-        gradesTallyLabel = new JLabel("Showing all registered courses");
-        gradesTallyLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        gradesTallyLabel.setForeground(COLOR_TEXT_MUTED);
-        toolbar.add(gradesTallyLabel, BorderLayout.EAST);
+        tableTallyLabel = new JLabel("Showing courses");
+        tableTallyLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tableTallyLabel.setForeground(COLOR_TEXT_MUTED);
+        toolbar.add(tableTallyLabel, BorderLayout.EAST);
 
         panel.add(toolbar, BorderLayout.NORTH);
 
-        // Course Grades Table
-        String[] columns = {"#", "Course Code", "Course Name", "Credits", "Final Mark", "Letter Grade", "Grade Point", "Status"};
+        // Clean, Uncluttered Course Grades Table (Only 8 Essential Columns)
+        String[] columns = {
+                "#", "Course Unit", "Course Title", "Credits", "Grade", "GP", "Status", "Action"
+        };
         gradesTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -444,25 +460,44 @@ public class UndergraduateGradesUI extends JPanel {
 
         // Column widths
         gradesTable.getColumnModel().getColumn(0).setPreferredWidth(45);   // #
-        gradesTable.getColumnModel().getColumn(1).setPreferredWidth(110);  // Code
-        gradesTable.getColumnModel().getColumn(2).setPreferredWidth(320);  // Name
-        gradesTable.getColumnModel().getColumn(3).setPreferredWidth(75);   // Credits
-        gradesTable.getColumnModel().getColumn(4).setPreferredWidth(110);  // Mark
-        gradesTable.getColumnModel().getColumn(5).setPreferredWidth(110);  // Grade
-        gradesTable.getColumnModel().getColumn(6).setPreferredWidth(100);  // GP
-        gradesTable.getColumnModel().getColumn(7).setPreferredWidth(120);  // Status
+        gradesTable.getColumnModel().getColumn(1).setPreferredWidth(120);  // Code
+        gradesTable.getColumnModel().getColumn(2).setPreferredWidth(380);  // Title
+        gradesTable.getColumnModel().getColumn(3).setPreferredWidth(70);   // Credits
+        gradesTable.getColumnModel().getColumn(4).setPreferredWidth(95);   // Grade
+        gradesTable.getColumnModel().getColumn(5).setPreferredWidth(80);   // GP
+        gradesTable.getColumnModel().getColumn(6).setPreferredWidth(120);  // Status
+        gradesTable.getColumnModel().getColumn(7).setPreferredWidth(130);  // Action Button
 
-        // Alignments & Pill Badge Renderers
+        // Cell Renderers
         DefaultTableCellRenderer centerRender = new DefaultTableCellRenderer();
         centerRender.setHorizontalAlignment(SwingConstants.CENTER);
-        gradesTable.getColumnModel().getColumn(0).setCellRenderer(centerRender);
-        gradesTable.getColumnModel().getColumn(3).setCellRenderer(centerRender);
-        gradesTable.getColumnModel().getColumn(4).setCellRenderer(centerRender);
-        gradesTable.getColumnModel().getColumn(6).setCellRenderer(centerRender);
 
+        gradesTable.getColumnModel().getColumn(0).setCellRenderer(centerRender);
         gradesTable.getColumnModel().getColumn(1).setCellRenderer(new CourseCodeCellRenderer());
-        gradesTable.getColumnModel().getColumn(5).setCellRenderer(new GradeBadgeCellRenderer());
-        gradesTable.getColumnModel().getColumn(7).setCellRenderer(new StatusBadgeCellRenderer());
+        gradesTable.getColumnModel().getColumn(3).setCellRenderer(centerRender);
+        gradesTable.getColumnModel().getColumn(4).setCellRenderer(new GradeBadgeCellRenderer());
+        gradesTable.getColumnModel().getColumn(5).setCellRenderer(centerRender);
+        gradesTable.getColumnModel().getColumn(6).setCellRenderer(new StatusBadgeCellRenderer());
+        gradesTable.getColumnModel().getColumn(7).setCellRenderer(new ActionButtonRenderer());
+
+        // Mouse click listener to open popup modal on button click or row double-click
+        gradesTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int viewRow = gradesTable.rowAtPoint(e.getPoint());
+                if (viewRow < 0) return;
+                int viewCol = gradesTable.columnAtPoint(e.getPoint());
+                int modelRow = gradesTable.convertRowIndexToModel(viewRow);
+
+                if (modelRow >= 0 && modelRow < courseGradesList.size()) {
+                    CourseGradeItem item = courseGradesList.get(modelRow);
+                    // Click on the Action button column (col 7) or double click anywhere on the row
+                    if (viewCol == 7 || e.getClickCount() == 2) {
+                        showCourseBreakdownDialog(item);
+                    }
+                }
+            }
+        });
 
         JScrollPane tableScroll = new JScrollPane(gradesTable);
         tableScroll.setBorder(new LineBorder(COLOR_BORDER, 1, true));
@@ -472,105 +507,240 @@ public class UndergraduateGradesUI extends JPanel {
         return panel;
     }
 
-    // ------------------------------------------
-    // TAB 2: DETAILED EXAM & CA MARKS PANEL
-    // ------------------------------------------
-    private JPanel createExamMarksTabPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 14));
-        panel.setBackground(COLOR_WHITE);
-        panel.setBorder(new CompoundBorder(
+    private void onPeriodFilterChanged() {
+        int idx = periodFilterCombo.getSelectedIndex();
+        switch (idx) {
+            case 0: // Level I - Semester II (L1.S2)
+                selectedYear = 1;
+                selectedSem = 2;
+                break;
+            case 1: // Level I - Semester I (L1.S1)
+                selectedYear = 1;
+                selectedSem = 1;
+                break;
+            case 2: // Level II - Semester I (L2.S1)
+                selectedYear = 2;
+                selectedSem = 1;
+                break;
+            case 3: // All Semesters
+            default:
+                selectedYear = null;
+                selectedSem = null;
+                break;
+        }
+        loadGradesData();
+    }
+
+    // ==========================================
+    // 4. POPUP MODAL: COURSE MARKS BREAKDOWN
+    // ==========================================
+    /**
+     * Opens a dedicated modal panel showing the complete evaluation breakdown
+     * for the selected course unit: Quizzes, Assignments, Mid Exam, CA Total (40%),
+     * End Semester Exam (60%), Overall Mark, and Final Grade.
+     */
+    private void showCourseBreakdownDialog(CourseGradeItem item) {
+        if (item == null) return;
+
+        Window parentWindow = SwingUtilities.getWindowAncestor(this);
+        JDialog dialog = new JDialog(parentWindow, "Evaluation Breakdown: " + item.getCourseCode(), Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setSize(560, 560);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel root = new JPanel();
+        root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
+        root.setBackground(COLOR_BG);
+        root.setBorder(new EmptyBorder(18, 20, 18, 20));
+
+        // 1. Course Header Card
+        JPanel courseHeader = new JPanel(new BorderLayout(10, 4));
+        courseHeader.setBackground(COLOR_WHITE);
+        courseHeader.setBorder(new CompoundBorder(
                 new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(16, 18, 16, 18)
+                new EmptyBorder(12, 16, 12, 16)
         ));
 
-        // Toolbar
-        JPanel toolbar = new JPanel(new BorderLayout(12, 0));
-        toolbar.setOpaque(false);
+        JPanel leftHeader = new JPanel(new GridLayout(2, 1, 0, 2));
+        leftHeader.setOpaque(false);
+        JLabel codeLbl = new JLabel(item.getCourseCode() + " - " + item.getCourseName());
+        codeLbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        codeLbl.setForeground(COLOR_PRIMARY_NAVY);
+        JLabel semLbl = new JLabel(item.getSemesterName() + "  •  " + item.getCredit() + " Academic Credits");
+        semLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        semLbl.setForeground(COLOR_TEXT_MUTED);
+        leftHeader.add(codeLbl);
+        leftHeader.add(semLbl);
+        courseHeader.add(leftHeader, BorderLayout.CENTER);
 
-        JPanel leftBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        leftBox.setOpaque(false);
+        // Grade badge on top right
+        JLabel gradeBadge = new JLabel(" Grade: " + item.getGrade() + " ");
+        gradeBadge.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        gradeBadge.setOpaque(true);
+        gradeBadge.setBackground(new Color(0xDC, 0xFC, 0xE7));
+        gradeBadge.setForeground(new Color(0x16, 0x65, 0x34));
+        gradeBadge.setBorder(new EmptyBorder(4, 10, 4, 10));
+        courseHeader.add(gradeBadge, BorderLayout.EAST);
 
-        JLabel compLbl = new JLabel("Assessment Type:");
-        compLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        compLbl.setForeground(COLOR_TEXT_PRIMARY);
-        leftBox.add(compLbl);
+        root.add(courseHeader);
+        root.add(Box.createVerticalStrut(14));
 
-        componentTypeFilterCombo = new JComboBox<>(new String[]{"All Assessment Components", "Continuous Assessments (CA)", "Final Examinations"});
-        componentTypeFilterCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        componentTypeFilterCombo.setPreferredSize(new Dimension(210, 32));
-        componentTypeFilterCombo.addActionListener(e -> filterExamMarksTable());
-        leftBox.add(componentTypeFilterCombo);
+        // 2. Continuous Assessment (CA) Breakdown Box (40%)
+        JPanel caBox = new JPanel();
+        caBox.setLayout(new BoxLayout(caBox, BoxLayout.Y_AXIS));
+        caBox.setBackground(COLOR_WHITE);
+        caBox.setBorder(new CompoundBorder(
+                new LineBorder(COLOR_BORDER, 1, true),
+                new EmptyBorder(12, 16, 12, 16)
+        ));
 
-        toolbar.add(leftBox, BorderLayout.WEST);
+        JLabel caTitle = new JLabel("Continuous Assessment (CA) - 40% Weightage");
+        caTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        caTitle.setForeground(COLOR_PRIMARY_NAVY);
+        caBox.add(caTitle);
+        caBox.add(Box.createVerticalStrut(10));
 
-        examMarksTallyLabel = new JLabel("Showing all component marks");
-        examMarksTallyLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        examMarksTallyLabel.setForeground(COLOR_TEXT_MUTED);
-        toolbar.add(examMarksTallyLabel, BorderLayout.EAST);
+        caBox.add(createDetailRow("1. Quizzes (10% Weight):",
+                item.getFormattedQuiz() + " / 100",
+                String.format("%.2f / 10.0%%", item.getQuizContribution())));
+        caBox.add(Box.createVerticalStrut(6));
 
-        panel.add(toolbar, BorderLayout.NORTH);
+        caBox.add(createDetailRow("2. Assignments / Mini Project (15% Weight):",
+                item.getFormattedAssignment() + " / 100",
+                String.format("%.2f / 15.0%%", item.getAssignmentContribution())));
+        caBox.add(Box.createVerticalStrut(6));
 
-        // Exam Marks Table
-        String[] columns = {"#", "Course Code", "Course Name", "Assessment Component", "Type", "Max Marks", "Weight %", "Marks Obtained", "Weighted Mark", "Date Uploaded"};
-        examMarksTableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        caBox.add(createDetailRow("3. Mid-Semester Examination (15% Weight):",
+                item.getFormattedMidExam() + " / 100",
+                String.format("%.2f / 15.0%%", item.getMidExamContribution())));
+        caBox.add(Box.createVerticalStrut(8));
 
-        examMarksTable = new JTable(examMarksTableModel);
-        examMarksTable.setRowHeight(38);
-        examMarksTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        examMarksTable.setSelectionBackground(COLOR_LIGHT_BLUE);
-        examMarksTable.setSelectionForeground(COLOR_TEXT_PRIMARY);
-        examMarksTable.setShowVerticalLines(false);
-        examMarksTable.setGridColor(new Color(0xF1, 0xF5, 0xF9));
+        // CA Total row with highlight
+        JPanel caTotalRow = new JPanel(new BorderLayout());
+        caTotalRow.setOpaque(true);
+        caTotalRow.setBackground(new Color(0xFA, 0xE8, 0xFF));
+        caTotalRow.setBorder(new EmptyBorder(6, 10, 6, 10));
+        JLabel caTotLbl = new JLabel("Total Continuous Assessment (CA) Score:");
+        caTotLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        caTotLbl.setForeground(new Color(0x86, 0x19, 0x8F));
+        JLabel caTotVal = new JLabel(item.getFormattedCATotal() + " / 40.00");
+        caTotVal.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        caTotVal.setForeground(new Color(0x86, 0x19, 0x8F));
+        caTotalRow.add(caTotLbl, BorderLayout.WEST);
+        caTotalRow.add(caTotVal, BorderLayout.EAST);
+        caBox.add(caTotalRow);
 
-        examMarksTableSorter = new TableRowSorter<>(examMarksTableModel);
-        examMarksTable.setRowSorter(examMarksTableSorter);
+        root.add(caBox);
+        root.add(Box.createVerticalStrut(12));
 
-        JTableHeader header = examMarksTable.getTableHeader();
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setBackground(new Color(0xFA, 0xFA, 0xFC));
-        header.setForeground(COLOR_PRIMARY_NAVY);
-        header.setPreferredSize(new Dimension(0, 38));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, COLOR_BORDER));
+        // 3. Final / End Semester Exam Box (60%)
+        JPanel endExamBox = new JPanel();
+        endExamBox.setLayout(new BoxLayout(endExamBox, BoxLayout.Y_AXIS));
+        endExamBox.setBackground(COLOR_WHITE);
+        endExamBox.setBorder(new CompoundBorder(
+                new LineBorder(COLOR_BORDER, 1, true),
+                new EmptyBorder(12, 16, 12, 16)
+        ));
 
-        // Column widths
-        examMarksTable.getColumnModel().getColumn(0).setPreferredWidth(40);   // #
-        examMarksTable.getColumnModel().getColumn(1).setPreferredWidth(95);   // Code
-        examMarksTable.getColumnModel().getColumn(2).setPreferredWidth(210);  // Course Name
-        examMarksTable.getColumnModel().getColumn(3).setPreferredWidth(190);  // Component
-        examMarksTable.getColumnModel().getColumn(4).setPreferredWidth(80);   // Type
-        examMarksTable.getColumnModel().getColumn(5).setPreferredWidth(75);   // Max
-        examMarksTable.getColumnModel().getColumn(6).setPreferredWidth(75);   // Weight
-        examMarksTable.getColumnModel().getColumn(7).setPreferredWidth(110);  // Obtained
-        examMarksTable.getColumnModel().getColumn(8).setPreferredWidth(100);  // Weighted
-        examMarksTable.getColumnModel().getColumn(9).setPreferredWidth(95);   // Date
+        JLabel endTitle = new JLabel("End-Semester Final Examination - 60% Weightage");
+        endTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        endTitle.setForeground(COLOR_PRIMARY_NAVY);
+        endExamBox.add(endTitle);
+        endExamBox.add(Box.createVerticalStrut(10));
 
-        // Alignments
-        DefaultTableCellRenderer centerRender = new DefaultTableCellRenderer();
-        centerRender.setHorizontalAlignment(SwingConstants.CENTER);
-        examMarksTable.getColumnModel().getColumn(0).setCellRenderer(centerRender);
-        examMarksTable.getColumnModel().getColumn(4).setCellRenderer(new ComponentTypeBadgeCellRenderer());
-        examMarksTable.getColumnModel().getColumn(5).setCellRenderer(centerRender);
-        examMarksTable.getColumnModel().getColumn(6).setCellRenderer(centerRender);
-        examMarksTable.getColumnModel().getColumn(7).setCellRenderer(centerRender);
-        examMarksTable.getColumnModel().getColumn(8).setCellRenderer(centerRender);
-        examMarksTable.getColumnModel().getColumn(9).setCellRenderer(centerRender);
-        examMarksTable.getColumnModel().getColumn(1).setCellRenderer(new CourseCodeCellRenderer());
+        endExamBox.add(createDetailRow("Final Theory & Practical Examination:",
+                item.getFormattedFinalExam() + " / 100",
+                String.format("%.2f / 60.0%%", item.getFinalExamContribution())));
+        endExamBox.add(Box.createVerticalStrut(8));
 
-        JScrollPane tableScroll = new JScrollPane(examMarksTable);
-        tableScroll.setBorder(new LineBorder(COLOR_BORDER, 1, true));
-        tableScroll.getViewport().setBackground(COLOR_WHITE);
-        panel.add(tableScroll, BorderLayout.CENTER);
+        // End exam total highlight
+        JPanel endTotalRow = new JPanel(new BorderLayout());
+        endTotalRow.setOpaque(true);
+        endTotalRow.setBackground(new Color(0xEE, 0xF2, 0xFF));
+        endTotalRow.setBorder(new EmptyBorder(6, 10, 6, 10));
+        JLabel endTotLbl = new JLabel("Final Exam Weighted Contribution:");
+        endTotLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        endTotLbl.setForeground(COLOR_PRIMARY_NAVY);
+        JLabel endTotVal = new JLabel(String.format("%.2f / 60.00", item.getFinalExamContribution()));
+        endTotVal.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        endTotVal.setForeground(COLOR_PRIMARY_NAVY);
+        endTotalRow.add(endTotLbl, BorderLayout.WEST);
+        endTotalRow.add(endTotVal, BorderLayout.EAST);
+        endExamBox.add(endTotalRow);
 
-        return panel;
+        root.add(endExamBox);
+        root.add(Box.createVerticalStrut(12));
+
+        // 4. Overall Final Mark & Result Summary Card
+        JPanel finalCard = new JPanel(new GridLayout(1, 3, 10, 0));
+        finalCard.setOpaque(false);
+
+        finalCard.add(createMiniSummaryBox("Overall Final Mark", item.getFormattedMark(), COLOR_PRIMARY_NAVY));
+        finalCard.add(createMiniSummaryBox("UGC Letter Grade", item.getGrade() + " (GP: " + item.getFormattedGradePoint() + ")", COLOR_MAIN_BLUE));
+        finalCard.add(createMiniSummaryBox("Status", item.getStatus(), COLOR_SUCCESS));
+
+        root.add(finalCard);
+        root.add(Box.createVerticalStrut(16));
+
+        // Close button
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        btnPanel.setOpaque(false);
+        JButton closeBtn = createActionButton("Close", COLOR_PRIMARY_NAVY, COLOR_WHITE);
+        closeBtn.addActionListener(e -> dialog.dispose());
+        btnPanel.add(closeBtn);
+        root.add(btnPanel);
+
+        dialog.setContentPane(root);
+        dialog.setVisible(true);
+    }
+
+    private JPanel createDetailRow(String label, String score, String contribution) {
+        JPanel r = new JPanel(new BorderLayout());
+        r.setOpaque(false);
+
+        JLabel l = new JLabel(label);
+        l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        l.setForeground(COLOR_TEXT_PRIMARY);
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        right.setOpaque(false);
+
+        JLabel s = new JLabel("Score: " + score);
+        s.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        s.setForeground(COLOR_TEXT_MUTED);
+
+        JLabel c = new JLabel("Contrib: " + contribution);
+        c.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        c.setForeground(COLOR_MAIN_BLUE);
+
+        right.add(s);
+        right.add(c);
+
+        r.add(l, BorderLayout.WEST);
+        r.add(right, BorderLayout.EAST);
+        return r;
+    }
+
+    private JPanel createMiniSummaryBox(String title, String val, Color color) {
+        JPanel b = new JPanel(new GridLayout(2, 1, 0, 2));
+        b.setBackground(COLOR_WHITE);
+        b.setBorder(new CompoundBorder(
+                new LineBorder(COLOR_BORDER, 1, true),
+                new EmptyBorder(8, 10, 8, 10)
+        ));
+        JLabel t = new JLabel(title);
+        t.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        t.setForeground(COLOR_TEXT_MUTED);
+        JLabel v = new JLabel(val);
+        v.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        v.setForeground(color);
+        b.add(t);
+        b.add(v);
+        return b;
     }
 
     // ------------------------------------------
-    // TAB 3: UGC GRADING SCALE REFERENCE
+    // TAB 2: UGC GRADING SCALE REFERENCE
     // ------------------------------------------
     private JPanel createGradingReferenceTabPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 16));
@@ -583,10 +753,10 @@ public class UndergraduateGradesUI extends JPanel {
         // Top info header
         JPanel infoHeader = new JPanel(new GridLayout(2, 1, 0, 4));
         infoHeader.setOpaque(false);
-        JLabel refTitle = new JLabel("University Grants Commission (UGC) Grading Criteria");
+        JLabel refTitle = new JLabel("University Grants Commission (UGC) Grading Criteria & Assessment Guide");
         refTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
         refTitle.setForeground(COLOR_PRIMARY_NAVY);
-        JLabel refSub = new JLabel("Official Circular No. 12-2024 Criteria for Faculty of Technology Degrees");
+        JLabel refSub = new JLabel("Official Circular No. 12-2024 Criteria for Faculty of Technology Degrees (BICT / BST / ET)");
         refSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         refSub.setForeground(COLOR_TEXT_MUTED);
         infoHeader.add(refTitle);
@@ -671,10 +841,12 @@ public class UndergraduateGradesUI extends JPanel {
         formulaPanel.add(createHonourRow("General Degree Pass:", "CGPA ≥ 2.00", COLOR_TEXT_PRIMARY));
         formulaPanel.add(Box.createVerticalStrut(14));
 
-        JLabel examRuleLbl = new JLabel("<html><b>Note on Assessment:</b><br>" +
-                "• Continuous Assessment (CA) accounts for 30% - 40% of the course.<br>" +
-                "• Final Examination accounts for 60% - 70% of the course.<br>" +
-                "• A minimum 80% attendance is strictly required to be eligible for final examinations.</html>");
+        JLabel examRuleLbl = new JLabel("<html><b>Continuous Assessment (CA) Structure:</b><br>" +
+                "• <b>Quizzes:</b> 10% weightage.<br>" +
+                "• <b>Assignments / Projects:</b> 15% weightage.<br>" +
+                "• <b>Mid-Semester Exam:</b> 15% weightage.<br>" +
+                "• <b>End-Semester Examination:</b> 60% weightage.<br>" +
+                "• <b>Minimum 80% attendance</b> is required for final examination eligibility.</html>");
         examRuleLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         examRuleLbl.setForeground(COLOR_TEXT_MUTED);
         formulaPanel.add(examRuleLbl);
@@ -700,32 +872,28 @@ public class UndergraduateGradesUI extends JPanel {
     }
 
     // ==========================================
-    // 4. DATA LOADING FROM DATABASE
+    // 5. DATA LOADING FROM DATABASE
     // ==========================================
     public void loadGradesData() {
         try {
-            // 1. Fetch Course Grades
-            courseGradesList = gradesDAO.getStudentCourseGrades(studentIdentifier);
+            // 1. Fetch Course Grades for selected period
+            courseGradesList = gradesDAO.getStudentCourseGrades(studentIdentifier, selectedYear, selectedSem);
 
-            // 2. Fetch Exam Component Marks
-            examMarksList = gradesDAO.getStudentExamMarks(studentIdentifier);
+            // 2. Fetch GPA Summary for selected period
+            gpaSummary = gradesDAO.getStudentGPASummary(studentIdentifier, selectedYear, selectedSem);
 
-            // 3. Fetch GPA Summary
-            gpaSummary = gradesDAO.getStudentGPASummary(studentIdentifier);
-
-            // 4. Update Header Subtitle
+            // 3. Update Header Subtitle
             String studentName = (loggedInStudent != null && loggedInStudent.getName() != null)
                     ? loggedInStudent.getName() : "H.D.W.B Hapuarachchi";
             String regNo = studentIdentifier;
             studentSubtitleLabel.setText("Student: " + studentName + "  •  Reg No: " + regNo +
-                    "  •  Batch: 2023/2024  •  Department of ICT");
+                    "  •  Batch: 2023/2024  •  Department of ICT  •  " + gpaSummary.getPeriodLabel());
 
-            // 5. Update KPI Cards
+            // 4. Update KPI Cards
             updateSummaryCards();
 
-            // 6. Populate Tables
+            // 5. Populate Table
             populateCourseGradesTable();
-            populateExamMarksTable();
 
         } catch (Exception e) {
             System.err.println("Database Notice: Error loading grades data: " + e.getMessage());
@@ -741,37 +909,17 @@ public class UndergraduateGradesUI extends JPanel {
                     item.getCourseCode(),
                     item.getCourseName(),
                     item.getCredit(),
-                    item.getFormattedMark(),
                     item.getGrade(),
                     item.getFormattedGradePoint(),
-                    item.getStatus()
+                    item.getStatus(),
+                    "View Marks"
             });
         }
         filterGradesTable();
     }
 
-    private void populateExamMarksTable() {
-        examMarksTableModel.setRowCount(0);
-        int index = 1;
-        for (ExamMarkItem item : examMarksList) {
-            examMarksTableModel.addRow(new Object[]{
-                    index++,
-                    item.getCourseCode(),
-                    item.getCourseName(),
-                    item.getComponentName(),
-                    item.getComponentType(),
-                    String.format("%.0f", item.getMaximumMarks()),
-                    String.format("%.0f%%", item.getWeightPercentage()),
-                    String.format("%.2f", item.getMarksObtained()),
-                    String.format("%.2f", item.getWeightedContribution()),
-                    item.getUploadedDate()
-            });
-        }
-        filterExamMarksTable();
-    }
-
     // ==========================================
-    // 5. SEARCH & FILTERING LOGIC
+    // 6. SEARCH & FILTERING LOGIC
     // ==========================================
     private void filterGradesTable() {
         String query = searchField.getText().trim();
@@ -783,11 +931,11 @@ public class UndergraduateGradesUI extends JPanel {
             filters.add(RowFilter.regexFilter("(?i)" + query, 1, 2)); // Course Code or Name
         }
 
-        if (status != null && !"All Courses".equals(status)) {
-            if ("Completed / Released".equals(status)) {
-                filters.add(RowFilter.regexFilter("(?i)Completed", 7));
-            } else if ("Pending Results".equals(status)) {
-                filters.add(RowFilter.regexFilter("(?i)In Progress|Pending", 7));
+        if (status != null && !"All Statuses".equals(status)) {
+            if ("Completed".equals(status)) {
+                filters.add(RowFilter.regexFilter("(?i)Completed", 6));
+            } else if ("Pending".equals(status)) {
+                filters.add(RowFilter.regexFilter("(?i)In Progress|Pending", 6));
             }
         }
 
@@ -798,25 +946,11 @@ public class UndergraduateGradesUI extends JPanel {
         }
 
         int count = gradesTable.getRowCount();
-        gradesTallyLabel.setText("Showing " + count + " of " + courseGradesList.size() + " courses");
-    }
-
-    private void filterExamMarksTable() {
-        String compType = (String) componentTypeFilterCombo.getSelectedItem();
-        if (compType == null || "All Assessment Components".equals(compType)) {
-            examMarksTableSorter.setRowFilter(null);
-        } else if ("Continuous Assessments (CA)".equals(compType)) {
-            examMarksTableSorter.setRowFilter(RowFilter.regexFilter("(?i)CA", 4));
-        } else if ("Final Examinations".equals(compType)) {
-            examMarksTableSorter.setRowFilter(RowFilter.regexFilter("(?i)Final", 4));
-        }
-
-        int count = examMarksTable.getRowCount();
-        examMarksTallyLabel.setText("Showing " + count + " of " + examMarksList.size() + " assessment marks");
+        tableTallyLabel.setText("Showing " + count + " of " + courseGradesList.size() + " courses (" + gpaSummary.getPeriodLabel() + ")");
     }
 
     // ==========================================
-    // 6. CUSTOM TABLE CELL RENDERERS
+    // 7. CUSTOM TABLE CELL RENDERERS
     // ==========================================
     private static class CourseCodeCellRenderer extends DefaultTableCellRenderer {
         @Override
@@ -896,64 +1030,62 @@ public class UndergraduateGradesUI extends JPanel {
         }
     }
 
-    private static class ComponentTypeBadgeCellRenderer extends DefaultTableCellRenderer {
+    private static class ActionButtonRenderer extends DefaultTableCellRenderer {
+        private final JButton btn = new JButton("View Marks ➔");
+
+        public ActionButtonRenderer() {
+            btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            btn.setForeground(COLOR_WHITE);
+            btn.setBackground(COLOR_MAIN_BLUE);
+            btn.setFocusPainted(false);
+            btn.setBorder(new EmptyBorder(4, 10, 4, 10));
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        }
+
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
-            JPanel panel = new JPanel(new GridBagLayout());
-            panel.setOpaque(true);
-            panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
-
-            String type = (value != null) ? value.toString() : "";
-            JLabel badge = new JLabel(" " + type + " ");
-            badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            badge.setOpaque(true);
-
-            if ("CA".equalsIgnoreCase(type)) {
-                badge.setBackground(new Color(0xFA, 0xE8, 0xFF)); // Light Purple
-                badge.setForeground(new Color(0x86, 0x19, 0x8F));
-            } else {
-                badge.setBackground(new Color(0xEE, 0xF2, 0xFF)); // Light Navy
-                badge.setForeground(new Color(0x37, 0x30, 0xA3));
-            }
-            badge.setBorder(new EmptyBorder(3, 6, 3, 6));
-
-            panel.add(badge);
-            return panel;
+            JPanel p = new JPanel(new GridBagLayout());
+            p.setOpaque(true);
+            p.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+            p.add(btn);
+            return p;
         }
     }
 
     // ==========================================
-    // 7. TRANSCRIPT DIALOG & HELPERS
+    // 8. TRANSCRIPT DIALOG & HELPERS
     // ==========================================
     private void showTranscriptDialog() {
         StringBuilder sb = new StringBuilder();
-        sb.append("=================================================================\n");
-        sb.append("      FACULTY OF TECHNOLOGY - ACADEMIC TRANSCRIPT SUMMARY        \n");
-        sb.append("=================================================================\n\n");
+        sb.append("========================================================================================\n");
+        sb.append("                 FACULTY OF TECHNOLOGY - OFFICIAL ACADEMIC TRANSCRIPT                   \n");
+        sb.append("========================================================================================\n\n");
         sb.append("Student Name       : ").append(loggedInStudent != null && loggedInStudent.getName() != null ? loggedInStudent.getName() : "H.D.W.B Hapuarachchi").append("\n");
         sb.append("Registration No    : ").append(studentIdentifier).append("\n");
         sb.append("Department         : Department of Information and Communication Technology\n");
-        sb.append("Academic Year      : Level II Semester I (2026)\n");
+        sb.append("Report Scope       : ").append(gpaSummary.getPeriodLabel()).append("\n");
         sb.append("Date Generated     : ").append(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))).append("\n\n");
-        sb.append("-----------------------------------------------------------------\n");
-        sb.append(String.format("%-10s %-32s %-6s %-8s %-6s\n", "CODE", "COURSE NAME", "CREDIT", "MARK", "GRADE"));
-        sb.append("-----------------------------------------------------------------\n");
+        sb.append("----------------------------------------------------------------------------------------\n");
+        sb.append(String.format("%-10s %-34s %-6s %-8s %-6s %-12s\n",
+                "CODE", "COURSE UNIT NAME", "CRED", "MARK", "GRADE", "STATUS"));
+        sb.append("----------------------------------------------------------------------------------------\n");
 
         for (CourseGradeItem c : courseGradesList) {
             String cName = c.getCourseName();
-            if (cName.length() > 30) cName = cName.substring(0, 27) + "...";
-            sb.append(String.format("%-10s %-32s %-6d %-8s %-6s\n",
-                    c.getCourseCode(), cName, c.getCredit(), c.getFormattedMark(), c.getGrade()));
+            if (cName.length() > 32) cName = cName.substring(0, 29) + "...";
+            sb.append(String.format("%-10s %-34s %-6d %-8s %-6s %-12s\n",
+                    c.getCourseCode(), cName, c.getCredit(),
+                    c.getFormattedMark(), c.getGrade(), c.getStatus()));
         }
 
-        sb.append("-----------------------------------------------------------------\n");
-        sb.append(String.format("Total Registered Credits: %d  |  Evaluated Credits: %d\n",
+        sb.append("----------------------------------------------------------------------------------------\n");
+        sb.append(String.format("Total Period Credits  : %d Registered  |  %d Evaluated & Completed\n",
                 gpaSummary.getTotalRegisteredCredits(), gpaSummary.getTotalCompletedCredits()));
-        sb.append(String.format("Cumulative GPA (CGPA)   : %.2f\n", gpaSummary.getCgpa()));
-        sb.append(String.format("Honours Classification  : %s\n", gpaSummary.getDegreeClassification()));
-        sb.append("Academic Standing       : ").append(gpaSummary.getStandingStatus()).append("\n");
-        sb.append("=================================================================\n");
+        sb.append(String.format("Grade Point Average   : %.2f (%s)\n", gpaSummary.getCgpa(), gpaSummary.getPeriodLabel()));
+        sb.append(String.format("Degree Honours Class  : %s\n", gpaSummary.getDegreeClassification()));
+        sb.append("Academic Standing     : ").append(gpaSummary.getStandingStatus()).append("\n");
+        sb.append("========================================================================================\n");
 
         JTextArea textArea = new JTextArea(sb.toString());
         textArea.setFont(new Font("Consolas", Font.PLAIN, 12));
@@ -961,7 +1093,7 @@ public class UndergraduateGradesUI extends JPanel {
         textArea.setCaretPosition(0);
 
         JScrollPane sp = new JScrollPane(textArea);
-        sp.setPreferredSize(new Dimension(600, 420));
+        sp.setPreferredSize(new Dimension(750, 480));
 
         JOptionPane.showMessageDialog(this, sp, "Academic Transcript Summary", JOptionPane.INFORMATION_MESSAGE);
     }
@@ -989,7 +1121,7 @@ public class UndergraduateGradesUI extends JPanel {
     }
 
     // ==========================================
-    // 8. STANDALONE MAIN METHOD
+    // 9. STANDALONE MAIN METHOD
     // ==========================================
     public static void main(String[] args) {
         System.setProperty("awt.useSystemAAFontSettings", "on");

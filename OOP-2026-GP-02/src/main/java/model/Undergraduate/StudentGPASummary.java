@@ -3,6 +3,7 @@ package main.java.model.Undergraduate;
 /**
  * Model class representing overall student GPA and academic performance summary.
  * Follows UGC Circular No. 12-2024 university classification standards.
+ * Supports Cumulative GPA (CGPA) and Semester GPA (SGPA) for specific academic periods.
  */
 public class StudentGPASummary {
     private double cgpa;                     // Cumulative Grade Point Average
@@ -13,6 +14,7 @@ public class StudentGPASummary {
     private int evaluatedCourses;            // Number of courses with final marks released
     private String standingStatus;           // "Good Standing", "Active", "Probation"
     private String degreeClassification;     // e.g. "First Class Honours"
+    private String periodLabel;              // e.g. "All Academic Years", "Year 1 Sem 1"
 
     // Default Constructor
     public StudentGPASummary() {
@@ -20,20 +22,30 @@ public class StudentGPASummary {
         this.sgpa = 0.0;
         this.standingStatus = "Active";
         this.degreeClassification = "General Pass";
+        this.periodLabel = "All Academic Years (Cumulative)";
     }
 
     // Full Parameterized Constructor
     public StudentGPASummary(double cgpa, double sgpa, int totalRegisteredCredits,
                              int totalCompletedCredits, int totalRegisteredCourses,
-                             int evaluatedCourses) {
+                             int evaluatedCourses, String periodLabel) {
         this.cgpa = cgpa;
         this.sgpa = sgpa;
         this.totalRegisteredCredits = totalRegisteredCredits;
         this.totalCompletedCredits = totalCompletedCredits;
         this.totalRegisteredCourses = totalRegisteredCourses;
         this.evaluatedCourses = evaluatedCourses;
+        this.periodLabel = (periodLabel != null) ? periodLabel : "All Academic Years (Cumulative)";
         this.degreeClassification = determineClassification(cgpa);
         this.standingStatus = (cgpa >= 2.00) ? "Good Standing" : "Academic Probation";
+    }
+
+    // Backward-compatible Constructor
+    public StudentGPASummary(double cgpa, double sgpa, int totalRegisteredCredits,
+                             int totalCompletedCredits, int totalRegisteredCourses,
+                             int evaluatedCourses) {
+        this(cgpa, sgpa, totalRegisteredCredits, totalCompletedCredits, totalRegisteredCourses,
+                evaluatedCourses, "All Academic Years (Cumulative)");
     }
 
     /**
@@ -127,5 +139,13 @@ public class StudentGPASummary {
 
     public void setDegreeClassification(String degreeClassification) {
         this.degreeClassification = degreeClassification;
+    }
+
+    public String getPeriodLabel() {
+        return periodLabel;
+    }
+
+    public void setPeriodLabel(String periodLabel) {
+        this.periodLabel = periodLabel;
     }
 }

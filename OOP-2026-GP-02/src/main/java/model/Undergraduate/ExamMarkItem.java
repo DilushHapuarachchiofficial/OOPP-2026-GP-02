@@ -9,6 +9,8 @@ public class ExamMarkItem {
     private int markId;
     private String courseCode;
     private String courseName;
+    private int academicYear;           // 1 = Level I, 2 = Level II
+    private int semester;               // 1 = Semester I, 2 = Semester II
     private String componentName;       // e.g. "Quiz 01", "Mid-Semester Exam", "Final Theory Exam"
     private String componentType;       // "CA" or "Final"
     private double maximumMarks;        // e.g. 100.00
@@ -21,13 +23,17 @@ public class ExamMarkItem {
     public ExamMarkItem() {
     }
 
-    // Full Parameterized Constructor
-    public ExamMarkItem(int markId, String courseCode, String courseName, String componentName,
-                        String componentType, double maximumMarks, double weightPercentage,
+    // Full Parameterized Constructor with Academic Year and Semester
+    public ExamMarkItem(int markId, String courseCode, String courseName,
+                        int academicYear, int semester,
+                        String componentName, String componentType,
+                        double maximumMarks, double weightPercentage,
                         double marksObtained, double weightedContribution, String uploadedDate) {
         this.markId = markId;
         this.courseCode = courseCode;
         this.courseName = courseName;
+        this.academicYear = academicYear;
+        this.semester = semester;
         this.componentName = componentName;
         this.componentType = componentType;
         this.maximumMarks = maximumMarks;
@@ -35,6 +41,14 @@ public class ExamMarkItem {
         this.marksObtained = marksObtained;
         this.weightedContribution = weightedContribution;
         this.uploadedDate = uploadedDate;
+    }
+
+    // Backward-compatible Constructor
+    public ExamMarkItem(int markId, String courseCode, String courseName, String componentName,
+                        String componentType, double maximumMarks, double weightPercentage,
+                        double marksObtained, double weightedContribution, String uploadedDate) {
+        this(markId, courseCode, courseName, 2, 1, componentName, componentType,
+                maximumMarks, weightPercentage, marksObtained, weightedContribution, uploadedDate);
     }
 
     // Formatted score percentage (e.g. "90.0%")
@@ -52,6 +66,10 @@ public class ExamMarkItem {
     // Formatted weighted contribution (e.g. "9.00 / 10.0%")
     public String getFormattedWeighted() {
         return String.format("%.2f / %.0f%%", weightedContribution, weightPercentage);
+    }
+
+    public String getYearSemesterLabel() {
+        return "Y" + academicYear + " S" + semester;
     }
 
     // Check if this is a final semester examination
@@ -87,6 +105,22 @@ public class ExamMarkItem {
 
     public void setCourseName(String courseName) {
         this.courseName = courseName;
+    }
+
+    public int getAcademicYear() {
+        return academicYear;
+    }
+
+    public void setAcademicYear(int academicYear) {
+        this.academicYear = academicYear;
+    }
+
+    public int getSemester() {
+        return semester;
+    }
+
+    public void setSemester(int semester) {
+        this.semester = semester;
     }
 
     public String getComponentName() {
