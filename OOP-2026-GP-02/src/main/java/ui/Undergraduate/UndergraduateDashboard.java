@@ -53,6 +53,7 @@ public class UndergraduateDashboard extends JFrame {
     private UndergraduateGradesUI gradesPanel;
     private UndergraduateTimetableUI timetablePanel;
     private UndergraduateNoticesUI noticesPanel;
+    private UndergraduateProfileUI profilePanel;
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
@@ -96,6 +97,7 @@ public class UndergraduateDashboard extends JFrame {
         gradesPanel = new UndergraduateGradesUI(currentStudent, this);
         timetablePanel = new UndergraduateTimetableUI(currentStudent, this);
         noticesPanel = new UndergraduateNoticesUI(currentStudent, this);
+        profilePanel = new UndergraduateProfileUI(currentStudent, this);
 
         mainContentArea.add(dashboardOverviewPanel, "DASHBOARD");
         mainContentArea.add(lectureNotesPanel, "LECTURE_NOTES");
@@ -105,6 +107,7 @@ public class UndergraduateDashboard extends JFrame {
         mainContentArea.add(gradesPanel, "GRADES");
         mainContentArea.add(timetablePanel, "TIMETABLE");
         mainContentArea.add(noticesPanel, "NOTICES");
+        mainContentArea.add(profilePanel, "PROFILE");
 
         rootPanel.add(topContainer, BorderLayout.NORTH);
         rootPanel.add(mainContentArea, BorderLayout.CENTER);
@@ -220,6 +223,14 @@ public class UndergraduateDashboard extends JFrame {
         JLabel nameLbl = new JLabel(currentStudent.getName() != null ? currentStudent.getName() : "Student");
         nameLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
         nameLbl.setForeground(COLOR_TEXT_PRIMARY);
+        nameLbl.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        nameLbl.setToolTipText("Click to view My Profile");
+        nameLbl.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                openProfile();
+            }
+        });
 
         JLabel roleLbl = new JLabel("Undergraduate");
         roleLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
@@ -270,9 +281,19 @@ public class UndergraduateDashboard extends JFrame {
         nameBox.add(roleLbl);
         nameBox.add(logoutBtn);
 
+        JLabel headerAvatar = createAvatarIcon(40, currentStudent.getName());
+        headerAvatar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        headerAvatar.setToolTipText("Click to view My Profile");
+        headerAvatar.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                openProfile();
+            }
+        });
+
         rightProfile.add(dateBadge);
         rightProfile.add(nameBox);
-        rightProfile.add(createAvatarIcon(40, currentStudent.getName()));
+        rightProfile.add(headerAvatar);
 
         header.add(leftBrand, BorderLayout.WEST);
         header.add(rightProfile, BorderLayout.EAST);
@@ -821,6 +842,18 @@ public class UndergraduateDashboard extends JFrame {
         }
     }
 
+    public void openProfile() {
+        if (navigationPanel != null) {
+            navigationPanel.highlightButton("PROFILE");
+        }
+        if (profilePanel != null) {
+            profilePanel.loadProfileData();
+        }
+        if (contentCardLayout != null && mainContentArea != null) {
+            contentCardLayout.show(mainContentArea, "PROFILE");
+        }
+    }
+
     public void showModulePlaceholder(String moduleName) {
         if ("Lecturer Notes".equalsIgnoreCase(moduleName) || "Course Materials".equalsIgnoreCase(moduleName) || "MATERIALS".equalsIgnoreCase(moduleName)) {
             openLectureNotes();
@@ -848,6 +881,10 @@ public class UndergraduateDashboard extends JFrame {
         }
         if ("Notices".equalsIgnoreCase(moduleName) || "NOTICES".equalsIgnoreCase(moduleName) || "Notices & Announcements".equalsIgnoreCase(moduleName)) {
             openNotices();
+            return;
+        }
+        if ("My Profile".equalsIgnoreCase(moduleName) || "Profile".equalsIgnoreCase(moduleName) || "PROFILE".equalsIgnoreCase(moduleName)) {
+            openProfile();
             return;
         }
         JOptionPane.showMessageDialog(
