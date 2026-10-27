@@ -51,6 +51,7 @@ public class UndergraduateDashboard extends JFrame {
     private UndergraduateMedicalUI medicalPanel;
     private UndergraduateCourseDetailsUI courseDetailsPanel;
     private UndergraduateGradesUI gradesPanel;
+    private UndergraduateTimetableUI timetablePanel;
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
@@ -92,6 +93,7 @@ public class UndergraduateDashboard extends JFrame {
         medicalPanel = new UndergraduateMedicalUI(currentStudent, this);
         courseDetailsPanel = new UndergraduateCourseDetailsUI(currentStudent, this);
         gradesPanel = new UndergraduateGradesUI(currentStudent, this);
+        timetablePanel = new UndergraduateTimetableUI(currentStudent, this);
 
         mainContentArea.add(dashboardOverviewPanel, "DASHBOARD");
         mainContentArea.add(lectureNotesPanel, "LECTURE_NOTES");
@@ -99,6 +101,7 @@ public class UndergraduateDashboard extends JFrame {
         mainContentArea.add(medicalPanel, "MEDICAL");
         mainContentArea.add(courseDetailsPanel, "COURSES");
         mainContentArea.add(gradesPanel, "GRADES");
+        mainContentArea.add(timetablePanel, "TIMETABLE");
 
         rootPanel.add(topContainer, BorderLayout.NORTH);
         rootPanel.add(mainContentArea, BorderLayout.CENTER);
@@ -791,6 +794,18 @@ public class UndergraduateDashboard extends JFrame {
         }
     }
 
+    public void openTimetable() {
+        if (navigationPanel != null) {
+            navigationPanel.highlightButton("TIMETABLE");
+        }
+        if (timetablePanel != null) {
+            timetablePanel.loadTimetableData();
+        }
+        if (contentCardLayout != null && mainContentArea != null) {
+            contentCardLayout.show(mainContentArea, "TIMETABLE");
+        }
+    }
+
     public void showModulePlaceholder(String moduleName) {
         if ("Lecturer Notes".equalsIgnoreCase(moduleName) || "Course Materials".equalsIgnoreCase(moduleName) || "MATERIALS".equalsIgnoreCase(moduleName)) {
             openLectureNotes();
@@ -810,6 +825,10 @@ public class UndergraduateDashboard extends JFrame {
         }
         if ("Grades & GPA".equalsIgnoreCase(moduleName) || "Grades".equalsIgnoreCase(moduleName) || "GPA".equalsIgnoreCase(moduleName) || "GRADES".equalsIgnoreCase(moduleName)) {
             openGrades();
+            return;
+        }
+        if ("Timetable".equalsIgnoreCase(moduleName) || "TIMETABLE".equalsIgnoreCase(moduleName)) {
+            openTimetable();
             return;
         }
         JOptionPane.showMessageDialog(
