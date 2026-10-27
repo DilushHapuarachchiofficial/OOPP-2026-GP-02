@@ -9,8 +9,6 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -54,17 +52,24 @@ public class UndergraduateGradesUI extends JPanel {
     private final String studentIdentifier;
     private final GradesDAO gradesDAO;
 
-    // Filter state (Defaults to Level I - Semester II: Year 1, Sem 2)
-    private Integer selectedYear = 1;
-    private Integer selectedSem = 2;
+    // Filter state (Defaults to Level II - Semester I: Year 2, Sem 1)
+    private Integer selectedYear = 2;
+    private Integer selectedSem = 1;
 
     // Loaded Data Models
     private List<CourseGradeItem> courseGradesList = new ArrayList<>();
-    private StudentGPASummary gpaSummary = new StudentGPASummary();
+    private StudentGPASummary cumulativeSummary = new StudentGPASummary(); // Overall CGPA
+    private StudentGPASummary semesterSummary = new StudentGPASummary();   // Selected Year/Semester SGPA
 
     // UI Dynamic Components
     private JLabel studentSubtitleLabel;
     private JPanel summaryCardsRow;
+
+    // Semester GPA Banner Components (Displayed directly above Course Units)
+    private JLabel semesterGpaTitleLabel;
+    private JLabel semesterGpaValueLabel;
+    private JLabel semesterGpaBadgeLabel;
+    private JLabel semesterGpaDetailsLabel;
 
     // Table controls
     private JComboBox<String> periodFilterCombo;
@@ -72,8 +77,6 @@ public class UndergraduateGradesUI extends JPanel {
     private DefaultTableModel gradesTableModel;
     private TableRowSorter<DefaultTableModel> gradesTableSorter;
     private JLabel tableTallyLabel;
-    private JTextField searchField;
-    private JComboBox<String> statusFilterCombo;
 
     /**
      * Main constructor for embedding inside UndergraduateDashboard.
@@ -84,9 +87,9 @@ public class UndergraduateGradesUI extends JPanel {
         this.studentIdentifier = resolveStudentIdentifier(student);
         this.gradesDAO = new GradesDAO();
 
-        // Default to Level 1, Semester 2 (L1.S2)
-        this.selectedYear = 1;
-        this.selectedSem = 2;
+        // Default to Level 2, Semester 1 (L2.S1)
+        this.selectedYear = 2;
+        this.selectedSem = 1;
 
         initializeUI();
         loadGradesData();
@@ -110,9 +113,9 @@ public class UndergraduateGradesUI extends JPanel {
                 : "TG/2024/2085";
         this.gradesDAO = new GradesDAO();
 
-        // Default to Level 1, Semester 2 (L1.S2)
-        this.selectedYear = 1;
-        this.selectedSem = 2;
+        // Default to Level 2, Semester 1 (L2.S1)
+        this.selectedYear = 2;
+        this.selectedSem = 1;
 
         initializeUI();
         loadGradesData();
@@ -224,46 +227,45 @@ public class UndergraduateGradesUI extends JPanel {
     private void updateSummaryCards() {
         summaryCardsRow.removeAll();
 
-        // 1. GPA Card (SGPA for selected semester or CGPA for all semesters)
-        String gpaValue = gpaSummary.getFormattedCGPA();
-        String classTitle = gpaSummary.getDegreeClassification();
-        Color gpaColor = (gpaSummary.getCgpa() >= 3.70) ? new Color(0x7C, 0x3A, 0xED) : COLOR_MAIN_BLUE;
-        String gpaTitle = (selectedYear == null && selectedSem == null) ? "CUMULATIVE GPA (CGPA)" : "SEMESTER GPA (SGPA)";
+        // 1. Overall Cumulative GPA Card (CGPA) - Always shows the student's total CGPA
+        String cgpaValue = cumulativeSummary.getFormattedCGPA();
+        String classTitle = cumulativeSummary.getDegreeClassification();
+        Color cgpaColor = (cumulativeSummary.getCgpa() >= 3.70) ? new Color(0x7C, 0x3A, 0xED) : COLOR_MAIN_BLUE;
 
         summaryCardsRow.add(createMetricCard(
-                gpaTitle,
-                gpaValue,
+                "CUMULATIVE GPA (CGPA)",
+                cgpaValue,
                 classTitle,
-                gpaSummary.getPeriodLabel(),
-                gpaColor
+                "Overall Academic Performance",
+                cgpaColor
         ));
 
-        // 2. Evaluated Academic Credits Card
-        int compCred = gpaSummary.getTotalCompletedCredits();
-        int regCred = gpaSummary.getTotalRegisteredCredits();
+        // 2. Evaluated Academic Credits Card (Total degree progress)
+        int compCred = cumulativeSummary.getTotalCompletedCredits();
+        int regCred = cumulativeSummary.getTotalRegisteredCredits();
         String credRatio = compCred + " / " + regCred + " Credits";
         int pct = (regCred > 0) ? (compCred * 100 / regCred) : 0;
         summaryCardsRow.add(createMetricCard(
                 "COMPLETED CREDITS",
                 credRatio,
                 pct + "% Completed",
-                compCred + " credits earned in this period",
+                compCred + " total credits earned",
                 COLOR_SUCCESS
         ));
 
-        // 3. Evaluated Courses Card
-        int evalCourses = gpaSummary.getEvaluatedCourses();
-        int regCourses = gpaSummary.getTotalRegisteredCourses();
+        // 3. Evaluated Courses Card (Total degree courses)
+        int evalCourses = cumulativeSummary.getEvaluatedCourses();
+        int regCourses = cumulativeSummary.getTotalRegisteredCourses();
         summaryCardsRow.add(createMetricCard(
                 "EVALUATED COURSES",
                 evalCourses + " / " + regCourses + " Courses",
                 "Results Published",
-                "Course units calculated",
+                "Overall course units calculated",
                 COLOR_MAIN_BLUE
         ));
 
-        // 4. Academic Standing Card
-        String standing = gpaSummary.getStandingStatus();
+        // 4. Academic Standing Card (Overall academic standing)
+        String standing = cumulativeSummary.getStandingStatus();
         summaryCardsRow.add(createMetricCard(
                 "ACADEMIC STATUS",
                 standing,
@@ -356,54 +358,35 @@ public class UndergraduateGradesUI extends JPanel {
                 new EmptyBorder(16, 18, 16, 18)
         ));
 
-        // Toolbar with Semester Dropdown, Search, and Status Filter
+        // Top Area: Holds Semester Selector toolbar AND SGPA Banner above Course Units Table
+        JPanel topArea = new JPanel();
+        topArea.setLayout(new BoxLayout(topArea, BoxLayout.Y_AXIS));
+        topArea.setOpaque(false);
+
+        // 1. Semester Selector Bar (Search and Status filters removed as requested)
         JPanel toolbar = new JPanel(new BorderLayout(12, 0));
         toolbar.setOpaque(false);
 
         JPanel leftFilters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         leftFilters.setOpaque(false);
 
-        // 1. Select Year / Semester Dropdown (Defaults to Level I - Semester II)
         JLabel periodLbl = new JLabel("Select Semester:");
         periodLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         periodLbl.setForeground(COLOR_PRIMARY_NAVY);
         leftFilters.add(periodLbl);
 
         String[] periods = {
+                "Level II - Semester I (L2.S1)",
                 "Level I - Semester II (L1.S2)",
                 "Level I - Semester I (L1.S1)",
-                "Level II - Semester I (L2.S1)",
                 "All Semesters (Cumulative CGPA)"
         };
         periodFilterCombo = new JComboBox<>(periods);
         periodFilterCombo.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        periodFilterCombo.setPreferredSize(new Dimension(230, 32));
-        periodFilterCombo.setSelectedIndex(0); // Level I - Semester II by default!
+        periodFilterCombo.setPreferredSize(new Dimension(240, 32));
+        periodFilterCombo.setSelectedIndex(0); // Level II - Semester I (L2.S1) by default
         periodFilterCombo.addActionListener(e -> onPeriodFilterChanged());
         leftFilters.add(periodFilterCombo);
-
-        // 2. Search Field
-        JLabel searchLbl = new JLabel("Search:");
-        searchLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        searchLbl.setForeground(COLOR_TEXT_PRIMARY);
-        leftFilters.add(searchLbl);
-
-        searchField = new JTextField(12);
-        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        searchField.setPreferredSize(new Dimension(130, 32));
-        searchField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { filterGradesTable(); }
-            @Override public void removeUpdate(DocumentEvent e) { filterGradesTable(); }
-            @Override public void changedUpdate(DocumentEvent e) { filterGradesTable(); }
-        });
-        leftFilters.add(searchField);
-
-        // 3. Status Filter
-        statusFilterCombo = new JComboBox<>(new String[]{"All Statuses", "Completed", "Pending"});
-        statusFilterCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        statusFilterCombo.setPreferredSize(new Dimension(120, 32));
-        statusFilterCombo.addActionListener(e -> filterGradesTable());
-        leftFilters.add(statusFilterCombo);
 
         toolbar.add(leftFilters, BorderLayout.WEST);
 
@@ -412,7 +395,13 @@ public class UndergraduateGradesUI extends JPanel {
         tableTallyLabel.setForeground(COLOR_TEXT_MUTED);
         toolbar.add(tableTallyLabel, BorderLayout.EAST);
 
-        panel.add(toolbar, BorderLayout.NORTH);
+        topArea.add(toolbar);
+        topArea.add(Box.createVerticalStrut(12));
+
+        // 2. SGPA Banner: Displays selected semester GPA (SGPA) directly above the course units table
+        topArea.add(createSemesterGpaBanner());
+
+        panel.add(topArea, BorderLayout.NORTH);
 
         // Clean, Uncluttered Course Grades Table (Only 8 Essential Columns)
         String[] columns = {
@@ -501,22 +490,121 @@ public class UndergraduateGradesUI extends JPanel {
         return panel;
     }
 
+    /**
+     * Creates a clean, modern summary banner showing the selected year/semester GPA (SGPA)
+     * right above the Course Units table.
+     */
+    private JPanel createSemesterGpaBanner() {
+        JPanel banner = new JPanel(new BorderLayout(16, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(0xF8, 0xFA, 0xFC));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.setColor(COLOR_MAIN_BLUE);
+                g2.fillRoundRect(0, 0, 5, getHeight(), 10, 10);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        banner.setOpaque(false);
+        banner.setBorder(new CompoundBorder(
+                new LineBorder(COLOR_BORDER, 1, true),
+                new EmptyBorder(10, 16, 10, 16)
+        ));
+
+        // Left Box: Title + SGPA Value + Degree Honours Badge
+        JPanel leftBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        leftBox.setOpaque(false);
+
+        semesterGpaTitleLabel = new JLabel("Semester GPA (SGPA):");
+        semesterGpaTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        semesterGpaTitleLabel.setForeground(COLOR_TEXT_PRIMARY);
+
+        semesterGpaValueLabel = new JLabel("4.00");
+        semesterGpaValueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        semesterGpaValueLabel.setForeground(COLOR_MAIN_BLUE);
+
+        semesterGpaBadgeLabel = new JLabel(" First Class Honours ");
+        semesterGpaBadgeLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        semesterGpaBadgeLabel.setOpaque(true);
+        semesterGpaBadgeLabel.setBackground(new Color(0xDC, 0xFC, 0xE7));
+        semesterGpaBadgeLabel.setForeground(new Color(0x16, 0x65, 0x34));
+        semesterGpaBadgeLabel.setBorder(new EmptyBorder(3, 8, 3, 8));
+
+        leftBox.add(semesterGpaTitleLabel);
+        leftBox.add(semesterGpaValueLabel);
+        leftBox.add(semesterGpaBadgeLabel);
+
+        // Right Box: Credits & Evaluated Courses for this selected semester
+        semesterGpaDetailsLabel = new JLabel("Year 2 Semester 1  •  Credits: 11 / 18  •  Evaluated: 5 / 9 Courses");
+        semesterGpaDetailsLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        semesterGpaDetailsLabel.setForeground(COLOR_TEXT_MUTED);
+
+        banner.add(leftBox, BorderLayout.WEST);
+        banner.add(semesterGpaDetailsLabel, BorderLayout.EAST);
+
+        return banner;
+    }
+
+    private void updateSemesterGpaBanner() {
+        boolean isAll = (selectedYear == null && selectedSem == null);
+        if (isAll) {
+            semesterGpaTitleLabel.setText("Cumulative GPA (CGPA):");
+            semesterGpaValueLabel.setText(semesterSummary.getFormattedCGPA());
+            semesterGpaValueLabel.setForeground(new Color(0x7C, 0x3A, 0xED));
+        } else {
+            semesterGpaTitleLabel.setText("Semester GPA (SGPA):");
+            semesterGpaValueLabel.setText(semesterSummary.getFormattedSGPA());
+            semesterGpaValueLabel.setForeground(COLOR_MAIN_BLUE);
+        }
+
+        double val = isAll ? semesterSummary.getCgpa() : semesterSummary.getSgpa();
+        String honours = StudentGPASummary.determineClassification(val);
+        semesterGpaBadgeLabel.setText(" " + honours + " ");
+
+        if (val >= 3.70) {
+            semesterGpaBadgeLabel.setBackground(new Color(0xDC, 0xFC, 0xE7));
+            semesterGpaBadgeLabel.setForeground(new Color(0x16, 0x65, 0x34));
+        } else if (val >= 3.30) {
+            semesterGpaBadgeLabel.setBackground(new Color(0xDB, 0xEA, 0xFE));
+            semesterGpaBadgeLabel.setForeground(new Color(0x1E, 0x40, 0xAF));
+        } else if (val >= 3.00) {
+            semesterGpaBadgeLabel.setBackground(new Color(0xFE, 0xF3, 0xC7));
+            semesterGpaBadgeLabel.setForeground(new Color(0x92, 0x40, 0x0E));
+        } else {
+            semesterGpaBadgeLabel.setBackground(new Color(0xF1, 0xF5, 0xF9));
+            semesterGpaBadgeLabel.setForeground(COLOR_TEXT_PRIMARY);
+        }
+
+        int compCred = semesterSummary.getTotalCompletedCredits();
+        int regCred = semesterSummary.getTotalRegisteredCredits();
+        int evalCourses = semesterSummary.getEvaluatedCourses();
+        int regCourses = semesterSummary.getTotalRegisteredCourses();
+
+        semesterGpaDetailsLabel.setText(
+                semesterSummary.getPeriodLabel() + "  •  Completed Credits: " + compCred + " / " + regCred +
+                "  •  Evaluated: " + evalCourses + " / " + regCourses + " Courses"
+        );
+    }
+
     private void onPeriodFilterChanged() {
         int idx = periodFilterCombo.getSelectedIndex();
         switch (idx) {
-            case 0: // Level I - Semester II (L1.S2)
-                selectedYear = 1;
-                selectedSem = 2;
-                break;
-            case 1: // Level I - Semester I (L1.S1)
-                selectedYear = 1;
-                selectedSem = 1;
-                break;
-            case 2: // Level II - Semester I (L2.S1)
+            case 0: // Level II - Semester I (L2.S1)
                 selectedYear = 2;
                 selectedSem = 1;
                 break;
-            case 3: // All Semesters
+            case 1: // Level I - Semester II (L1.S2)
+                selectedYear = 1;
+                selectedSem = 2;
+                break;
+            case 2: // Level I - Semester I (L1.S1)
+                selectedYear = 1;
+                selectedSem = 1;
+                break;
+            case 3: // All Semesters (Cumulative CGPA)
             default:
                 selectedYear = null;
                 selectedSem = null;
@@ -929,20 +1017,26 @@ public class UndergraduateGradesUI extends JPanel {
             // 1. Fetch Course Grades for selected period
             courseGradesList = gradesDAO.getStudentCourseGrades(studentIdentifier, selectedYear, selectedSem);
 
-            // 2. Fetch GPA Summary for selected period
-            gpaSummary = gradesDAO.getStudentGPASummary(studentIdentifier, selectedYear, selectedSem);
+            // 2. Fetch Semester GPA Summary for selected period (SGPA)
+            semesterSummary = gradesDAO.getStudentGPASummary(studentIdentifier, selectedYear, selectedSem);
 
-            // 3. Update Header Subtitle
+            // 3. Fetch Overall Cumulative GPA Summary (CGPA)
+            cumulativeSummary = gradesDAO.getStudentGPASummary(studentIdentifier, null, null);
+
+            // 4. Update Header Subtitle
             String studentName = (loggedInStudent != null && loggedInStudent.getName() != null)
                     ? loggedInStudent.getName() : "H.D.W.B Hapuarachchi";
             String regNo = studentIdentifier;
             studentSubtitleLabel.setText("Student: " + studentName + "  •  Reg No: " + regNo +
-                    "  •  Batch: 2023/2024  •  Department of ICT  •  " + gpaSummary.getPeriodLabel());
+                    "  •  Batch: 2023/2024  •  Department of ICT  •  " + semesterSummary.getPeriodLabel());
 
-            // 4. Update KPI Cards
+            // 5. Update KPI Cards (Top 4 cards always show Cumulative GPA & degree progress)
             updateSummaryCards();
 
-            // 5. Populate Table
+            // 6. Update Semester GPA Banner above Course Units Table
+            updateSemesterGpaBanner();
+
+            // 7. Populate Course Table
             populateCourseGradesTable();
 
         } catch (Exception e) {
@@ -965,38 +1059,7 @@ public class UndergraduateGradesUI extends JPanel {
                     "View Marks >"
             });
         }
-        filterGradesTable();
-    }
-
-    // ==========================================
-    // 6. SEARCH & FILTERING LOGIC
-    // ==========================================
-    private void filterGradesTable() {
-        String query = searchField.getText().trim();
-        String status = (String) statusFilterCombo.getSelectedItem();
-
-        List<RowFilter<Object, Object>> filters = new ArrayList<>();
-
-        if (!query.isEmpty()) {
-            filters.add(RowFilter.regexFilter("(?i)" + query, 1, 2)); // Course Code or Name
-        }
-
-        if (status != null && !"All Statuses".equals(status)) {
-            if ("Completed".equals(status)) {
-                filters.add(RowFilter.regexFilter("(?i)Completed", 6));
-            } else if ("Pending".equals(status)) {
-                filters.add(RowFilter.regexFilter("(?i)In Progress|Pending", 6));
-            }
-        }
-
-        if (filters.isEmpty()) {
-            gradesTableSorter.setRowFilter(null);
-        } else {
-            gradesTableSorter.setRowFilter(RowFilter.andFilter(filters));
-        }
-
-        int count = gradesTable.getRowCount();
-        tableTallyLabel.setText("Showing " + count + " of " + courseGradesList.size() + " courses (" + gpaSummary.getPeriodLabel() + ")");
+        tableTallyLabel.setText("Showing " + courseGradesList.size() + " of " + courseGradesList.size() + " courses (" + semesterSummary.getPeriodLabel() + ")");
     }
 
     // ==========================================
