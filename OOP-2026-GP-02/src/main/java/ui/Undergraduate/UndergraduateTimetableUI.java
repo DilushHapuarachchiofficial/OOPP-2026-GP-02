@@ -68,14 +68,6 @@ public class UndergraduateTimetableUI extends JPanel {
         loadTimetableData();
     }
 
-    public UndergraduateTimetableUI(Undergraduate student) {
-        this(student, null);
-    }
-
-    public UndergraduateTimetableUI() {
-        this(null, null);
-    }
-
     private void initializeUI() {
         setLayout(new BorderLayout());
         setBackground(COLOR_BG);
@@ -599,28 +591,5 @@ public class UndergraduateTimetableUI extends JPanel {
         btn.setBorder(new EmptyBorder(8, 16, 8, 16));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
-    }
-
-    // ==========================================
-    // 5. STANDALONE MAIN METHOD FOR TESTING
-    // ==========================================
-    public static void main(String[] args) {
-        System.setProperty("awt.useSystemAAFontSettings", "on");
-        System.setProperty("swing.aatext", "true");
-
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception ignored) {}
-
-            JFrame frame = new JFrame("TecFAMS - Academic Timetable & Lecture Schedule");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1200, 780);
-            frame.setLocationRelativeTo(null);
-
-            UndergraduateTimetableUI timetableUI = new UndergraduateTimetableUI();
-            frame.setContentPane(timetableUI);
-            frame.setVisible(true);
-        });
     }
 }
