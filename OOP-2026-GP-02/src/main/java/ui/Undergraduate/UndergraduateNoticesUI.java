@@ -63,28 +63,35 @@ public class UndergraduateNoticesUI extends JPanel {
         setLayout(new BorderLayout());
         setBackground(COLOR_BG);
 
-        // Scrollable content wrapper
+        // Wrapper to pin content to NORTH so cards and gaps never stretch vertically
+        JPanel scrollContentWrapper = new JPanel(new BorderLayout());
+        scrollContentWrapper.setBackground(COLOR_BG);
+
+        // Content panel stacking header, counter, and notice cards tightly
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBackground(COLOR_BG);
-        contentPanel.setBorder(new EmptyBorder(18, 24, 24, 24));
+        contentPanel.setBorder(new EmptyBorder(16, 24, 20, 24));
 
         // 1. Top Header Bar
         contentPanel.add(createHeaderBar());
-        contentPanel.add(Box.createVerticalStrut(16));
+        contentPanel.add(Box.createVerticalStrut(10));
 
-        // 2. Control Bar (Counter + Refresh button)
+        // 2. Control Bar (Status & Count only, Refresh button removed)
         contentPanel.add(createControlBar());
-        contentPanel.add(Box.createVerticalStrut(14));
+        contentPanel.add(Box.createVerticalStrut(12));
 
         // 3. Notices Feed Container (Newest notices dynamically added to the top)
         noticesFeedContainer = new JPanel();
         noticesFeedContainer.setLayout(new BoxLayout(noticesFeedContainer, BoxLayout.Y_AXIS));
         noticesFeedContainer.setOpaque(false);
+        noticesFeedContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentPanel.add(noticesFeedContainer);
 
+        scrollContentWrapper.add(contentPanel, BorderLayout.NORTH);
+
         // Put in smooth scroll pane
-        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        JScrollPane scrollPane = new JScrollPane(scrollContentWrapper);
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setBackground(COLOR_BG);
@@ -97,13 +104,17 @@ public class UndergraduateNoticesUI extends JPanel {
     private JPanel createHeaderBar() {
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel leftBox = new JPanel(new GridLayout(2, 1, 0, 4));
+        // Left box with Title and Subtitle stacked tightly
+        JPanel leftBox = new JPanel();
+        leftBox.setLayout(new BoxLayout(leftBox, BoxLayout.Y_AXIS));
         leftBox.setOpaque(false);
 
         JLabel titleLbl = new JLabel("Faculty Notices & Official Announcements");
         titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 22));
         titleLbl.setForeground(COLOR_PRIMARY_NAVY);
+        titleLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         String studentName = (loggedInStudent != null && loggedInStudent.getName() != null)
                 ? loggedInStudent.getName() : "H.D.W.B Hapuarachchi";
@@ -114,14 +125,16 @@ public class UndergraduateNoticesUI extends JPanel {
                 "  •  Batch: 2023/2024  •  Department of ICT  •  Level II - Semester I");
         subtitleLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         subtitleLbl.setForeground(COLOR_TEXT_MUTED);
+        subtitleLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         leftBox.add(titleLbl);
+        leftBox.add(Box.createVerticalStrut(4));
         leftBox.add(subtitleLbl);
         header.add(leftBox, BorderLayout.WEST);
 
         // Right Box: Back to Dashboard button
         if (parentDashboard != null) {
-            JPanel rightBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+            JPanel rightBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
             rightBox.setOpaque(false);
 
             JButton backBtn = createActionButton("← Back to Dashboard", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
@@ -134,40 +147,28 @@ public class UndergraduateNoticesUI extends JPanel {
     }
 
     // ==========================================
-    // 2. CONTROL BAR (Counter & Refresh)
+    // 2. CONTROL BAR (Counter & Sort Indicator)
     // ==========================================
     private JPanel createControlBar() {
-        JPanel bar = new JPanel(new BorderLayout(16, 0));
+        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         bar.setOpaque(false);
-
-        // Left: Notice Count & Sort Order Indicator
-        JPanel leftBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        leftBox.setOpaque(false);
+        bar.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel sortBadge = new JLabel(" Sorted: Newest on Top ");
         sortBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
         sortBadge.setOpaque(true);
         sortBadge.setBackground(new Color(0xDC, 0xFC, 0xE7));
         sortBadge.setForeground(new Color(0x16, 0x65, 0x34));
-        sortBadge.setBorder(new EmptyBorder(5, 10, 5, 10));
-        leftBox.add(sortBadge);
+        sortBadge.setBorder(new EmptyBorder(4, 10, 4, 10));
+        bar.add(sortBadge);
+
+        bar.add(Box.createHorizontalStrut(10));
 
         noticeCountLabel = new JLabel("Loading announcements...");
         noticeCountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         noticeCountLabel.setForeground(COLOR_TEXT_MUTED);
-        leftBox.add(noticeCountLabel);
+        bar.add(noticeCountLabel);
 
-        bar.add(leftBox, BorderLayout.WEST);
-
-        // Right: Refresh button
-        JPanel rightBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        rightBox.setOpaque(false);
-
-        JButton refreshBtn = createActionButton("↻ Refresh Notices", new Color(0xF1, 0xF5, 0xF9), COLOR_PRIMARY_NAVY);
-        refreshBtn.addActionListener(e -> loadNoticesData());
-        rightBox.add(refreshBtn);
-
-        bar.add(rightBox, BorderLayout.EAST);
         return bar;
     }
 
@@ -192,6 +193,7 @@ public class UndergraduateNoticesUI extends JPanel {
 
         if (noticesList == null || noticesList.isEmpty()) {
             JPanel emptyCard = createEmptyCard();
+            emptyCard.setAlignmentX(Component.LEFT_ALIGNMENT);
             noticesFeedContainer.add(emptyCard);
             noticeCountLabel.setText("No announcements available at this time.");
         } else {
@@ -202,8 +204,11 @@ public class UndergraduateNoticesUI extends JPanel {
                 Notice notice = noticesList.get(i);
                 boolean isLatest = (i == 0); // The very first notice is the newest!
                 JPanel card = createNoticeCard(notice, isLatest);
+                card.setAlignmentX(Component.LEFT_ALIGNMENT);
                 noticesFeedContainer.add(card);
-                noticesFeedContainer.add(Box.createVerticalStrut(14));
+                if (i < noticesList.size() - 1) {
+                    noticesFeedContainer.add(Box.createVerticalStrut(10));
+                }
             }
         }
 
@@ -215,7 +220,7 @@ public class UndergraduateNoticesUI extends JPanel {
     // 4. NOTICE CARD COMPONENT
     // ==========================================
     private JPanel createNoticeCard(Notice notice, boolean isLatest) {
-        JPanel card = new JPanel(new BorderLayout(0, 10)) {
+        JPanel card = new JPanel(new BorderLayout(0, 8)) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -232,16 +237,18 @@ public class UndergraduateNoticesUI extends JPanel {
             }
         };
         card.setOpaque(false);
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.setBorder(new CompoundBorder(
                 new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(16, 20, 16, 20)
+                new EmptyBorder(12, 18, 12, 18)
         ));
 
         // Top Row: Badges (LATEST / DATE / AUDIENCE)
         JPanel topRow = new JPanel(new BorderLayout());
         topRow.setOpaque(false);
+        topRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel leftBadges = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel leftBadges = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         leftBadges.setOpaque(false);
 
         if (isLatest) {
@@ -281,18 +288,20 @@ public class UndergraduateNoticesUI extends JPanel {
 
         card.add(topRow, BorderLayout.NORTH);
 
-        // Center: Title + Description
+        // Center: Title + Description stacked cleanly
         JPanel centerBox = new JPanel();
         centerBox.setLayout(new BoxLayout(centerBox, BoxLayout.Y_AXIS));
         centerBox.setOpaque(false);
+        centerBox.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel titleLbl = new JLabel(notice.getTitle());
-        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
         titleLbl.setForeground(COLOR_PRIMARY_NAVY);
+        titleLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         centerBox.add(titleLbl);
-        centerBox.add(Box.createVerticalStrut(8));
+        centerBox.add(Box.createVerticalStrut(4));
 
-        // Description text area (Clean, word-wrapped)
+        // Description text area (Clean, word-wrapped, strictly left aligned)
         JTextArea descArea = new JTextArea(notice.getDescription());
         descArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         descArea.setForeground(COLOR_TEXT_PRIMARY);
@@ -302,6 +311,7 @@ public class UndergraduateNoticesUI extends JPanel {
         descArea.setOpaque(false);
         descArea.setFocusable(false);
         descArea.setBorder(null);
+        descArea.setAlignmentX(Component.LEFT_ALIGNMENT);
         centerBox.add(descArea);
 
         card.add(centerBox, BorderLayout.CENTER);
@@ -309,9 +319,10 @@ public class UndergraduateNoticesUI extends JPanel {
         // Bottom Row: Publisher info
         JPanel bottomRow = new JPanel(new BorderLayout());
         bottomRow.setOpaque(false);
+        bottomRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         bottomRow.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(0xF1, 0xF5, 0xF9)));
 
-        JPanel pubBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 6));
+        JPanel pubBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
         pubBox.setOpaque(false);
 
         JLabel pubIcon = new JLabel("👤 Published by:");
@@ -342,7 +353,7 @@ public class UndergraduateNoticesUI extends JPanel {
         card.setBackground(COLOR_WHITE);
         card.setBorder(new CompoundBorder(
                 new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(32, 24, 32, 24)
+                new EmptyBorder(24, 20, 24, 20)
         ));
 
         JLabel lbl = new JLabel("No notices have been published yet.");
@@ -381,3 +392,4 @@ public class UndergraduateNoticesUI extends JPanel {
         return btn;
     }
 }
+
