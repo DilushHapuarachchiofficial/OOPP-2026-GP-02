@@ -208,6 +208,11 @@ public class UndergraduateNavigation extends JPanel {
                 if (parentDashboard != null) {
                     parentDashboard.openGrades();
                 }
+            } else if ("TIMETABLE".equals(moduleKey)) {
+                highlightButton("TIMETABLE");
+                if (parentDashboard != null) {
+                    parentDashboard.openTimetable();
+                }
             } else {
                 if (parentDashboard != null) {
                     parentDashboard.showModulePlaceholder(title);
