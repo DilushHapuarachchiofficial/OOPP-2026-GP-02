@@ -213,6 +213,11 @@ public class UndergraduateNavigation extends JPanel {
                 if (parentDashboard != null) {
                     parentDashboard.openTimetable();
                 }
+            } else if ("NOTICES".equals(moduleKey)) {
+                highlightButton("NOTICES");
+                if (parentDashboard != null) {
+                    parentDashboard.openNotices();
+                }
             } else {
                 if (parentDashboard != null) {
                     parentDashboard.showModulePlaceholder(title);
