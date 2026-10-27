@@ -12,16 +12,25 @@ public class Notice {
     private String description;
     private String publishedDate;
     private String expiryDate;
+    private String targetAudience;
+    private String publisherName;
 
     public Notice() {
     }
 
     public Notice(int noticeId, String title, String description, String publishedDate, String expiryDate) {
+        this(noticeId, title, description, publishedDate, expiryDate, "Students", "Faculty Administration");
+    }
+
+    public Notice(int noticeId, String title, String description, String publishedDate, String expiryDate,
+                  String targetAudience, String publisherName) {
         this.noticeId = noticeId;
         this.title = title;
         this.description = description;
         this.publishedDate = publishedDate;
         this.expiryDate = expiryDate;
+        this.targetAudience = (targetAudience != null) ? targetAudience : "Students";
+        this.publisherName = (publisherName != null) ? publisherName : "Faculty Administration";
     }
 
     // UML Methods
@@ -91,5 +100,21 @@ public class Notice {
 
     public void setExpiryDate(String expiryDate) {
         this.expiryDate = expiryDate;
+    }
+
+    public String getTargetAudience() {
+        return targetAudience;
+    }
+
+    public void setTargetAudience(String targetAudience) {
+        this.targetAudience = targetAudience;
+    }
+
+    public String getPublisherName() {
+        return publisherName;
+    }
+
+    public void setPublisherName(String publisherName) {
+        this.publisherName = publisherName;
     }
 }
