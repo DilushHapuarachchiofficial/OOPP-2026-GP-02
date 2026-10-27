@@ -52,6 +52,7 @@ public class UndergraduateDashboard extends JFrame {
     private UndergraduateCourseDetailsUI courseDetailsPanel;
     private UndergraduateGradesUI gradesPanel;
     private UndergraduateTimetableUI timetablePanel;
+    private UndergraduateNoticesUI noticesPanel;
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
@@ -94,6 +95,7 @@ public class UndergraduateDashboard extends JFrame {
         courseDetailsPanel = new UndergraduateCourseDetailsUI(currentStudent, this);
         gradesPanel = new UndergraduateGradesUI(currentStudent, this);
         timetablePanel = new UndergraduateTimetableUI(currentStudent, this);
+        noticesPanel = new UndergraduateNoticesUI(currentStudent, this);
 
         mainContentArea.add(dashboardOverviewPanel, "DASHBOARD");
         mainContentArea.add(lectureNotesPanel, "LECTURE_NOTES");
@@ -102,6 +104,7 @@ public class UndergraduateDashboard extends JFrame {
         mainContentArea.add(courseDetailsPanel, "COURSES");
         mainContentArea.add(gradesPanel, "GRADES");
         mainContentArea.add(timetablePanel, "TIMETABLE");
+        mainContentArea.add(noticesPanel, "NOTICES");
 
         rootPanel.add(topContainer, BorderLayout.NORTH);
         rootPanel.add(mainContentArea, BorderLayout.CENTER);
@@ -623,7 +626,7 @@ public class UndergraduateDashboard extends JFrame {
     // 6. RECENT NOTICES CARD
     // ==========================================
     private JPanel createRecentNoticesCard() {
-        JButton viewAll = createLinkButton("View All Notices →", e -> showModulePlaceholder("Notices & Announcements"));
+        JButton viewAll = createLinkButton("View All Notices →", e -> openNotices());
 
         JPanel list = new JPanel();
         list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
@@ -806,6 +809,18 @@ public class UndergraduateDashboard extends JFrame {
         }
     }
 
+    public void openNotices() {
+        if (navigationPanel != null) {
+            navigationPanel.highlightButton("NOTICES");
+        }
+        if (noticesPanel != null) {
+            noticesPanel.loadNoticesData();
+        }
+        if (contentCardLayout != null && mainContentArea != null) {
+            contentCardLayout.show(mainContentArea, "NOTICES");
+        }
+    }
+
     public void showModulePlaceholder(String moduleName) {
         if ("Lecturer Notes".equalsIgnoreCase(moduleName) || "Course Materials".equalsIgnoreCase(moduleName) || "MATERIALS".equalsIgnoreCase(moduleName)) {
             openLectureNotes();
@@ -829,6 +844,10 @@ public class UndergraduateDashboard extends JFrame {
         }
         if ("Timetable".equalsIgnoreCase(moduleName) || "TIMETABLE".equalsIgnoreCase(moduleName)) {
             openTimetable();
+            return;
+        }
+        if ("Notices".equalsIgnoreCase(moduleName) || "NOTICES".equalsIgnoreCase(moduleName) || "Notices & Announcements".equalsIgnoreCase(moduleName)) {
+            openNotices();
             return;
         }
         JOptionPane.showMessageDialog(
