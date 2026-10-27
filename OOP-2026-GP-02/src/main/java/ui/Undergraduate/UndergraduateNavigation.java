@@ -218,6 +218,11 @@ public class UndergraduateNavigation extends JPanel {
                 if (parentDashboard != null) {
                     parentDashboard.openNotices();
                 }
+            } else if ("PROFILE".equals(moduleKey)) {
+                highlightButton("PROFILE");
+                if (parentDashboard != null) {
+                    parentDashboard.openProfile();
+                }
             } else {
                 if (parentDashboard != null) {
                     parentDashboard.showModulePlaceholder(title);
