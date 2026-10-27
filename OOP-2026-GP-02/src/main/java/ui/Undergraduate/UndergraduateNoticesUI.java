@@ -338,11 +338,6 @@ public class UndergraduateNoticesUI extends JPanel {
 
         bottomRow.add(pubBox, BorderLayout.WEST);
 
-        JLabel deptLbl = new JLabel("Faculty of Technology • University of Sri Jayewardenepura");
-        deptLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        deptLbl.setForeground(COLOR_TEXT_MUTED);
-        bottomRow.add(deptLbl, BorderLayout.EAST);
-
         card.add(bottomRow, BorderLayout.SOUTH);
 
         return card;
