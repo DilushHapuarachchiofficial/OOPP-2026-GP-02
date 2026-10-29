@@ -336,11 +336,11 @@ public class UndergraduateMedicalUI extends JPanel {
         // Form Title & Subtitle
         JPanel formHeader = new JPanel(new BorderLayout());
         formHeader.setOpaque(false);
-        JLabel title = new JLabel("Submit Medical Certificate for Absent Days & Missed Lectures");
+        JLabel title = new JLabel("Submit Medical Certificate for Absent Days & Missed Lectures (Level II Semester I)");
         title.setFont(new Font("Segoe UI", Font.BOLD, 15));
         title.setForeground(COLOR_PRIMARY_NAVY);
 
-        JLabel hint = new JLabel("Enter your medical leave date range and click 'Find Missed Lectures' to select your absent sessions.");
+        JLabel hint = new JLabel("Enter your medical leave date range and click 'Find Missed Lectures' to select your absent sessions (Current Semester: Level II Semester I only).");
         hint.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         hint.setForeground(COLOR_TEXT_MUTED);
 
