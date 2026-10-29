@@ -260,14 +260,8 @@ public class ModernDialog extends JDialog {
         if (isDestructive) {
             baseBg = new Color(220, 38, 38);   // Crimson red
             hoverBg = new Color(185, 28, 28);
-        } else if (type == DialogType.SUCCESS) {
-            baseBg = new Color(16, 149, 79);   // Vibrant Emerald
-            hoverBg = new Color(12, 120, 63);
-        } else if (type == DialogType.WARNING) {
-            baseBg = new Color(217, 119, 6);   // Amber
-            hoverBg = new Color(180, 83, 9);
         } else {
-            baseBg = new Color(21, 101, 192);  // Royal Blue (#1565C0)
+            baseBg = new Color(21, 101, 192);  // App Theme Royal Blue (#1565C0)
             hoverBg = new Color(13, 71, 161);  // Darker Blue (#0D47A1)
         }
 
