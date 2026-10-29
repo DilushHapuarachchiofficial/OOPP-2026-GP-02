@@ -70,6 +70,7 @@ public class MedicalDAO {
                 "INNER JOIN courses c ON s.course_id = c.course_id " +
                 "INNER JOIN students stu ON a.student_id = stu.student_id " +
                 "WHERE (stu.student_reg_no = ? OR CAST(stu.student_id AS CHAR) = ?) " +
+                "AND c.academic_year = 2 AND c.semester = 1 " +
                 "AND a.attendance_status = 'Absent' " +
                 "ORDER BY s.session_date DESC, c.course_code ASC";
 
@@ -122,6 +123,7 @@ public class MedicalDAO {
                 "INNER JOIN courses c ON s.course_id = c.course_id " +
                 "INNER JOIN students stu ON a.student_id = stu.student_id " +
                 "WHERE (stu.student_reg_no = ? OR CAST(stu.student_id AS CHAR) = ?) " +
+                "AND c.academic_year = 2 AND c.semester = 1 " +
                 "AND a.attendance_status = 'Absent' " +
                 "AND s.session_date >= ? AND s.session_date <= ? " +
                 "ORDER BY s.session_date ASC, c.course_code ASC";
