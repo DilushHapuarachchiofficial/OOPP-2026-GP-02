@@ -4,49 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/mysql-connector-j-8.3.0.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/dao/DBConnection.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/AssessmentDAO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/CourseMaterialsLogic.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/Lecturer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardDAO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerDashboardModel.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/LecturerProfileLogic.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/MarksCalculationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/MarksDAO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/ResultsDAO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/StudentDetailsEligibilityLogic.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/LoginLogic.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/model/UserSession.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/test/TestMarksManagement.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/CourseMaterials.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerDashboard.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerMarksManagement.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerProfile.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/Navbar.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/StudentDetailsEligibility.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/LoginUI.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/out/production/ui/main/java/ui/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/out/production/ui/main/java/ui/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/out/production/ui/main/java/ui/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/out/production/ui/main/java/ui/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/out/production/ui/main/java/ui/ui.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/ui/ui.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/database/marks_migration.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/database/tecfams_db.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/images/bg.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/images/bg.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/images/dashboard_tech_bg.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/uploads/profiles/user_4_1791998505603.jpg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/admin/Admin.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/admin/Admin.java" afterDir="false" />
-    </list>
+    <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -85,7 +43,7 @@
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "Merging Test__Merge__Branch__01",
+    "git-widget-placeholder": "Test__Merge__Branch__01",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/kavis/OneDrive/Desktop/TecFAMS/OOPP-2026-GP-02/OOP-2026-GP-02",
