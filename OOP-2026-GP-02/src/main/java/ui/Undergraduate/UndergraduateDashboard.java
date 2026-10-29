@@ -847,6 +847,7 @@ public class UndergraduateDashboard extends JFrame {
             navigationPanel.highlightButton("PROFILE");
         }
         if (profilePanel != null) {
+            profilePanel.showViewProfilePanel();
             profilePanel.loadProfileData();
         }
         if (contentCardLayout != null && mainContentArea != null) {
@@ -972,6 +973,9 @@ public class UndergraduateDashboard extends JFrame {
                 "Department of Information and Communication Technology", 2024
         );
 
+        student.setNic("200113401237");
+        student.setDob("2001-11-25");
+        student.setAddress("Kandy");
         student.setGpa(new GPA(3.65, 3.58));
         student.setAttendanceSummary(new AttendanceSummary(30, 26, 2));
 
