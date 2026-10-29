@@ -35,13 +35,14 @@ public class LectureNotesDAO {
         }
 
         String sql = "SELECT c.course_id, c.course_code, c.course_name, c.credit, " +
-                "COALESCE(d.department_code, 'ICT') AS dept, c.course_type " +
+                "COALESCE(d.department_code, 'ICT') AS dept, c.course_type, " +
+                "c.semester, c.academic_year " +
                 "FROM course_registrations cr " +
                 "INNER JOIN students s ON cr.student_id = s.student_id " +
                 "INNER JOIN courses c ON cr.course_id = c.course_id " +
                 "LEFT JOIN departments d ON c.department_id = d.department_id " +
                 "WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? " +
-                "ORDER BY c.course_code ASC";
+                "ORDER BY c.academic_year ASC, c.semester ASC, c.course_code ASC";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -68,6 +69,8 @@ public class LectureNotesDAO {
                         rs.getString("dept"),
                         rs.getString("course_type")
                 );
+                course.setSemester(rs.getInt("semester"));
+                course.setAcademicYear(rs.getInt("academic_year"));
                 enrolledCourses.add(course);
             }
         } catch (SQLException e) {
