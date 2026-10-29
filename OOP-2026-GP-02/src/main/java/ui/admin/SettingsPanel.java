@@ -492,36 +492,36 @@ public class SettingsPanel extends JPanel {
 
         boolean success = SettingsDAO.updateSettings(updated);
         if (success) {
-            JOptionPane.showMessageDialog(
+            ModernDialog.showMessageDialog(
                 this,
                 "All system settings have been saved and applied successfully!",
                 "Settings Saved",
-                JOptionPane.INFORMATION_MESSAGE
+                ModernDialog.INFORMATION_MESSAGE
             );
         } else {
-            JOptionPane.showMessageDialog(
+            ModernDialog.showMessageDialog(
                 this,
                 "Failed to update settings in the database. Please check connection.",
                 "Save Failed",
-                JOptionPane.ERROR_MESSAGE
+                ModernDialog.ERROR_MESSAGE
             );
         }
     }
 
     private void resetCurrentCategoryDefaults() {
-        int confirm = JOptionPane.showConfirmDialog(
+        int confirm = ModernDialog.showConfirmDialog(
             this,
             "Are you sure you want to reset all settings in '" + currentTab + "' to institutional defaults?",
             "Confirm Reset",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE
+            ModernDialog.YES_NO_OPTION,
+            ModernDialog.WARNING_MESSAGE
         );
 
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (confirm == ModernDialog.YES_OPTION) {
             boolean success = SettingsDAO.resetCategoryToDefaults(currentTab);
             if (success) {
                 loadSettingsFromDatabase();
-                JOptionPane.showMessageDialog(this, "Settings for " + currentTab + " restored to defaults.", "Reset Successful", JOptionPane.INFORMATION_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Settings for " + currentTab + " restored to defaults.", "Reset Successful", ModernDialog.INFORMATION_MESSAGE);
             }
         }
     }
@@ -558,14 +558,14 @@ public class SettingsPanel extends JPanel {
 
             boolean success = SettingsDAO.exportDatabaseBackup(targetFile);
             if (success) {
-                JOptionPane.showMessageDialog(
+                ModernDialog.showMessageDialog(
                     this,
                     "Database backup generated successfully!\nFile: " + targetFile.getAbsolutePath() + "\nSize: " + (targetFile.length() / 1024) + " KB",
                     "Backup Complete",
-                    JOptionPane.INFORMATION_MESSAGE
+                    ModernDialog.INFORMATION_MESSAGE
                 );
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to export database backup.", "Backup Error", JOptionPane.ERROR_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Failed to export database backup.", "Backup Error", ModernDialog.ERROR_MESSAGE);
             }
         }
     }
