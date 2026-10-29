@@ -15,6 +15,9 @@ public class Undergraduate extends User {
     private String batch;
     private String department;
     private int enrollmentYear;
+    private String nic;
+    private String dob;
+    private String address;
 
     // Student academic data references
     private GPA gpa;
@@ -60,6 +63,21 @@ public class Undergraduate extends User {
      * Updates permitted contact details (phone and email).
      * Follows the SRS profile restriction rule for Undergraduates.
      */
+    /**
+     * Updates full student profile details.
+     */
+    public void updateFullProfile(String name, String email, String phone, String address, String nic, String dob, String profilePicture) {
+        setName(name);
+        setEmail(email);
+        setPhone(phone);
+        this.address = address;
+        this.nic = nic;
+        this.dob = dob;
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            setProfilePicture(profilePicture);
+        }
+    }
+
     public void updateContactDetails(String phone, String email) {
         setPhone(phone);
         setEmail(email);
@@ -193,6 +211,30 @@ public class Undergraduate extends User {
 
     public void setGrades(List<Mark> grades) {
         this.grades = grades;
+    }
+
+    public String getNic() {
+        return nic;
+    }
+
+    public void setNic(String nic) {
+        this.nic = nic;
+    }
+
+    public String getDob() {
+        return dob;
+    }
+
+    public void setDob(String dob) {
+        this.dob = dob;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public void setNotices(List<Notice> notices) {
