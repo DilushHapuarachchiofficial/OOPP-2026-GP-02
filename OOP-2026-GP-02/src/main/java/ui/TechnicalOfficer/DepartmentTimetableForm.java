@@ -573,10 +573,14 @@ public class DepartmentTimetableForm extends JFrame {
     }
 
     private void backToDashboard() {
-        dispose();
-        if (parentDashboard != null) {
-            parentDashboard.setVisible(true);
-            parentDashboard.toFront();
+        if (parentDashboard instanceof TechnicalOfficerDashboard) {
+            ((TechnicalOfficerDashboard) parentDashboard).showDashboardView();
+        } else {
+            dispose();
+            if (parentDashboard != null) {
+                parentDashboard.setVisible(true);
+                parentDashboard.toFront();
+            }
         }
     }
 
