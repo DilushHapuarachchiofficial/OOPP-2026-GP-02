@@ -48,6 +48,9 @@ public class UndergraduateLectureNotesUI extends JPanel {
     // UI Components
     private JPanel mainContentPanel;
     private JLabel statusCountLabel;
+    private JComboBox<String> semesterFilterCombo;
+    private List<Course> allEnrolledCourses;
+    private List<LectureNoteItem> allStudentNotes;
 
     public UndergraduateLectureNotesUI(Undergraduate student, UndergraduateDashboard parentDashboard) {
         this.loggedInStudent = student;
@@ -106,9 +109,9 @@ public class UndergraduateLectureNotesUI extends JPanel {
     }
 
     private JPanel createHeadingPanel() {
-        JPanel headingBar = new JPanel(new BorderLayout());
+        JPanel headingBar = new JPanel(new BorderLayout(16, 0));
         headingBar.setBackground(COLOR_BG);
-        headingBar.setBorder(new EmptyBorder(16, 24, 6, 24));
+        headingBar.setBorder(new EmptyBorder(16, 24, 8, 24));
 
         JPanel leftBox = new JPanel(new GridLayout(2, 1, 0, 4));
         leftBox.setOpaque(false);
@@ -125,6 +128,31 @@ public class UndergraduateLectureNotesUI extends JPanel {
         leftBox.add(statusCountLabel);
         headingBar.add(leftBox, BorderLayout.WEST);
 
+        // Right Action Toolbar: Semester Dropdown Filter & Back Button
+        JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        rightActions.setOpaque(false);
+
+        JLabel filterLabel = new JLabel("Select Semester:");
+        filterLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        filterLabel.setForeground(COLOR_PRIMARY_NAVY);
+
+        String[] semesterOptions = {
+                "Level II - Semester I (Current)",
+                "Level I - Semester I",
+                "Level I - Semester II",
+                "Level II - Semester II",
+                "All Semesters"
+        };
+        semesterFilterCombo = new JComboBox<>(semesterOptions);
+        semesterFilterCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        semesterFilterCombo.setBackground(COLOR_WHITE);
+        semesterFilterCombo.setPreferredSize(new Dimension(215, 32));
+        semesterFilterCombo.setSelectedIndex(0); // Level II - Semester I (Current) by default
+        semesterFilterCombo.addActionListener(e -> applySemesterFilter());
+
+        rightActions.add(filterLabel);
+        rightActions.add(semesterFilterCombo);
+
         if (parentDashboard != null) {
             JButton backBtn = new JButton("<- Back to Dashboard");
             backBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -137,9 +165,10 @@ public class UndergraduateLectureNotesUI extends JPanel {
                     new EmptyBorder(6, 12, 6, 12)
             ));
             backBtn.addActionListener(e -> parentDashboard.showDashboardView());
-            headingBar.add(backBtn, BorderLayout.EAST);
+            rightActions.add(backBtn);
         }
 
+        headingBar.add(rightActions, BorderLayout.EAST);
         return headingBar;
     }
 
@@ -147,14 +176,28 @@ public class UndergraduateLectureNotesUI extends JPanel {
      * Loads enrolled courses and groups lecture notes by each course.
      */
     public void loadLectureNotesData() {
+        // 1. Fetch courses enrolled by this student from database
+        allEnrolledCourses = lectureNotesDAO.getEnrolledCoursesForStudent(studentIdentifier);
+
+        // 2. Fetch all lecture notes belonging to those enrolled courses
+        allStudentNotes = lectureNotesDAO.getLectureNotesForStudent(studentIdentifier);
+
+        // 3. Apply the semester filter (defaults to Level II - Semester I)
+        applySemesterFilter();
+    }
+
+    /**
+     * Filters courses and notes based on the semester selected in the dropdown.
+     */
+    public void applySemesterFilter() {
+        if (mainContentPanel == null) return;
         mainContentPanel.removeAll();
 
-        // 1. Fetch courses enrolled by this student
-        List<Course> enrolledCourses = lectureNotesDAO.getEnrolledCoursesForStudent(studentIdentifier);
-
-        // Empty State 1: Student is not currently enrolled in any courses
-        if (enrolledCourses == null || enrolledCourses.isEmpty()) {
-            statusCountLabel.setText("Enrollment Status: No registered courses found");
+        // Empty State: Student is not currently enrolled in any courses
+        if (allEnrolledCourses == null || allEnrolledCourses.isEmpty()) {
+            if (statusCountLabel != null) {
+                statusCountLabel.setText("Enrollment Status: No registered courses found");
+            }
             mainContentPanel.add(createEmptyStatePanel(
                     "You are not currently enrolled in any courses.",
                     "Please contact your Department Coordinator or Dean's Office to complete course registration."
@@ -164,37 +207,91 @@ public class UndergraduateLectureNotesUI extends JPanel {
             return;
         }
 
-        // 2. Fetch all lecture notes belonging to those enrolled courses
-        List<LectureNoteItem> allNotes = lectureNotesDAO.getLectureNotesForStudent(studentIdentifier);
+        String selectedPeriod = (semesterFilterCombo != null && semesterFilterCombo.getSelectedItem() != null)
+                ? (String) semesterFilterCombo.getSelectedItem()
+                : "Level II - Semester I (Current)";
 
-        // Empty State 2: Enrolled in courses, but zero lecture notes uploaded yet
-        if (allNotes == null || allNotes.isEmpty()) {
-            statusCountLabel.setText("Enrolled Courses: " + enrolledCourses.size() + "  |  Available Notes: 0");
-            mainContentPanel.add(createEmptyStatePanel(
-                    "No lecture notes are available for your enrolled courses.",
-                    "Your lecturers have not uploaded any notes or lab sheets for your registered courses yet."
-            ), BorderLayout.CENTER);
-            mainContentPanel.revalidate();
-            mainContentPanel.repaint();
-            return;
+        int targetLevel = 0;
+        int targetSemester = 0;
+
+        if (selectedPeriod.startsWith("Level II - Semester I")) {
+            targetLevel = 2;
+            targetSemester = 1;
+        } else if (selectedPeriod.startsWith("Level I - Semester I")) {
+            targetLevel = 1;
+            targetSemester = 1;
+        } else if (selectedPeriod.startsWith("Level I - Semester II")) {
+            targetLevel = 1;
+            targetSemester = 2;
+        } else if (selectedPeriod.startsWith("Level II - Semester II")) {
+            targetLevel = 2;
+            targetSemester = 2;
         }
 
-        // 3. Populate course-by-course card view
-        statusCountLabel.setText("Enrolled Courses: " + enrolledCourses.size() +
-                "  |  Available Notes: " + allNotes.size() + " document(s)");
+        List<Course> filteredCourses = new ArrayList<>();
+        for (Course c : allEnrolledCourses) {
+            int cLvl = extractCourseLevel(c);
+            int cSem = extractCourseSemester(c);
+            if (targetLevel == 0 || (cLvl == targetLevel && cSem == targetSemester)) {
+                filteredCourses.add(c);
+            }
+        }
 
-        JPanel courseCardsList = createCourseCardsListPanel(enrolledCourses, allNotes);
+        // Count notes available in the filtered courses
+        int filteredNotesCount = 0;
+        if (allStudentNotes != null) {
+            for (Course c : filteredCourses) {
+                for (LectureNoteItem note : allStudentNotes) {
+                    if (note.getCourseCode() != null && note.getCourseCode().equalsIgnoreCase(c.getCourseCode())) {
+                        filteredNotesCount++;
+                    }
+                }
+            }
+        }
 
-        JScrollPane scrollPane = new JScrollPane(courseCardsList);
-        scrollPane.setBorder(null);
-        scrollPane.setBackground(COLOR_BG);
-        scrollPane.getViewport().setBackground(COLOR_BG);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        if (statusCountLabel != null) {
+            statusCountLabel.setText("Showing: " + selectedPeriod +
+                    "  |  Enrolled Courses: " + filteredCourses.size() +
+                    "  |  Available Notes: " + filteredNotesCount + " document(s)");
+        }
 
-        mainContentPanel.add(scrollPane, BorderLayout.CENTER);
+        if (filteredCourses.isEmpty()) {
+            mainContentPanel.add(createEmptyStatePanel(
+                    "No registered courses found for " + selectedPeriod + ".",
+                    "You do not have any enrolled course units for the selected academic period."
+            ), BorderLayout.CENTER);
+        } else {
+            JPanel courseCardsList = createCourseCardsListPanel(filteredCourses, allStudentNotes != null ? allStudentNotes : new ArrayList<>());
+            JScrollPane scrollPane = new JScrollPane(courseCardsList);
+            scrollPane.setBorder(null);
+            scrollPane.setBackground(COLOR_BG);
+            scrollPane.getViewport().setBackground(COLOR_BG);
+            scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+            mainContentPanel.add(scrollPane, BorderLayout.CENTER);
+        }
 
         mainContentPanel.revalidate();
         mainContentPanel.repaint();
+    }
+
+    private int extractCourseLevel(Course c) {
+        if (c.getAcademicYear() > 0) return c.getAcademicYear();
+        String code = c.getCourseCode();
+        if (code != null && code.length() >= 5) {
+            char ch = code.charAt(3);
+            if (Character.isDigit(ch)) return Character.getNumericValue(ch);
+        }
+        return 2;
+    }
+
+    private int extractCourseSemester(Course c) {
+        if (c.getSemester() > 0) return c.getSemester();
+        String code = c.getCourseCode();
+        if (code != null && code.length() >= 5) {
+            char ch = code.charAt(4);
+            if (Character.isDigit(ch)) return Character.getNumericValue(ch);
+        }
+        return 1;
     }
 
     /**
@@ -267,8 +364,12 @@ public class UndergraduateLectureNotesUI extends JPanel {
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
         nameLabel.setForeground(COLOR_PRIMARY_NAVY);
 
+        int cLevel = extractCourseLevel(course);
+        int cSem = extractCourseSemester(course);
+        String semTag = "Level " + (cLevel == 1 ? "I" : "II") + " Sem " + (cSem == 1 ? "I" : "II");
         String info = (course.getCredits() > 0 ? course.getCredits() + " Credits" : "") +
-                (course.getDepartment() != null ? " • " + course.getDepartment() : "");
+                (course.getDepartment() != null ? " • " + course.getDepartment() : "") +
+                " • " + semTag;
         JLabel deptLabel = new JLabel(info);
         deptLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         deptLabel.setForeground(COLOR_TEXT_MUTED);
