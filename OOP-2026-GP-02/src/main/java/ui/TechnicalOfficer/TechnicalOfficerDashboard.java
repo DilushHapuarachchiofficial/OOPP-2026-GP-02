@@ -360,7 +360,7 @@ public class TechnicalOfficerDashboard extends JFrame {
                 "View weekly department lecture timetables, computer laboratory allocations, and scheduled timeslots for academic staff and students.",
                 "📅",
                 "View Timetable",
-                () -> openSectionAction("Department Timetable", "Department Academic Timetable section.\n(Lecture Halls, Computer Laboratories, and Scheduled Timeslots)")
+                this::openDepartmentTimetable
         ));
 
         // Card 4: Notices
@@ -369,7 +369,7 @@ public class TechnicalOfficerDashboard extends JFrame {
                 "Read official faculty circulars, examination scheduling announcements, and administrative memorandums published by Administration.",
                 "📢",
                 "Browse Notices",
-                () -> openSectionAction("Faculty Notices", "Faculty Notices and Circulars section.\n(View-Only Access - Managed by Administration)")
+                this::openFacultyNotices
         ));
 
         return grid;
@@ -477,6 +477,32 @@ public class TechnicalOfficerDashboard extends JFrame {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Failed to open Medical Records Management: " + ex.getMessage(),
+                    "Navigation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
+    public void openDepartmentTimetable() {
+        try {
+            DepartmentTimetableForm form = new DepartmentTimetableForm(this, currentOfficer);
+            form.setVisible(true);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to open Department Timetable: " + ex.getMessage(),
+                    "Navigation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
+    public void openFacultyNotices() {
+        try {
+            FacultyNoticesForm form = new FacultyNoticesForm(this, currentOfficer);
+            form.setVisible(true);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to open Faculty Notices: " + ex.getMessage(),
                     "Navigation Error",
                     JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
