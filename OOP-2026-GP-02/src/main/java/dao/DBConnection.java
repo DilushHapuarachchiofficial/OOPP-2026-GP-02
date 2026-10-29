@@ -21,7 +21,7 @@ public class DBConnection {
     private static final String DB_NAME = "tecfams_db";
     private static final String DB_URL = "jdbc:mysql://localhost:3306/" + DB_NAME + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "1234";
+    private static final String DB_PASSWORD = "DVBH123@mysql";
     private static final String FALLBACK_PASSWORD = "";
 
     // Secondary URL fallback if database is named tecFams
