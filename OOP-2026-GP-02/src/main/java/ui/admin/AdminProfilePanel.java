@@ -373,13 +373,13 @@ public class AdminProfilePanel extends JPanel {
                         if (onProfileUpdatedListener != null) {
                             onProfileUpdatedListener.accept(currentAdmin);
                         }
-                        JOptionPane.showMessageDialog(this, "Profile picture updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        ModernDialog.showMessageDialog(this, "Profile picture updated successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
                     } else {
-                        JOptionPane.showMessageDialog(this, "Profile picture selected for preview. Click 'Save Changes' to apply.", "Preview Ready", JOptionPane.INFORMATION_MESSAGE);
+                        ModernDialog.showMessageDialog(this, "Profile picture selected for preview. Click 'Save Changes' to apply.", "Preview Ready", ModernDialog.INFORMATION_MESSAGE);
                     }
                 } catch (IOException ex) {
                     ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Failed to copy image file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    ModernDialog.showMessageDialog(this, "Failed to copy image file: " + ex.getMessage(), "Error", ModernDialog.ERROR_MESSAGE);
                 }
             }
         }
@@ -689,7 +689,7 @@ public class AdminProfilePanel extends JPanel {
         String newAddress = addressField.getText().trim();
 
         if (newName.isEmpty() || newEmail.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Name and Email cannot be empty.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            ModernDialog.showMessageDialog(this, "Name and Email cannot be empty.", "Validation Error", ModernDialog.WARNING_MESSAGE);
             return;
         }
 
@@ -713,9 +713,9 @@ public class AdminProfilePanel extends JPanel {
                 onProfileUpdatedListener.accept(currentAdmin);
             }
 
-            JOptionPane.showMessageDialog(this, "Profile updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            ModernDialog.showMessageDialog(this, "Profile updated successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
         } else {
-            JOptionPane.showMessageDialog(this, "Failed to update profile. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showMessageDialog(this, "Failed to update profile. Please try again.", "Error", ModernDialog.ERROR_MESSAGE);
         }
     }
 
@@ -738,29 +738,29 @@ public class AdminProfilePanel extends JPanel {
         String confirmPass = new String(confirmPasswordField.getPassword()).trim();
 
         if (currentPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill in all password fields.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            ModernDialog.showMessageDialog(this, "Please fill in all password fields.", "Validation Error", ModernDialog.WARNING_MESSAGE);
             return;
         }
 
         if (!newPass.equals(confirmPass)) {
-            JOptionPane.showMessageDialog(this, "New password and confirmation do not match.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            ModernDialog.showMessageDialog(this, "New password and confirmation do not match.", "Validation Error", ModernDialog.WARNING_MESSAGE);
             return;
         }
 
         if (newPass.length() < 4) {
-            JOptionPane.showMessageDialog(this, "New password must be at least 4 characters long.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            ModernDialog.showMessageDialog(this, "New password must be at least 4 characters long.", "Validation Error", ModernDialog.WARNING_MESSAGE);
             return;
         }
 
         boolean success = UserDAO.changeUserPassword(currentAdminId, currentPass, newPass);
         if (success) {
-            JOptionPane.showMessageDialog(this, "Password changed successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            ModernDialog.showMessageDialog(this, "Password changed successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
             currentPasswordField.setText("");
             newPasswordField.setText("");
             confirmPasswordField.setText("");
             switchToTab(true);
         } else {
-            JOptionPane.showMessageDialog(this, "Current password is incorrect. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showMessageDialog(this, "Current password is incorrect. Please try again.", "Error", ModernDialog.ERROR_MESSAGE);
         }
     }
 
