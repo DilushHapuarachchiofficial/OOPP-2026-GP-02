@@ -13,6 +13,11 @@ public class Timetable {
     private String sessionType; // "Practical" or "Theory"
     private String department;
 
+    private int entryId;
+    private String courseName;
+    private int academicYear;
+    private int semester;
+
     public Timetable() {
     }
 
@@ -27,7 +32,55 @@ public class Timetable {
         this.department = department;
     }
 
+    public Timetable(int entryId, String timetableId, String dayOfWeek, String timeSlot,
+                     String courseCode, String courseName, String location, String sessionType,
+                     int academicYear, int semester, String department) {
+        this.entryId = entryId;
+        this.timetableId = timetableId;
+        this.dayOfWeek = dayOfWeek;
+        this.timeSlot = timeSlot;
+        this.courseCode = courseCode;
+        this.courseName = courseName;
+        this.location = location;
+        this.sessionType = sessionType;
+        this.academicYear = academicYear;
+        this.semester = semester;
+        this.department = department;
+    }
+
     // Getters and Setters
+    public int getEntryId() {
+        return entryId;
+    }
+
+    public void setEntryId(int entryId) {
+        this.entryId = entryId;
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public int getAcademicYear() {
+        return academicYear;
+    }
+
+    public void setAcademicYear(int academicYear) {
+        this.academicYear = academicYear;
+    }
+
+    public int getSemester() {
+        return semester;
+    }
+
+    public void setSemester(int semester) {
+        this.semester = semester;
+    }
+
     public String getTimetableId() {
         return timetableId;
     }
