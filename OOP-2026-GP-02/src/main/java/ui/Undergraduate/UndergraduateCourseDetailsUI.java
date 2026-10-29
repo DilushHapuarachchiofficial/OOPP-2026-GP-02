@@ -17,6 +17,7 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.awt.event.MouseWheelListener;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -928,6 +929,19 @@ public class UndergraduateCourseDetailsUI extends JPanel {
     // 10. AVATAR ICON HELPER
     // ==========================================
     private JLabel createAvatarIcon(int size, String name) {
+        String pic = (loggedInStudent != null) ? loggedInStudent.getProfilePicture() : null;
+        if (pic != null && !pic.trim().isEmpty() && !pic.equalsIgnoreCase("default_avatar.png")) {
+            File f = new File(pic.trim());
+            if (f.exists() && f.isFile()) {
+                try {
+                    ImageIcon icon = new ImageIcon(f.getAbsolutePath());
+                    Image img = icon.getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
+                    JLabel av = new JLabel(new ImageIcon(img));
+                    av.setPreferredSize(new Dimension(size, size));
+                    return av;
+                } catch (Exception ignored) {}
+            }
+        }
         JLabel avatar = new JLabel();
         avatar.setPreferredSize(new Dimension(size, size));
 

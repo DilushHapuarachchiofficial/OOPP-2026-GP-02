@@ -732,6 +732,11 @@ public class UndergraduateProfileUI extends JPanel {
         // Refresh View labels and avatars
         loadProfileData();
 
+        // Notify parent dashboard to update header, overview, and other pages
+        if (parentDashboard != null) {
+            parentDashboard.notifyProfileUpdated();
+        }
+
         // Return to View panel
         showViewProfilePanel();
     }

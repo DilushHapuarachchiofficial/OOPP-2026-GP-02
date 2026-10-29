@@ -11,6 +11,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -54,6 +55,8 @@ public class UndergraduateDashboard extends JFrame {
     private UndergraduateTimetableUI timetablePanel;
     private UndergraduateNoticesUI noticesPanel;
     private UndergraduateProfileUI profilePanel;
+    private JLabel headerNameLbl;
+    private JLabel headerAvatar;
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
@@ -220,12 +223,12 @@ public class UndergraduateDashboard extends JFrame {
 
         JPanel nameBox = new JPanel(new GridLayout(3, 1, 0, 1));
         nameBox.setOpaque(false);
-        JLabel nameLbl = new JLabel(currentStudent.getName() != null ? currentStudent.getName() : "Student");
-        nameLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        nameLbl.setForeground(COLOR_TEXT_PRIMARY);
-        nameLbl.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        nameLbl.setToolTipText("Click to view My Profile");
-        nameLbl.addMouseListener(new MouseAdapter() {
+        headerNameLbl = new JLabel(currentStudent.getName() != null ? currentStudent.getName() : "Student");
+        headerNameLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        headerNameLbl.setForeground(COLOR_TEXT_PRIMARY);
+        headerNameLbl.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        headerNameLbl.setToolTipText("Click to view My Profile");
+        headerNameLbl.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 openProfile();
@@ -277,11 +280,13 @@ public class UndergraduateDashboard extends JFrame {
             }
         });
 
-        nameBox.add(nameLbl);
+        nameBox.add(headerNameLbl);
         nameBox.add(roleLbl);
         nameBox.add(logoutBtn);
 
-        JLabel headerAvatar = createAvatarIcon(40, currentStudent.getName());
+        headerAvatar = new JLabel();
+        headerAvatar.setPreferredSize(new Dimension(40, 40));
+        headerAvatar.setIcon(renderAvatarIcon(40, currentStudent.getProfilePicture(), currentStudent.getName()));
         headerAvatar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         headerAvatar.setToolTipText("Click to view My Profile");
         headerAvatar.addMouseListener(new MouseAdapter() {
@@ -905,7 +910,129 @@ public class UndergraduateDashboard extends JFrame {
         }
     }
 
+    /**
+     * Called when student profile is updated in My Profile.
+     * Updates top header, overview dashboard, and sub-module panels.
+     */
+    public void notifyProfileUpdated() {
+        // 1. Update Top-Right Header (Name and Avatar photo)
+        if (headerNameLbl != null && currentStudent != null) {
+            headerNameLbl.setText(currentStudent.getName() != null ? currentStudent.getName() : "Student");
+        }
+        if (headerAvatar != null && currentStudent != null) {
+            headerAvatar.setIcon(renderAvatarIcon(40, currentStudent.getProfilePicture(), currentStudent.getName()));
+        }
+
+        // 2. Refresh Dashboard Overview panel
+        if (mainContentArea != null && dashboardOverviewPanel != null) {
+            mainContentArea.remove(dashboardOverviewPanel);
+            dashboardOverviewPanel = createDashboardOverviewPanel();
+            mainContentArea.add(dashboardOverviewPanel, "DASHBOARD");
+        }
+
+        // 3. Re-instantiate sub-panels with the updated student model
+        refreshSubPanels();
+
+        // 4. Ensure PROFILE remains the active view
+        if (contentCardLayout != null && mainContentArea != null) {
+            contentCardLayout.show(mainContentArea, "PROFILE");
+        }
+
+        revalidate();
+        repaint();
+    }
+
+    public void refreshSubPanels() {
+        if (mainContentArea == null) return;
+
+        if (attendancePanel != null) {
+            mainContentArea.remove(attendancePanel);
+            attendancePanel = new UndergraduateAttendanceUI(currentStudent, this);
+            mainContentArea.add(attendancePanel, "ATTENDANCE");
+        }
+        if (medicalPanel != null) {
+            mainContentArea.remove(medicalPanel);
+            medicalPanel = new UndergraduateMedicalUI(currentStudent, this);
+            mainContentArea.add(medicalPanel, "MEDICAL");
+        }
+        if (courseDetailsPanel != null) {
+            mainContentArea.remove(courseDetailsPanel);
+            courseDetailsPanel = new UndergraduateCourseDetailsUI(currentStudent, this);
+            mainContentArea.add(courseDetailsPanel, "COURSES");
+        }
+        if (lectureNotesPanel != null) {
+            mainContentArea.remove(lectureNotesPanel);
+            lectureNotesPanel = new UndergraduateLectureNotesUI(currentStudent, this);
+            mainContentArea.add(lectureNotesPanel, "MATERIALS");
+        }
+        if (gradesPanel != null) {
+            mainContentArea.remove(gradesPanel);
+            gradesPanel = new UndergraduateGradesUI(currentStudent, this);
+            mainContentArea.add(gradesPanel, "GRADES");
+        }
+        if (timetablePanel != null) {
+            mainContentArea.remove(timetablePanel);
+            timetablePanel = new UndergraduateTimetableUI(currentStudent, this);
+            mainContentArea.add(timetablePanel, "TIMETABLE");
+        }
+        if (noticesPanel != null) {
+            mainContentArea.remove(noticesPanel);
+            noticesPanel = new UndergraduateNoticesUI(currentStudent, this);
+            mainContentArea.add(noticesPanel, "NOTICES");
+        }
+    }
+
+    private Icon renderAvatarIcon(int size, String imagePath, String name) {
+        if (imagePath != null && !imagePath.trim().isEmpty() && !imagePath.equalsIgnoreCase("default_avatar.png")) {
+            File f = new File(imagePath.trim());
+            if (f.exists() && f.isFile()) {
+                try {
+                    ImageIcon icon = new ImageIcon(f.getAbsolutePath());
+                    Image img = icon.getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
+                    return new ImageIcon(img);
+                } catch (Exception ignored) {}
+            }
+        }
+        return createVectorInitialsIcon(size, name);
+    }
+
+    private Icon createVectorInitialsIcon(int size, String name) {
+        String initials = "ST";
+        if (name != null && !name.trim().isEmpty()) {
+            String[] parts = name.trim().split("\\s+");
+            if (parts.length >= 2) initials = ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+            else if (parts[0].length() >= 2) initials = parts[0].substring(0, 2).toUpperCase();
+        }
+        final String text = initials;
+
+        return new Icon() {
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(COLOR_PRIMARY_NAVY);
+                g2.fillOval(x, y, size, size);
+                g2.setColor(COLOR_WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, size / 2));
+                FontMetrics fm = g2.getFontMetrics();
+                int tx = x + (size - fm.stringWidth(text)) / 2;
+                int ty = y + ((size - fm.getHeight()) / 2) + fm.getAscent();
+                g2.drawString(text, tx, ty);
+                g2.dispose();
+            }
+            @Override public int getIconWidth() { return size; }
+            @Override public int getIconHeight() { return size; }
+        };
+    }
+
     private JLabel createAvatarIcon(int size, String name) {
+        JLabel avatar = new JLabel();
+        avatar.setPreferredSize(new Dimension(size, size));
+        avatar.setIcon(renderAvatarIcon(size, currentStudent != null ? currentStudent.getProfilePicture() : null, name));
+        return avatar;
+    }
+
+    private JLabel createAvatarIcon_old(int size, String name) {
         JLabel avatar = new JLabel();
         avatar.setPreferredSize(new Dimension(size, size));
 
