@@ -939,7 +939,7 @@ public class ReportsPanel extends JPanel {
         }
 
         if (targetTable.getRowCount() == 0) {
-            JOptionPane.showMessageDialog(this, "No data available in the current report to export.", "Export Notice", JOptionPane.INFORMATION_MESSAGE);
+            ModernDialog.showMessageDialog(this, "No data available in the current report to export.", "Export Notice", ModernDialog.INFORMATION_MESSAGE);
             return;
         }
 
@@ -979,15 +979,15 @@ public class ReportsPanel extends JPanel {
                     pw.println();
                 }
 
-                JOptionPane.showMessageDialog(
+                ModernDialog.showMessageDialog(
                     this,
                     "Report exported successfully to:\n" + fileToSave.getAbsolutePath() + "\n(" + rowCount + " records written)",
                     "Export Successful",
-                    JOptionPane.INFORMATION_MESSAGE
+                    ModernDialog.INFORMATION_MESSAGE
                 );
             } catch (Exception ex) {
                 ex.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Failed to export report: " + ex.getMessage(), "Export Error", JOptionPane.ERROR_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Failed to export report: " + ex.getMessage(), "Export Error", ModernDialog.ERROR_MESSAGE);
             }
         }
     }
