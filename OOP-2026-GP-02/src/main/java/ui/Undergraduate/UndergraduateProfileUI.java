@@ -1,9 +1,6 @@
 package main.java.ui.Undergraduate;
 
 import main.java.dao.Undergraduate.UndergraduateDAO;
-import main.java.model.Undergraduate.AttendanceSummary;
-import main.java.model.Undergraduate.Course;
-import main.java.model.Undergraduate.GPA;
 import main.java.model.Undergraduate.Undergraduate;
 
 import javax.swing.*;
@@ -13,7 +10,6 @@ import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.File;
-import java.util.List;
 
 /**
  * TecFAMS - Faculty of Technology Academic Management System
@@ -61,14 +57,6 @@ public class UndergraduateProfileUI extends JPanel {
     private JLabel bannerNameLabel;
     private JLabel bannerRegNoLabel;
     private JLabel bannerDeptLabel;
-
-    // Quick Stats Labels
-    private JLabel gpaValueLabel;
-    private JLabel gpaSubtitleLabel;
-    private JLabel attendanceValueLabel;
-    private JLabel attendanceSubtitleLabel;
-    private JLabel coursesValueLabel;
-    private JLabel coursesSubtitleLabel;
 
     // Academic Details Labels (Left Card - Official University Info)
     private JLabel valFullName;
@@ -156,17 +144,13 @@ public class UndergraduateProfileUI extends JPanel {
 
         // 2. Profile Hero Banner (Avatar, Name, Reg No, Department)
         contentPanel.add(createProfileHeroCard());
-        contentPanel.add(Box.createVerticalStrut(16));
+        contentPanel.add(Box.createVerticalStrut(18));
 
-        // 3. Quick Stats Row (CGPA, Attendance %, Enrolled Courses)
-        contentPanel.add(createQuickStatsRow());
-        contentPanel.add(Box.createVerticalStrut(16));
-
-        // 4. Detailed Info Section (Academic Records & Personal Details)
+        // 3. Detailed Info Section (Academic Records & Personal Details)
         contentPanel.add(createDetailedInfoSection());
-        contentPanel.add(Box.createVerticalStrut(16));
+        contentPanel.add(Box.createVerticalStrut(18));
 
-        // 5. Account Security Card
+        // 4. Account Security Card
         contentPanel.add(createSecurityInfoCard());
 
         JScrollPane scrollPane = new JScrollPane(contentPanel);
@@ -204,22 +188,12 @@ public class UndergraduateProfileUI extends JPanel {
         JPanel rightBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         rightBox.setOpaque(false);
 
-        JButton btnEditHeader = createStyledButton("✏ Edit Profile", COLOR_MAIN_BLUE, COLOR_WHITE);
+        JButton btnEditHeader = createStyledButton("Edit Profile", COLOR_MAIN_BLUE, COLOR_WHITE);
         btnEditHeader.addActionListener(e -> showEditProfilePanel());
         rightBox.add(btnEditHeader);
 
-        JButton refreshBtn = createStyledButton("↻ Refresh", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
-        refreshBtn.addActionListener(e -> {
-            loadProfileData();
-            JOptionPane.showMessageDialog(this,
-                    "Profile data refreshed successfully from the database.",
-                    "Profile Refreshed",
-                    JOptionPane.INFORMATION_MESSAGE);
-        });
-        rightBox.add(refreshBtn);
-
         if (parentDashboard != null) {
-            JButton backBtn = createStyledButton("← Back to Dashboard", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
+            JButton backBtn = createStyledButton("Back to Dashboard", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
             backBtn.addActionListener(e -> parentDashboard.showDashboardView());
             rightBox.add(backBtn);
         }
@@ -235,37 +209,37 @@ public class UndergraduateProfileUI extends JPanel {
                 new LineBorder(COLOR_BORDER, 1, true),
                 new EmptyBorder(18, 22, 18, 22)
         ));
-        card.setMaximumSize(new Dimension(3000, 110));
+        card.setMaximumSize(new Dimension(3000, 115));
 
         bannerAvatarLabel = new JLabel();
         bannerAvatarLabel.setPreferredSize(new Dimension(72, 72));
         card.add(bannerAvatarLabel, BorderLayout.WEST);
 
-        JPanel centerBox = new JPanel();
-        centerBox.setLayout(new BoxLayout(centerBox, BoxLayout.Y_AXIS));
+        // Center Box: 3 rows grid so that every element is strictly left-aligned
+        JPanel centerBox = new JPanel(new GridLayout(3, 1, 0, 4));
         centerBox.setOpaque(false);
 
         bannerNameLabel = new JLabel("Undergraduate Student");
-        bannerNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        bannerNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         bannerNameLabel.setForeground(COLOR_PRIMARY_NAVY);
 
-        JPanel subInfoRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 3));
+        JPanel subInfoRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         subInfoRow.setOpaque(false);
 
         bannerRegNoLabel = new JLabel("Reg No: TG/2024/2085");
-        bannerRegNoLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        bannerRegNoLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         bannerRegNoLabel.setForeground(COLOR_MAIN_BLUE);
 
-        bannerDeptLabel = new JLabel("•  Department of ICT");
+        bannerDeptLabel = new JLabel("   •   Department of Information and Communication Technology");
         bannerDeptLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         bannerDeptLabel.setForeground(COLOR_TEXT_MUTED);
 
         subInfoRow.add(bannerRegNoLabel);
         subInfoRow.add(bannerDeptLabel);
 
-        JPanel badgesRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+        JPanel badgesRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         badgesRow.setOpaque(false);
-        badgesRow.add(createPillBadge("● Active Student", new Color(0xDC, 0xFC, 0xE7), new Color(0x16, 0x65, 0x34)));
+        badgesRow.add(createPillBadge("Active Student", new Color(0xDC, 0xFC, 0xE7), new Color(0x16, 0x65, 0x34)));
         badgesRow.add(createPillBadge("BICT (Hons)", new Color(0xEF, 0xF6, 0xFF), new Color(0x1D, 0x4E, 0xD8)));
         badgesRow.add(createPillBadge("Level II • Semester I", new Color(0xF3, 0xE8, 0xFF), new Color(0x6B, 0x21, 0xA8)));
 
@@ -275,68 +249,6 @@ public class UndergraduateProfileUI extends JPanel {
 
         card.add(centerBox, BorderLayout.CENTER);
         return card;
-    }
-
-    private JPanel createQuickStatsRow() {
-        JPanel row = new JPanel(new GridLayout(1, 3, 16, 0));
-        row.setOpaque(false);
-        row.setMaximumSize(new Dimension(3000, 95));
-
-        JPanel gpaCard = createStatBox("Cumulative GPA (CGPA)");
-        gpaValueLabel = new JLabel("3.65");
-        gpaValueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        gpaValueLabel.setForeground(COLOR_PRIMARY_NAVY);
-        gpaSubtitleLabel = new JLabel("SGPA: 3.58  •  Good Standing");
-        gpaSubtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        gpaSubtitleLabel.setForeground(COLOR_SUCCESS);
-        gpaCard.add(gpaValueLabel);
-        gpaCard.add(Box.createVerticalStrut(2));
-        gpaCard.add(gpaSubtitleLabel);
-
-        JPanel attCard = createStatBox("Overall Attendance Rate");
-        attendanceValueLabel = new JLabel("92.8%");
-        attendanceValueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        attendanceValueLabel.setForeground(COLOR_SUCCESS);
-        attendanceSubtitleLabel = new JLabel("Eligible for Exams (Threshold: 80%)");
-        attendanceSubtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        attendanceSubtitleLabel.setForeground(COLOR_TEXT_MUTED);
-        attCard.add(attendanceValueLabel);
-        attCard.add(Box.createVerticalStrut(2));
-        attCard.add(attendanceSubtitleLabel);
-
-        JPanel coursesCard = createStatBox("Registered Courses");
-        coursesValueLabel = new JLabel("8 Courses");
-        coursesValueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        coursesValueLabel.setForeground(COLOR_MAIN_BLUE);
-        coursesSubtitleLabel = new JLabel("Level II Semester I (Current Period)");
-        coursesSubtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        coursesSubtitleLabel.setForeground(COLOR_TEXT_MUTED);
-        coursesCard.add(coursesValueLabel);
-        coursesCard.add(Box.createVerticalStrut(2));
-        coursesCard.add(coursesSubtitleLabel);
-
-        row.add(gpaCard);
-        row.add(attCard);
-        row.add(coursesCard);
-        return row;
-    }
-
-    private JPanel createStatBox(String title) {
-        JPanel box = new JPanel();
-        box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
-        box.setBackground(COLOR_CARD_BG);
-        box.setBorder(new CompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(12, 16, 12, 16)
-        ));
-
-        JLabel titleLbl = new JLabel(title);
-        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        titleLbl.setForeground(COLOR_TEXT_MUTED);
-
-        box.add(titleLbl);
-        box.add(Box.createVerticalStrut(4));
-        return box;
     }
 
     private JPanel createDetailedInfoSection() {
@@ -398,7 +310,7 @@ public class UndergraduateProfileUI extends JPanel {
 
         JPanel footerRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 4));
         footerRow.setOpaque(false);
-        JLabel footerNote = new JLabel("ℹ To request official academic corrections, contact the Dean's Office.");
+        JLabel footerNote = new JLabel("To request official academic corrections, contact the Dean's Office.");
         footerNote.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         footerNote.setForeground(COLOR_TEXT_MUTED);
         footerRow.add(footerNote);
@@ -450,11 +362,11 @@ public class UndergraduateProfileUI extends JPanel {
 
         card.add(body, BorderLayout.CENTER);
 
-        // Edit Profile Button
+        // Edit Profile Button (clean text without any broken icon)
         JPanel footerRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 4));
         footerRow.setOpaque(false);
 
-        JButton btnEditProfile = createStyledButton("✏ Edit Profile", COLOR_MAIN_BLUE, COLOR_WHITE);
+        JButton btnEditProfile = createStyledButton("Edit Profile", COLOR_MAIN_BLUE, COLOR_WHITE);
         btnEditProfile.addActionListener(e -> showEditProfilePanel());
         footerRow.add(btnEditProfile);
 
@@ -526,7 +438,7 @@ public class UndergraduateProfileUI extends JPanel {
 
         JPanel titleBox = new JPanel(new GridLayout(2, 1, 0, 2));
         titleBox.setOpaque(false);
-        JLabel title = new JLabel("✏ Edit Student Profile");
+        JLabel title = new JLabel("Edit Student Profile");
         title.setFont(new Font("Segoe UI", Font.BOLD, 22));
         title.setForeground(COLOR_PRIMARY_NAVY);
         JLabel subtitle = new JLabel("Update your personal details, home address, contact numbers, and profile photo");
@@ -536,7 +448,7 @@ public class UndergraduateProfileUI extends JPanel {
         titleBox.add(subtitle);
         headerBar.add(titleBox, BorderLayout.WEST);
 
-        JButton btnBack = createStyledButton("← Back to Profile", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
+        JButton btnBack = createStyledButton("Back to Profile", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
         btnBack.addActionListener(e -> showViewProfilePanel());
         headerBar.add(btnBack, BorderLayout.EAST);
 
@@ -607,14 +519,14 @@ public class UndergraduateProfileUI extends JPanel {
 
         formCard.add(fieldsPanel, BorderLayout.CENTER);
 
-        // Action Buttons Row
+        // Action Buttons Row (clean text)
         JPanel actionsRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionsRow.setOpaque(false);
 
-        JButton btnCancel = createStyledButton("✖ Cancel", new Color(0xF3, 0xF4, 0xF6), COLOR_TEXT_PRIMARY);
+        JButton btnCancel = createStyledButton("Cancel", new Color(0xF3, 0xF4, 0xF6), COLOR_TEXT_PRIMARY);
         btnCancel.addActionListener(e -> showViewProfilePanel());
 
-        JButton btnSave = createStyledButton("💾 Save Changes", COLOR_SUCCESS, COLOR_WHITE);
+        JButton btnSave = createStyledButton("Save Changes", COLOR_SUCCESS, COLOR_WHITE);
         btnSave.addActionListener(e -> saveProfileChanges());
 
         actionsRow.add(btnCancel);
@@ -677,7 +589,7 @@ public class UndergraduateProfileUI extends JPanel {
         inputWithBtn.setOpaque(false);
         inputWithBtn.add(txtEditProfilePic, BorderLayout.CENTER);
 
-        JButton btnBrowse = createStyledButton("📁 Browse Image...", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
+        JButton btnBrowse = createStyledButton("Browse Image...", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
         btnBrowse.addActionListener(e -> chooseImageFile());
         inputWithBtn.add(btnBrowse, BorderLayout.EAST);
 
@@ -852,24 +764,6 @@ public class UndergraduateProfileUI extends JPanel {
                 if (dbStudent.getAddress() != null) loggedInStudent.setAddress(dbStudent.getAddress());
                 if (dbStudent.getProfilePicture() != null) loggedInStudent.setProfilePicture(dbStudent.getProfilePicture());
             }
-
-            // Load fresh GPA
-            GPA dbGpa = dao.getStudentGPA(studentKey);
-            if (dbGpa != null) {
-                loggedInStudent.setGpa(dbGpa);
-            }
-
-            // Load attendance summary
-            AttendanceSummary dbAtt = dao.getAttendanceSummary(studentKey);
-            if (dbAtt != null) {
-                loggedInStudent.setAttendanceSummary(dbAtt);
-            }
-
-            // Load enrolled courses
-            List<Course> dbCourses = dao.getCoursesForStudent(studentKey);
-            if (dbCourses != null && !dbCourses.isEmpty()) {
-                loggedInStudent.setCourses(dbCourses);
-            }
         } catch (Exception e) {
             System.err.println("Notice: Using memory student profile: " + e.getMessage());
         }
@@ -881,27 +775,8 @@ public class UndergraduateProfileUI extends JPanel {
 
         bannerNameLabel.setText(name);
         bannerRegNoLabel.setText("Reg No: " + regNo);
-        bannerDeptLabel.setText("•  " + dept);
+        bannerDeptLabel.setText("   •   " + dept);
         bannerAvatarLabel.setIcon(renderAvatar(72, loggedInStudent.getProfilePicture(), name));
-
-        // Populate Quick Stats
-        if (loggedInStudent.viewGPA() != null) {
-            double cgpa = loggedInStudent.viewGPA().getCGPA();
-            double sgpa = loggedInStudent.viewGPA().getSGPA();
-            gpaValueLabel.setText(String.format("%.2f", cgpa > 0 ? cgpa : 3.65));
-            gpaSubtitleLabel.setText(String.format("SGPA: %.2f  •  Good Academic Standing", sgpa > 0 ? sgpa : 3.58));
-        }
-
-        if (loggedInStudent.getAttendanceSummary() != null) {
-            double pct = loggedInStudent.getAttendanceSummary().getPercentage();
-            attendanceValueLabel.setText(String.format("%.1f%%", pct > 0 ? pct : 92.8));
-            attendanceSubtitleLabel.setText(pct >= 80.0
-                    ? "Eligible for Exams (Threshold: 80%)"
-                    : "Caution: Below 80% requirement");
-        }
-
-        int courseCount = (loggedInStudent.viewCourses() != null) ? loggedInStudent.viewCourses().size() : 8;
-        coursesValueLabel.setText(courseCount + " Courses");
 
         // Populate Academic Details (Left Card)
         valFullName.setText(name);
@@ -973,7 +848,7 @@ public class UndergraduateProfileUI extends JPanel {
             String[] parts = name.trim().split("\\s+");
             if (parts.length >= 2) {
                 initials = ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
-            } else if (parts.length >= 2) {
+            } else if (parts[0].length() >= 2) {
                 initials = parts[0].substring(0, 2).toUpperCase();
             }
         }
@@ -1020,8 +895,6 @@ public class UndergraduateProfileUI extends JPanel {
         student.setNic("200113401237");
         student.setDob("2001-11-25");
         student.setAddress("Kandy");
-        student.setGpa(new GPA(3.65, 3.58));
-        student.setAttendanceSummary(new AttendanceSummary(30, 26, 2));
         return student;
     }
 
