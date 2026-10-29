@@ -46,7 +46,13 @@ public class   TechnicalOfficerNavigationBar extends JPanel {
         menuPanel.setOpaque(false);
         menuPanel.setBorder(new EmptyBorder(0, 16, 0, 0));
 
-        addNavItem(menuPanel, "DASHBOARD",  "📊", "Dashboard", () -> selectNav("DASHBOARD"));
+        addNavItem(menuPanel, "DASHBOARD",  "📊", "Dashboard", () -> {
+            if (dashboard != null) {
+                dashboard.showDashboardView();
+            } else {
+                selectNav("DASHBOARD");
+            }
+        });
         addNavItem(menuPanel, "ATTENDANCE", "📝", "Attendance Management", () -> {
             if (dashboard != null) {
                 dashboard.openAttendanceManagement();
@@ -60,15 +66,11 @@ public class   TechnicalOfficerNavigationBar extends JPanel {
         addNavItem(menuPanel, "TIMETABLE",  "📅", "Department Timetable", () -> {
             if (dashboard != null) {
                 dashboard.openDepartmentTimetable();
-            } else {
-                new DepartmentTimetableForm().setVisible(true);
             }
         });
         addNavItem(menuPanel, "NOTICES",    "📢", "Notices", () -> {
             if (dashboard != null) {
                 dashboard.openFacultyNotices();
-            } else {
-                new FacultyNoticesForm().setVisible(true);
             }
         });
         addNavItem(menuPanel, "PROFILE",    "👤", "My Profile", () -> {
