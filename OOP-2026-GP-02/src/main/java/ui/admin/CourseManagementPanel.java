@@ -322,19 +322,19 @@ public class CourseManagementPanel extends JPanel {
             int year = Integer.parseInt((String) yearCombo.getSelectedItem());
             
             if (code.isEmpty() || name.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please fill all required fields.");
+                ModernDialog.showMessageDialog(this, "Please fill all required fields.", "Validation Error", ModernDialog.WARNING_MESSAGE);
                 return;
             }
             
             if (CourseDAO.addCourse(1, code, name, credit, type, sem, year, null)) {
-                JOptionPane.showMessageDialog(this, "Course added successfully!");
+                ModernDialog.showMessageDialog(this, "Course added successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
                 refreshTableData();
                 cardLayout.show(this, "List");
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to add course.");
+                ModernDialog.showMessageDialog(this, "Failed to add course.", "Error", ModernDialog.ERROR_MESSAGE);
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Invalid input. Check credits format.");
+            ModernDialog.showMessageDialog(this, "Invalid input. Check credits format.", "Input Error", ModernDialog.ERROR_MESSAGE);
         }
     }
     
@@ -422,12 +422,12 @@ public class CourseManagementPanel extends JPanel {
                         fireEditingStopped();
                         String idStr = (String) table.getValueAt(currentRow, 0);
                         int id = Integer.parseInt(idStr.substring(1));
-                        int confirm = JOptionPane.showConfirmDialog(panel, "Delete course " + idStr + "?", "Confirm", JOptionPane.YES_NO_OPTION);
-                        if (confirm == JOptionPane.YES_OPTION) {
+                        int confirm = ModernDialog.showConfirmDialog(panel, "Delete course " + idStr + "?", "Confirm Delete", ModernDialog.YES_NO_OPTION);
+                        if (confirm == ModernDialog.YES_OPTION) {
                             if (CourseDAO.deleteCourse(id)) {
                                 ((DefaultTableModel)table.getModel()).removeRow(currentRow);
                             } else {
-                                JOptionPane.showMessageDialog(panel, "Failed to delete.");
+                                ModernDialog.showMessageDialog(panel, "Failed to delete course.", "Error", ModernDialog.ERROR_MESSAGE);
                             }
                         }
                     }
