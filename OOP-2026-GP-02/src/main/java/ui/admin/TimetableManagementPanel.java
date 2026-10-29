@@ -1206,7 +1206,7 @@ public class TimetableManagementPanel extends JPanel {
     private void handleSaveAction() {
         CourseItem selCourse = (CourseItem) formCourseCombo.getSelectedItem();
         if (selCourse == null) {
-            JOptionPane.showMessageDialog(this, "Please select a valid course.", "Missing Field", JOptionPane.WARNING_MESSAGE);
+            ModernDialog.showMessageDialog(this, "Please select a valid course.", "Missing Field", ModernDialog.WARNING_MESSAGE);
             return;
         }
 
@@ -1218,7 +1218,7 @@ public class TimetableManagementPanel extends JPanel {
         String day = (String) formDayCombo.getSelectedItem();
         String slotStr = (String) formTimeCombo.getSelectedItem();
         if (slotStr == null || !slotStr.contains("-")) {
-            JOptionPane.showMessageDialog(this, "Please specify a valid time slot like '8:00 - 9:00' or '8:00 - 10:00'.", "Invalid Time", JOptionPane.WARNING_MESSAGE);
+            ModernDialog.showMessageDialog(this, "Please specify a valid time slot like '8:00 - 9:00' or '8:00 - 10:00'.", "Invalid Time", ModernDialog.WARNING_MESSAGE);
             return;
         }
 
@@ -1235,12 +1235,12 @@ public class TimetableManagementPanel extends JPanel {
             // Create New Entry in Database
             int targetTtId = TimetableDAO.getOrCreateTimetable(deptId, year, sem);
             if (targetTtId <= 0) {
-                JOptionPane.showMessageDialog(this, "Failed to initialize timetable for the selected Department and Level.", "Database Error", JOptionPane.ERROR_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Failed to initialize timetable for the selected Department and Level.", "Database Error", ModernDialog.ERROR_MESSAGE);
                 return;
             }
             boolean success = TimetableDAO.addEntry(targetTtId, selCourse.id, day, startSql, endSql, hall, type);
             if (success) {
-                JOptionPane.showMessageDialog(this, "Timetable entry created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Timetable entry created successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
 
                 // Ensure newly added entry is visible by matching filters if needed
                 DepartmentItem currentDept = (DepartmentItem) deptCombo.getSelectedItem();
@@ -1261,17 +1261,17 @@ public class TimetableManagementPanel extends JPanel {
                 loadTimetableForSelectedFilters();
                 returnToTimetableGrid();
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to create timetable entry. Please verify inputs.", "Error", JOptionPane.ERROR_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Failed to create timetable entry. Please verify inputs.", "Error", ModernDialog.ERROR_MESSAGE);
             }
         } else {
             // Update Existing Entry in Database
             boolean success = TimetableDAO.updateEntry(editingEntryId, selCourse.id, day, startSql, endSql, hall, type);
             if (success) {
-                JOptionPane.showMessageDialog(this, "Timetable entry updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Timetable entry updated successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
                 loadTimetableForSelectedFilters();
                 returnToTimetableGrid();
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to update timetable entry.", "Error", JOptionPane.ERROR_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Failed to update timetable entry.", "Error", ModernDialog.ERROR_MESSAGE);
             }
         }
     }
@@ -1279,21 +1279,21 @@ public class TimetableManagementPanel extends JPanel {
     private void handleDeleteAction() {
         if (editingEntryId == null) return;
 
-        int confirm = JOptionPane.showConfirmDialog(
+        int confirm = ModernDialog.showConfirmDialog(
             this,
             "Are you sure you want to delete this timetable class slot?",
             "Confirm Delete",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE
+            ModernDialog.YES_NO_OPTION,
+            ModernDialog.WARNING_MESSAGE
         );
 
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (confirm == ModernDialog.YES_OPTION) {
             if (TimetableDAO.deleteEntry(editingEntryId)) {
-                JOptionPane.showMessageDialog(this, "Class slot deleted successfully!", "Deleted", JOptionPane.INFORMATION_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Class slot deleted successfully!", "Deleted", ModernDialog.INFORMATION_MESSAGE);
                 loadTimetableForSelectedFilters();
                 returnToTimetableGrid();
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to delete slot.", "Error", JOptionPane.ERROR_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Failed to delete slot.", "Error", ModernDialog.ERROR_MESSAGE);
             }
         }
     }
