@@ -15,7 +15,8 @@ public class Admin extends User {
     }
 
     public Admin(int id, String name, String username, String role, String email, String status, String phone, String address, String profilePicture) {
-        super(id, name, username, role, email, status, profilePicture);
+        super(id, name, username, role, email, status);
+        setProfilePicture(profilePicture);
         this.phone = phone;
         this.address = address;
     }
