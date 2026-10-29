@@ -168,22 +168,10 @@ public class UndergraduateDashboard extends JFrame {
                 currentStudent.setAttendanceSummary(dbAtt);
             }
 
-            // 6. Fetch live registered courses and lecturer materials
+            // 6. Fetch live registered courses
             List<Course> dbCourses = dao.getCoursesForStudent(lookupId);
-            List<CourseMaterial> dbMat = dao.getCourseMaterialsForStudent(lookupId);
             if (dbCourses != null && !dbCourses.isEmpty()) {
-                if (dbMat != null && !dbMat.isEmpty()) {
-                    for (Course c : dbCourses) {
-                        for (CourseMaterial m : dbMat) {
-                            if (m.getCourseCode() != null && m.getCourseCode().equalsIgnoreCase(c.getCourseCode())) {
-                                c.addMaterial(m);
-                            }
-                        }
-                    }
-                }
                 currentStudent.setCourses(dbCourses);
-            } else if (dbMat != null && !dbMat.isEmpty() && currentStudent.viewCourses() != null && !currentStudent.viewCourses().isEmpty()) {
-                currentStudent.viewCourses().get(0).setMaterials(dbMat);
             }
         } catch (Exception e) {
             System.err.println("Notice: Running with fallback preview state: " + e.getMessage());
@@ -309,7 +297,7 @@ public class UndergraduateDashboard extends JFrame {
     // 2. DASHBOARD OVERVIEW MAIN PANEL
     // ==========================================
     private JScrollPane createDashboardOverviewPanel() {
-        JPanel content = new JPanel();
+        JPanel content = new ScrollableTrackWidthPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBackground(COLOR_BG);
         content.setBorder(new EmptyBorder(22, 26, 26, 26));
@@ -326,13 +314,11 @@ public class UndergraduateDashboard extends JFrame {
         wSub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         wSub.setForeground(COLOR_TEXT_MUTED);
 
-        JPanel welcomeBox = new JPanel();
-        welcomeBox.setLayout(new BoxLayout(welcomeBox, BoxLayout.Y_AXIS));
+        JPanel welcomeBox = new JPanel(new BorderLayout(0, 4));
         welcomeBox.setOpaque(false);
         welcomeBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        welcomeBox.add(wTitle);
-        welcomeBox.add(Box.createVerticalStrut(4));
-        welcomeBox.add(wSub);
+        welcomeBox.add(wTitle, BorderLayout.NORTH);
+        welcomeBox.add(wSub, BorderLayout.SOUTH);
         content.add(welcomeBox);
         content.add(Box.createVerticalStrut(18));
 
@@ -342,7 +328,7 @@ public class UndergraduateDashboard extends JFrame {
         content.add(cardsRow);
         content.add(Box.createVerticalStrut(20));
 
-        // 2-Column Split: Lectures/Notes (Left) & Notices/Assistance (Right)
+        // 2-Column Split: Today's Lectures (50%) & Recent Notices (50%)
         JPanel gridSplit = new JPanel(new GridBagLayout());
         gridSplit.setOpaque(false);
         gridSplit.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -351,35 +337,30 @@ public class UndergraduateDashboard extends JFrame {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weighty = 1.0;
 
-        // Left Column (62%)
+        // Left Column (54%): Today's Lectures
         gbc.gridx = 0;
-        gbc.weightx = 0.62;
-        gbc.insets = new Insets(0, 0, 0, 16);
-        JPanel leftCol = new JPanel();
-        leftCol.setLayout(new BoxLayout(leftCol, BoxLayout.Y_AXIS));
-        leftCol.setOpaque(false);
-        leftCol.add(createTodayLecturesCard());
-        leftCol.add(Box.createVerticalStrut(18));
-        leftCol.add(createLecturerNotesCard());
-        gridSplit.add(leftCol, gbc);
+        gbc.weightx = 0.54;
+        gbc.insets = new Insets(0, 0, 0, 12);
+        gridSplit.add(createTodayLecturesCard(), gbc);
 
-        // Right Column (38%)
+        // Right Column (46%): Recent Notices
         gbc.gridx = 1;
-        gbc.weightx = 0.38;
-        gbc.insets = new Insets(0, 0, 0, 0);
-        JPanel rightCol = new JPanel();
-        rightCol.setLayout(new BoxLayout(rightCol, BoxLayout.Y_AXIS));
-        rightCol.setOpaque(false);
-        rightCol.add(createRecentNoticesCard());
-        rightCol.add(Box.createVerticalStrut(18));
-        rightCol.add(createAcademicSupportCard());
-        gridSplit.add(rightCol, gbc);
+        gbc.weightx = 0.46;
+        gbc.insets = new Insets(0, 12, 0, 0);
+        gridSplit.add(createRecentNoticesCard(), gbc);
 
         content.add(gridSplit);
+        content.add(Box.createVerticalStrut(18));
+
+        // Academic Support Banner (Full Width)
+        JPanel supportCard = createAcademicSupportCard();
+        supportCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(supportCard);
 
         JScrollPane scroll = new JScrollPane(content);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBackground(COLOR_BG);
         return scroll;
     }
@@ -502,10 +483,13 @@ public class UndergraduateDashboard extends JFrame {
         if (lectures.isEmpty() && tt != null && !tt.getSchedules().isEmpty()) lectures = tt.getSchedules();
 
         if (lectures.isEmpty()) {
+            JPanel emptyRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 8));
+            emptyRow.setOpaque(false);
             JLabel empty = new JLabel("No lectures scheduled for today.");
             empty.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             empty.setForeground(COLOR_TEXT_MUTED);
-            list.add(empty);
+            emptyRow.add(empty);
+            list.add(emptyRow);
         } else {
             Collections.sort(lectures, Comparator.comparing(Schedule::getStartTime, Comparator.nullsLast(String::compareTo)));
             for (int i = 0; i < lectures.size(); i++) {
@@ -513,24 +497,35 @@ public class UndergraduateDashboard extends JFrame {
                 if (i < lectures.size() - 1) list.add(Box.createVerticalStrut(8));
             }
         }
+        list.add(Box.createVerticalGlue());
+
+        JPanel headerRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        headerRight.setOpaque(false);
 
         JLabel badge = new JLabel("Day: " + LocalDate.now().getDayOfWeek());
         badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
         badge.setForeground(COLOR_MAIN_BLUE);
-        return createSectionCard("Today's Lectures", badge, list);
+
+        JButton viewTimetableBtn = createLinkButton("View Full Timetable →", e -> openTimetable());
+
+        headerRight.add(badge);
+        headerRight.add(viewTimetableBtn);
+
+        return createSectionCard("Today's Lectures", headerRight, list);
     }
 
     private JPanel createLectureRowItem(Schedule s, boolean isUpcoming) {
-        JPanel row = new JPanel(new BorderLayout(12, 0));
+        JPanel row = new JPanel(new BorderLayout(8, 0));
         row.setBackground(isUpcoming ? new Color(0xF4, 0xF8, 0xFF) : COLOR_WHITE);
         row.setBorder(new CompoundBorder(
                 new LineBorder(isUpcoming ? COLOR_MAIN_BLUE : COLOR_BORDER, 1, true),
-                new EmptyBorder(8, 12, 8, 12)
+                new EmptyBorder(8, 10, 8, 10)
         ));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 54));
 
         JPanel timeBox = new JPanel(new GridLayout(2, 1, 0, 2));
         timeBox.setOpaque(false);
-        timeBox.setPreferredSize(new Dimension(130, 36));
+        timeBox.setPreferredSize(new Dimension(122, 36));
 
         JLabel timeLbl = new JLabel(s.getStartTime() + " - " + s.getEndTime());
         timeLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -550,8 +545,9 @@ public class UndergraduateDashboard extends JFrame {
         courseLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         courseLbl.setForeground(COLOR_TEXT_PRIMARY);
 
-        JLabel desc = new JLabel("Lecturer: " + (s.getLecturerName() != null ? s.getLecturerName() : "Lecturer") +
-                " | Room: " + (s.getLocation() != null ? s.getLocation() : "TBA"));
+        String lect = (s.getLecturerName() != null ? s.getLecturerName() : "Lecturer");
+        String room = (s.getLocation() != null ? s.getLocation() : "TBA");
+        JLabel desc = new JLabel(lect + "  •  " + room);
         desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         desc.setForeground(COLOR_TEXT_MUTED);
 
@@ -572,84 +568,7 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     // ==========================================
-    // 5. LECTURER NOTES CARD
-    // ==========================================
-    private JPanel createLecturerNotesCard() {
-        JButton viewAll = createLinkButton("View All Materials →", e -> openLectureNotes());
-
-        JPanel list = new JPanel();
-        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
-        list.setOpaque(false);
-
-        List<CourseMaterial> materials = extractMaterials();
-        if (materials.isEmpty()) {
-            JLabel empty = new JLabel("No course materials currently available.");
-            empty.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            empty.setForeground(COLOR_TEXT_MUTED);
-            list.add(empty);
-        } else {
-            int count = Math.min(3, materials.size());
-            for (int i = 0; i < count; i++) {
-                list.add(createMaterialRowItem(materials.get(i)));
-                if (i < count - 1) list.add(Box.createVerticalStrut(8));
-            }
-        }
-
-        return createSectionCard("Lecturer Notes & Materials", viewAll, list);
-    }
-
-    private JPanel createMaterialRowItem(CourseMaterial cm) {
-        JPanel row = new JPanel(new BorderLayout(10, 0));
-        row.setBackground(COLOR_WHITE);
-        row.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(8, 12, 8, 12)));
-        row.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        row.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                openLectureNotes();
-            }
-        });
-
-        JPanel info = new JPanel(new GridLayout(2, 1, 0, 2));
-        info.setOpaque(false);
-
-        JLabel tLbl = new JLabel(cm.getTitle());
-        tLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tLbl.setForeground(COLOR_TEXT_PRIMARY);
-
-        JLabel dLbl = new JLabel(cm.getCourseCode() + " | " + cm.getDescription() + " | " + cm.getUploadedDate());
-        dLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        dLbl.setForeground(COLOR_TEXT_MUTED);
-
-        info.add(tLbl);
-        info.add(dLbl);
-        row.add(info, BorderLayout.CENTER);
-
-        JButton openBtn = new JButton("View Notes →");
-        openBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        openBtn.setForeground(COLOR_MAIN_BLUE);
-        openBtn.setBackground(COLOR_LIGHT_BLUE);
-        openBtn.setFocusPainted(false);
-        openBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        openBtn.setBorder(new CompoundBorder(new LineBorder(COLOR_MAIN_BLUE, 1, true), new EmptyBorder(5, 12, 5, 12)));
-        openBtn.addActionListener(e -> openLectureNotes());
-
-        row.add(openBtn, BorderLayout.EAST);
-        return row;
-    }
-
-    private List<CourseMaterial> extractMaterials() {
-        List<CourseMaterial> all = new ArrayList<>();
-        if (currentStudent.viewCourses() != null) {
-            for (Course c : currentStudent.viewCourses()) {
-                if (c.getMaterials() != null) all.addAll(c.getMaterials());
-            }
-        }
-        return all;
-    }
-
-    // ==========================================
-    // 6. RECENT NOTICES CARD
+    // 5. RECENT NOTICES CARD
     // ==========================================
     private JPanel createRecentNoticesCard() {
         JButton viewAll = createLinkButton("View All Notices →", e -> openNotices());
@@ -660,10 +579,13 @@ public class UndergraduateDashboard extends JFrame {
 
         List<Notice> notices = currentStudent.viewNotices();
         if (notices == null || notices.isEmpty()) {
+            JPanel emptyRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 8));
+            emptyRow.setOpaque(false);
             JLabel empty = new JLabel("No notices published currently.");
             empty.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             empty.setForeground(COLOR_TEXT_MUTED);
-            list.add(empty);
+            emptyRow.add(empty);
+            list.add(emptyRow);
         } else {
             int count = Math.min(3, notices.size());
             for (int i = 0; i < count; i++) {
@@ -671,6 +593,7 @@ public class UndergraduateDashboard extends JFrame {
                 if (i < count - 1) list.add(Box.createVerticalStrut(8));
             }
         }
+        list.add(Box.createVerticalGlue());
 
         return createSectionCard("Recent Notices", viewAll, list);
     }
@@ -679,6 +602,7 @@ public class UndergraduateDashboard extends JFrame {
         JPanel box = new JPanel(new BorderLayout(0, 4));
         box.setBackground(COLOR_WHITE);
         box.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(8, 12, 8, 12)));
+        box.setMaximumSize(new Dimension(Integer.MAX_VALUE, 95));
 
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
@@ -694,7 +618,7 @@ public class UndergraduateDashboard extends JFrame {
         top.add(t, BorderLayout.WEST);
         top.add(tag, BorderLayout.EAST);
 
-        JLabel desc = new JLabel("<html><body style='width: 240px;'>" + n.getDescription() + "</body></html>");
+        JLabel desc = new JLabel("<html><body style='width: 500px;'>" + n.getDescription() + "</body></html>");
         desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         desc.setForeground(COLOR_TEXT_MUTED);
 
@@ -709,23 +633,48 @@ public class UndergraduateDashboard extends JFrame {
     }
 
     // ==========================================
-    // 7. ACADEMIC ASSISTANCE CARD
+    // 6. ACADEMIC ASSISTANCE CARD
     // ==========================================
     private JPanel createAcademicSupportCard() {
-        JPanel card = new JPanel(new BorderLayout(0, 6));
+        JPanel card = new JPanel(new BorderLayout(20, 0));
         card.setBackground(COLOR_LIGHT_BLUE);
-        card.setBorder(new CompoundBorder(new LineBorder(COLOR_MAIN_BLUE, 1, true), new EmptyBorder(12, 16, 12, 16)));
+        card.setBorder(new CompoundBorder(
+                new LineBorder(new Color(0xBF, 0xDB, 0xFE), 1, true),
+                new EmptyBorder(14, 18, 14, 18)
+        ));
 
-        JLabel title = new JLabel("Academic Assistance");
+        JPanel left = new JPanel(new BorderLayout(0, 4));
+        left.setOpaque(false);
+
+        JLabel title = new JLabel("Academic Assistance & Student Helpdesk");
         title.setFont(new Font("Segoe UI", Font.BOLD, 13));
         title.setForeground(COLOR_PRIMARY_NAVY);
 
-        JLabel desc = new JLabel("<html>For inquiries, contact your Technical Officer or Dean's Office.<br><b>Email:</b> tech-dean@fot.ruh.ac.lk<br><b>Desk:</b> Admin Block B, Level 1</html>");
-        desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        JLabel desc = new JLabel("For course registrations, timetable clashes, or official inquiries, contact the Dean's Office.");
+        desc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         desc.setForeground(COLOR_TEXT_PRIMARY);
 
-        card.add(title, BorderLayout.NORTH);
-        card.add(desc, BorderLayout.CENTER);
+        left.add(title, BorderLayout.NORTH);
+        left.add(desc, BorderLayout.SOUTH);
+
+        JPanel right = new JPanel();
+        right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
+        right.setOpaque(false);
+
+        JLabel email = new JLabel("Email: tech-dean@fot.ruh.ac.lk");
+        email.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        email.setForeground(COLOR_TEXT_PRIMARY);
+
+        JLabel desk = new JLabel("Office: Dean's Office, Admin Block B, Level 1");
+        desk.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        desk.setForeground(COLOR_TEXT_PRIMARY);
+
+        right.add(email);
+        right.add(Box.createVerticalStrut(4));
+        right.add(desk);
+
+        card.add(left, BorderLayout.CENTER);
+        card.add(right, BorderLayout.EAST);
         return card;
     }
 
@@ -1114,8 +1063,6 @@ public class UndergraduateDashboard extends JFrame {
         student.setTimetable(tt);
 
         Course c1 = new Course(1, "ICT2132", "OOP Practicum", 2, "DICT", "Java OOP principles and GUI.");
-        c1.addMaterial(new CourseMaterial(1, "ICT2132", "Lecture 05 - Java Swing GUI", "Swing GUI layout design.", "swing.pdf", "2026-10-12"));
-        c1.addMaterial(new CourseMaterial(2, "ICT2132", "Lab Sheet 06 - JDBC & DAO", "PreparedStatement connectivity.", "jdbc.pdf", "2026-10-14"));
         List<Course> cList = new ArrayList<>();
         cList.add(c1);
         student.setCourses(cList);
@@ -1141,5 +1088,39 @@ public class UndergraduateDashboard extends JFrame {
             UndergraduateDashboard dashboard = new UndergraduateDashboard(sampleStudent);
             dashboard.setVisible(true);
         });
+    }
+
+    // ==========================================
+    // HELPER: Track Viewport Width Scrollable Panel
+    // ==========================================
+    private static class ScrollableTrackWidthPanel extends JPanel implements Scrollable {
+        public ScrollableTrackWidthPanel() {
+            super();
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 16;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 64;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return false;
+        }
     }
 }
