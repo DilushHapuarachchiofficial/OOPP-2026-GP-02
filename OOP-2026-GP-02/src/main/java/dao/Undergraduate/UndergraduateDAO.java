@@ -138,6 +138,64 @@ public class UndergraduateDAO {
         }
     }
 
+    /**
+     * Verifies if the entered current password matches the user's password in users table.
+     */
+    public boolean verifyCurrentPassword(String studentId, String currentPassword) {
+        if (studentId == null || currentPassword == null) return false;
+        String sql = "SELECT u.password_hash FROM users u " +
+                "INNER JOIN students s ON u.user_id = s.student_id " +
+                "WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? OR u.username = ?";
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+            if (conn == null) return false;
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, studentId.trim());
+            stmt.setString(2, studentId.trim());
+            stmt.setString(3, studentId.trim());
+            rs = stmt.executeQuery();
+            if (rs.next()) {
+                String dbPass = rs.getString("password_hash");
+                return currentPassword.equals(dbPass);
+            }
+        } catch (SQLException e) {
+            System.err.println("Database Notice: Could not verify current password: " + e.getMessage());
+        } finally {
+            closeQuietly(rs, stmt, conn);
+        }
+        return false;
+    }
+
+    /**
+     * Updates the user's password in the users table.
+     */
+    public boolean updatePassword(String studentId, String newPassword) {
+        if (studentId == null || newPassword == null || newPassword.trim().isEmpty()) return false;
+        String sql = "UPDATE users u INNER JOIN students s ON u.user_id = s.student_id " +
+                "SET u.password_hash = ? WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? OR u.username = ?";
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+            if (conn == null) return false;
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, newPassword.trim());
+            stmt.setString(2, studentId.trim());
+            stmt.setString(3, studentId.trim());
+            stmt.setString(4, studentId.trim());
+            int affected = stmt.executeUpdate();
+            return affected > 0;
+        } catch (SQLException e) {
+            System.err.println("Database Notice: Could not update password: " + e.getMessage());
+            return false;
+        } finally {
+            closeQuietly(null, stmt, conn);
+        }
+    }
+
     public boolean updateContactDetails(String studentId, String phone, String email) {
         String query = "UPDATE students SET phone = ?, email = ? WHERE student_reg_no = ? OR CAST(student_id AS CHAR) = ?";
 

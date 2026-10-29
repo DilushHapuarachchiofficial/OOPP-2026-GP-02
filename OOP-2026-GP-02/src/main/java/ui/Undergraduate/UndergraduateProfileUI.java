@@ -366,6 +366,10 @@ public class UndergraduateProfileUI extends JPanel {
         JPanel footerRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 4));
         footerRow.setOpaque(false);
 
+        JButton btnChangePass = createStyledButton("Change Password", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
+        btnChangePass.addActionListener(e -> showChangePasswordDialog());
+        footerRow.add(btnChangePass);
+
         JButton btnEditProfile = createStyledButton("Edit Profile", COLOR_MAIN_BLUE, COLOR_WHITE);
         btnEditProfile.addActionListener(e -> showEditProfilePanel());
         footerRow.add(btnEditProfile);
@@ -416,8 +420,17 @@ public class UndergraduateProfileUI extends JPanel {
         leftBox.add(desc);
         card.add(leftBox, BorderLayout.CENTER);
 
+        JPanel rightBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        rightBox.setOpaque(false);
+
         JLabel badge = createPillBadge("Security Level: Student", new Color(0xEA, 0xF2, 0xFF), COLOR_MAIN_BLUE);
-        card.add(badge, BorderLayout.EAST);
+        rightBox.add(badge);
+
+        JButton btnChangePassSec = createStyledButton("Change Password", COLOR_MAIN_BLUE, COLOR_WHITE);
+        btnChangePassSec.addActionListener(e -> showChangePasswordDialog());
+        rightBox.add(btnChangePassSec);
+
+        card.add(rightBox, BorderLayout.EAST);
 
         return card;
     }
@@ -529,6 +542,9 @@ public class UndergraduateProfileUI extends JPanel {
         JButton btnSave = createStyledButton("Save Changes", COLOR_SUCCESS, COLOR_WHITE);
         btnSave.addActionListener(e -> saveProfileChanges());
 
+        JButton btnChangePassInEdit = createStyledButton("Change Password", COLOR_LIGHT_BLUE, COLOR_MAIN_BLUE);
+        btnChangePassInEdit.addActionListener(e -> showChangePasswordDialog());
+        actionsRow.add(btnChangePassInEdit);
         actionsRow.add(btnCancel);
         actionsRow.add(btnSave);
         formCard.add(actionsRow, BorderLayout.SOUTH);
@@ -890,17 +906,166 @@ public class UndergraduateProfileUI extends JPanel {
         };
     }
 
+    
+    // ==========================================
+    // 5. CHANGE PASSWORD DIALOG
+    // ==========================================
+    private void showChangePasswordDialog() {
+        Window parentWindow = SwingUtilities.getWindowAncestor(this);
+        JDialog dialog = new JDialog(parentWindow != null ? (Frame) parentWindow : null, "Change Account Password", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setResizable(false);
+
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBackground(COLOR_WHITE);
+        content.setBorder(new EmptyBorder(22, 26, 22, 26));
+
+        JLabel headerLbl = new JLabel("Change Account Password");
+        headerLbl.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        headerLbl.setForeground(COLOR_PRIMARY_NAVY);
+        headerLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(headerLbl);
+
+        JLabel subLbl = new JLabel("Enter your current password and choose a secure new password.");
+        subLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subLbl.setForeground(COLOR_TEXT_MUTED);
+        subLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(subLbl);
+        content.add(Box.createVerticalStrut(18));
+
+        JPasswordField txtCurrent = new JPasswordField();
+        styleInputField(txtCurrent);
+        txtCurrent.setPreferredSize(new Dimension(380, 36));
+
+        JPasswordField txtNew = new JPasswordField();
+        styleInputField(txtNew);
+        txtNew.setPreferredSize(new Dimension(380, 36));
+
+        JPasswordField txtConfirm = new JPasswordField();
+        styleInputField(txtConfirm);
+        txtConfirm.setPreferredSize(new Dimension(380, 36));
+
+        content.add(createPasswordRow("Current Password *", txtCurrent));
+        content.add(Box.createVerticalStrut(12));
+        content.add(createPasswordRow("New Password *", txtNew));
+        content.add(Box.createVerticalStrut(12));
+        content.add(createPasswordRow("Confirm New Password *", txtConfirm));
+        content.add(Box.createVerticalStrut(12));
+
+        JCheckBox chkShow = new JCheckBox("Show Passwords");
+        chkShow.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        chkShow.setForeground(COLOR_TEXT_PRIMARY);
+        chkShow.setOpaque(false);
+        chkShow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        char defaultEcho = txtCurrent.getEchoChar();
+        chkShow.addActionListener(e -> {
+            char echo = chkShow.isSelected() ? (char) 0 : defaultEcho;
+            txtCurrent.setEchoChar(echo);
+            txtNew.setEchoChar(echo);
+            txtConfirm.setEchoChar(echo);
+        });
+        content.add(chkShow);
+        content.add(Box.createVerticalStrut(18));
+
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        btnRow.setOpaque(false);
+        btnRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton btnCancel = createStyledButton("Cancel", new Color(0xF3, 0xF4, 0xF6), COLOR_TEXT_PRIMARY);
+        btnCancel.addActionListener(e -> dialog.dispose());
+
+        JButton btnUpdate = createStyledButton("Update Password", COLOR_SUCCESS, COLOR_WHITE);
+        btnUpdate.addActionListener(e -> {
+            String currentPass = new String(txtCurrent.getPassword()).trim();
+            String newPass = new String(txtNew.getPassword()).trim();
+            String confirmPass = new String(txtConfirm.getPassword()).trim();
+
+            if (currentPass.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Please enter your current password.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                txtCurrent.requestFocus();
+                return;
+            }
+
+            if (newPass.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Please enter a new password.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                txtNew.requestFocus();
+                return;
+            }
+
+            if (newPass.length() < 4) {
+                JOptionPane.showMessageDialog(dialog, "New password must be at least 4 characters long.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                txtNew.requestFocus();
+                return;
+            }
+
+            if (!newPass.equals(confirmPass)) {
+                JOptionPane.showMessageDialog(dialog, "New password and Confirm password do not match!", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                txtConfirm.requestFocus();
+                return;
+            }
+
+            if (currentPass.equals(newPass)) {
+                JOptionPane.showMessageDialog(dialog, "New password cannot be the same as your current password.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                txtNew.requestFocus();
+                return;
+            }
+
+            String studentKey = (loggedInStudent.getRegistrationNo() != null && !loggedInStudent.getRegistrationNo().isEmpty())
+                    ? loggedInStudent.getRegistrationNo() : loggedInStudent.getStudentId();
+            if (studentKey == null || studentKey.trim().isEmpty()) {
+                studentKey = "TG/2024/2085";
+            }
+
+            boolean validCurrent = dao.verifyCurrentPassword(studentKey, currentPass);
+            if (!validCurrent) {
+                JOptionPane.showMessageDialog(dialog, "Current password is incorrect! Please verify and try again.", "Authentication Failed", JOptionPane.ERROR_MESSAGE);
+                txtCurrent.requestFocus();
+                return;
+            }
+
+            boolean updated = dao.updatePassword(studentKey, newPass);
+            if (updated) {
+                loggedInStudent.setPassword(newPass);
+                JOptionPane.showMessageDialog(dialog, "Your password has been changed successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                dialog.dispose();
+            } else {
+                JOptionPane.showMessageDialog(dialog, "Could not update password in database. Please check connection.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnRow.add(btnCancel);
+        btnRow.add(btnUpdate);
+        content.add(btnRow);
+
+        dialog.setContentPane(content);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
+    private JPanel createPasswordRow(String labelText, JPasswordField passField) {
+        JPanel row = new JPanel(new BorderLayout(8, 2));
+        row.setOpaque(false);
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lbl = new JLabel(labelText);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lbl.setForeground(COLOR_TEXT_PRIMARY);
+
+        row.add(lbl, BorderLayout.NORTH);
+        row.add(passField, BorderLayout.CENTER);
+        return row;
+    }
+
     private static Undergraduate createPreviewStudent() {
-        Undergraduate student = new Undergraduate(
-                "USR-1085", "tg2085", "", "H.D.W.B. Hapuarachchi",
+        UndergraduateDAO dao = new UndergraduateDAO();
+        Undergraduate student = dao.getUndergraduateByStudentId("TG/2024/2085");
+        if (student != null) return student;
+        return new Undergraduate("21", "tg2085", "", "Dilush Bandara Hapuarachchi",
                 "wb.hapu@student.ruh.ac.lk", "0710001004", "",
                 "21", "TG/2024/2085", "Batch 2023/2024",
-                "Department of Information and Communication Technology", 2024
-        );
-        student.setNic("200113401237");
-        student.setDob("2001-11-25");
-        student.setAddress("Kandy");
-        return student;
+                "Department of Information and Communication Technology", 2024);
     }
 
     /**
