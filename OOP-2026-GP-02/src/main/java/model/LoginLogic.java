@@ -115,6 +115,27 @@ public class LoginLogic {
                                             }
                                         }
                                     }
+                                } else if ("Admin".equalsIgnoreCase(mappedRole)) {
+                                    String admSql = "SELECT name, email, phone FROM admins WHERE admin_id = ?";
+                                    try (PreparedStatement admStmt = conn.prepareStatement(admSql)) {
+                                        admStmt.setInt(1, userId);
+                                        try (ResultSet admRs = admStmt.executeQuery()) {
+                                            if (admRs.next()) {
+                                                UserSession.setCurrentSession(new UserSession(
+                                                        userId, cleanUsername, mappedRole,
+                                                        admRs.getString("name"),
+                                                        "Administrator",
+                                                        "Faculty of Technology",
+                                                        admRs.getString("email")
+                                                ));
+                                            } else {
+                                                UserSession.setCurrentSession(new UserSession(
+                                                        userId, cleanUsername, mappedRole,
+                                                        cleanUsername, "Administrator", "Faculty of Technology", ""
+                                                ));
+                                            }
+                                        }
+                                    }
                                 } else {
                                     UserSession.setCurrentSession(new UserSession(
                                             userId, cleanUsername, mappedRole,
@@ -245,6 +266,19 @@ public class LoginLogic {
 
     public static void openAdminDashboard() {
         javax.swing.SwingUtilities.invokeLater(() -> {
+            UserSession session = UserSession.getCurrentSession();
+            int adminId = (session != null) ? session.getUserId() : -1;
+
+            if (adminId > 0) {
+                try {
+                    Class<?> clazz = Class.forName("main.java.ui.admin.AdminDashboard");
+                    java.lang.reflect.Constructor<?> ctor = clazz.getConstructor(int.class);
+                    JFrame frame = (JFrame) ctor.newInstance(adminId);
+                    frame.setVisible(true);
+                    return;
+                } catch (Exception ignored) {}
+            }
+
             boolean opened = tryOpenDashboard(
                 "main.java.ui.admin.AdminDashboard",
                 "main.java.ui.Admin.AdminDashboard",

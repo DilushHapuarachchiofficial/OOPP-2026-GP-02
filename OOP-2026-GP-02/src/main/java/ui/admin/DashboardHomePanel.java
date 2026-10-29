@@ -37,8 +37,13 @@ public class DashboardHomePanel extends JPanel {
 
     public DashboardHomePanel(String username) {
         if (username == null || username.trim().isEmpty()) {
-            main.java.model.admin.Admin a = UserDAO.getAdminProfile(1);
-            this.username = (a != null && a.getUsername() != null) ? a.getUsername() : "admin";
+            main.java.model.UserSession session = main.java.model.UserSession.getCurrentSession();
+            if (session != null && session.getUsername() != null && !session.getUsername().trim().isEmpty()) {
+                this.username = session.getUsername();
+            } else {
+                main.java.model.admin.Admin a = UserDAO.getAdminProfile(1);
+                this.username = (a != null && a.getUsername() != null) ? a.getUsername() : "admin";
+            }
         } else {
             this.username = username;
         }

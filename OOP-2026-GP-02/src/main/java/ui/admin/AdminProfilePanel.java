@@ -19,7 +19,8 @@ import main.java.model.admin.Admin;
 
 public class AdminProfilePanel extends JPanel {
 
-    private int currentAdminId = 1; // Default logged in admin id
+    private int currentAdminId = -1; // Resolved dynamically from session or constructor
+    private String currentUsername = null;
     private Admin currentAdmin;
 
     // Optional listener to notify AdminDashboard or other parent containers of changes
@@ -59,10 +60,27 @@ public class AdminProfilePanel extends JPanel {
     private JPasswordField confirmPasswordField;
 
     public AdminProfilePanel() {
-        this(null);
+        this(-1, null);
     }
 
     public AdminProfilePanel(Consumer<Admin> onProfileUpdatedListener) {
+        this(-1, onProfileUpdatedListener);
+    }
+
+    public AdminProfilePanel(int adminId, Consumer<Admin> onProfileUpdatedListener) {
+        this.currentAdminId = adminId;
+        this.onProfileUpdatedListener = onProfileUpdatedListener;
+        setLayout(new BorderLayout());
+        setBackground(new Color(245, 247, 250));
+
+        // Load admin profile from database
+        loadAdminProfile();
+
+        buildUI();
+    }
+
+    public AdminProfilePanel(String username, Consumer<Admin> onProfileUpdatedListener) {
+        this.currentUsername = username;
         this.onProfileUpdatedListener = onProfileUpdatedListener;
         setLayout(new BorderLayout());
         setBackground(new Color(245, 247, 250));
@@ -82,9 +100,38 @@ public class AdminProfilePanel extends JPanel {
     }
 
     private void loadAdminProfile() {
-        currentAdmin = UserDAO.getAdminProfile(currentAdminId);
+        // 1. Resolve admin ID from active UserSession if not passed
+        if (currentAdminId <= 0) {
+            main.java.model.UserSession session = main.java.model.UserSession.getCurrentSession();
+            if (session != null && session.getUserId() > 0) {
+                currentAdminId = session.getUserId();
+            }
+        }
+
+        // 2. Fetch admin profile by ID
+        if (currentAdminId > 0) {
+            currentAdmin = UserDAO.getAdminProfile(currentAdminId);
+        }
+
+        // 3. Fallback to username if ID lookup failed
+        if (currentAdmin == null && currentUsername != null && !currentUsername.trim().isEmpty()) {
+            currentAdmin = UserDAO.getAdminProfileByUsername(currentUsername);
+        }
+
         if (currentAdmin == null) {
-            // Fallback default
+            main.java.model.UserSession session = main.java.model.UserSession.getCurrentSession();
+            if (session != null && session.getUsername() != null && !session.getUsername().trim().isEmpty()) {
+                currentAdmin = UserDAO.getAdminProfileByUsername(session.getUsername());
+            }
+        }
+
+        // 4. Fallback to default admin (ID 1)
+        if (currentAdmin == null) {
+            currentAdmin = UserDAO.getAdminProfile(1);
+        }
+
+        // 5. Final fallback
+        if (currentAdmin == null) {
             currentAdmin = new Admin(
                 1,
                 "Admin",
@@ -97,6 +144,7 @@ public class AdminProfilePanel extends JPanel {
                 "default_avatar.png"
             );
         }
+        currentAdminId = currentAdmin.getId();
         selectedProfilePicture = currentAdmin.getProfilePicture();
     }
 

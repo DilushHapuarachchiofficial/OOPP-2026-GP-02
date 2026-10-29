@@ -12,9 +12,15 @@ public class AdminDashboard extends JFrame {
     private JLabel headerProfileIcon;
     private JLabel headerProfileName;
     private String currentProfilePicture;
+    private int loggedInAdminId = -1;
     private DashboardHomePanel dashboardHomePanel;
 
     public AdminDashboard() {
+        this(-1);
+    }
+
+    public AdminDashboard(int loggedInAdminId) {
+        this.loggedInAdminId = loggedInAdminId;
         setTitle("TecFAMS - Faculty Academic Management System");
         setSize(1280, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -64,16 +70,28 @@ public class AdminDashboard extends JFrame {
         cardPanel = new JPanel(cardLayout);
         cardPanel.setBackground(new Color(245, 247, 250));
 
-        AdminProfilePanel profilePanel = new AdminProfilePanel(updatedAdmin -> {
-            updateHeaderProfile(updatedAdmin);
-        });
+        // Determine logged-in admin ID from parameter or active UserSession
+        int targetAdminId = this.loggedInAdminId;
+        if (targetAdminId <= 0) {
+            main.java.model.UserSession session = main.java.model.UserSession.getCurrentSession();
+            if (session != null && session.getUserId() > 0) {
+                targetAdminId = session.getUserId();
+            }
+        }
+
+        AdminProfilePanel profilePanel = (targetAdminId > 0)
+                ? new AdminProfilePanel(targetAdminId, updatedAdmin -> updateHeaderProfile(updatedAdmin))
+                : new AdminProfilePanel(updatedAdmin -> updateHeaderProfile(updatedAdmin));
+
         if (profilePanel.getCurrentAdmin() != null) {
             currentProfilePicture = profilePanel.getCurrentAdmin().getProfilePicture();
         }
 
         String loggedUsername = (profilePanel.getCurrentAdmin() != null && profilePanel.getCurrentAdmin().getUsername() != null)
                 ? profilePanel.getCurrentAdmin().getUsername()
-                : "admin";
+                : (main.java.model.UserSession.getCurrentSession() != null 
+                        ? main.java.model.UserSession.getCurrentSession().getUsername() 
+                        : "admin");
 
         dashboardHomePanel = new DashboardHomePanel(loggedUsername);
         addSidebarButton(sidebar, "Dashboard", "src/main/resources/images/admin-icons/dashboard.png", dashboardHomePanel, true);
@@ -91,8 +109,9 @@ public class AdminDashboard extends JFrame {
         JButton logoutBtn = createSidebarButton("Logout", "src/main/resources/images/admin-icons/logout.png");
         logoutBtn.setForeground(new Color(255, 99, 71));
         logoutBtn.addActionListener(e -> {
+            main.java.model.UserSession.clearSession();
             dispose();
-            // new LoginScreen().setVisible(true);
+            SwingUtilities.invokeLater(() -> new main.java.ui.LoginUI().setVisible(true));
         });
         JPanel logoutPanel = new JPanel(new BorderLayout());
         logoutPanel.setOpaque(false);
@@ -197,8 +216,9 @@ public class AdminDashboard extends JFrame {
         });
 
         logoutItem.addActionListener(e -> {
-            this.dispose();
-            //SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
+            main.java.model.UserSession.clearSession();
+            dispose();
+            SwingUtilities.invokeLater(() -> new main.java.ui.LoginUI().setVisible(true));
         });
 
         Font menuFont = new Font("Segoe UI", Font.PLAIN, 14);
@@ -212,10 +232,6 @@ public class AdminDashboard extends JFrame {
         }
 
         logoutItem.setForeground(new Color(220, 53, 69)); // Red color for logout
-        logoutItem.addActionListener(e -> {
-            dispose();
-            // new LoginScreen().setVisible(true);
-        });
 
         profileMenu.add(settingsItem);
         profileMenu.addSeparator();

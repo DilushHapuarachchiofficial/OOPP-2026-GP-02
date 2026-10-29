@@ -237,23 +237,66 @@ public class UserDAO {
         String query = 
             "SELECT a.admin_id, a.name, a.email, a.phone, a.address, u.username, u.role, u.status, u.profile_picture " +
             "FROM admins a " +
-            "JOIN users u ON a.admin_id = u.user_id " +
+            "LEFT JOIN users u ON a.admin_id = u.user_id " +
             "WHERE a.admin_id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setInt(1, adminId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
+                    String username = rs.getString("username");
+                    if (username == null || username.trim().isEmpty()) {
+                        username = "admin" + adminId;
+                    }
                     return new main.java.model.admin.Admin(
                         rs.getInt("admin_id"),
                         rs.getString("name"),
+                        username,
+                        rs.getString("role") != null ? rs.getString("role") : "Admin",
+                        rs.getString("email") != null ? rs.getString("email") : "",
+                        rs.getString("status") != null ? rs.getString("status") : "Active",
+                        rs.getString("phone") != null ? rs.getString("phone") : "",
+                        rs.getString("address") != null ? rs.getString("address") : "",
+                        rs.getString("profile_picture") != null ? rs.getString("profile_picture") : "default_avatar.png"
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static main.java.model.admin.Admin getAdminProfileByUsername(String username) {
+        if (username == null || username.trim().isEmpty()) return null;
+        String query = 
+            "SELECT a.admin_id, a.name, a.email, a.phone, a.address, u.user_id, u.username, u.role, u.status, u.profile_picture " +
+            "FROM users u " +
+            "LEFT JOIN admins a ON a.admin_id = u.user_id " +
+            "WHERE u.username = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, username.trim());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    int adminId = rs.getInt("admin_id");
+                    if (adminId == 0) {
+                        adminId = rs.getInt("user_id");
+                    }
+                    String name = rs.getString("name");
+                    if (name == null || name.trim().isEmpty()) {
+                        name = rs.getString("username");
+                    }
+                    return new main.java.model.admin.Admin(
+                        adminId,
+                        name,
                         rs.getString("username"),
-                        rs.getString("role"),
-                        rs.getString("email"),
-                        rs.getString("status"),
-                        rs.getString("phone"),
-                        rs.getString("address"),
-                        rs.getString("profile_picture")
+                        rs.getString("role") != null ? rs.getString("role") : "Admin",
+                        rs.getString("email") != null ? rs.getString("email") : "",
+                        rs.getString("status") != null ? rs.getString("status") : "Active",
+                        rs.getString("phone") != null ? rs.getString("phone") : "",
+                        rs.getString("address") != null ? rs.getString("address") : "",
+                        rs.getString("profile_picture") != null ? rs.getString("profile_picture") : "default_avatar.png"
                     );
                 }
             }
