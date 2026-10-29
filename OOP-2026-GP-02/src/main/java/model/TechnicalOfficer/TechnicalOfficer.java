@@ -52,7 +52,7 @@ public class TechnicalOfficer extends User {
     }
 
     public void viewTimetable() {
-        // View timetable logic
+        new main.java.ui.TechnicalOfficer.DepartmentTimetableForm(null, this).setVisible(true);
     }
 
     public void addAttendance(String studentId, String courseCode, String sessionType, String status) {
@@ -80,7 +80,7 @@ public class TechnicalOfficer extends User {
     }
 
     public void viewNotices() {
-        // View notices logic
+        new main.java.ui.TechnicalOfficer.FacultyNoticesForm(null, this).setVisible(true);
     }
 
     // Getters and Setters

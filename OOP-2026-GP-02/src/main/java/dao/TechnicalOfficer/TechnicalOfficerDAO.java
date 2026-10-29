@@ -1,6 +1,8 @@
 package main.java.dao.TechnicalOfficer;
 
+import main.java.model.Notice;
 import main.java.model.TechnicalOfficer.TechnicalOfficer;
+import main.java.model.Timetable;
 import main.java.model.UserSession;
 import main.resources.database.DatabaseConnection;
 
@@ -9,6 +11,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Data Access Object (DAO) for Technical Officer operations in TecFAMS.
@@ -386,5 +392,266 @@ public class TechnicalOfficerDAO {
             } catch (SQLException ignored) {}
         }
         return 6;
+    }
+
+    /**
+     * Retrieves all department names from the database for filter dropdowns.
+     */
+    public List<String> getAllDepartmentNames() {
+        List<String> list = new ArrayList<>();
+        Connection conn = DatabaseConnection.getConnection();
+        if (conn != null) {
+            try (Statement s = conn.createStatement();
+                 ResultSet rs = s.executeQuery("SELECT department_name FROM departments ORDER BY department_id ASC")) {
+                while (rs.next()) {
+                    list.add(rs.getString("department_name"));
+                }
+            } catch (SQLException e) {
+                System.err.println("TechnicalOfficerDAO: Error fetching departments: " + e.getMessage());
+            }
+        }
+        if (list.isEmpty()) {
+            list.add("Department of Information and Communication Technology");
+            list.add("Department of Engineering Technology");
+            list.add("Department of Biosystems Technology");
+            list.add("Department of Multidisciplinary Studies");
+        }
+        return list;
+    }
+
+    /**
+     * Retrieves timetable entries matching optional filters from database.
+     */
+    public List<Timetable> getDepartmentTimetableEntries(String departmentFilter, Integer yearFilter, Integer semFilter, String dayFilter, String sessionTypeFilter, String searchQuery) {
+        List<Timetable> list = new ArrayList<>();
+        Connection conn = DatabaseConnection.getConnection();
+        if (conn == null) {
+            return list;
+        }
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT te.entry_id, te.timetable_id, te.course_id, " +
+            "       COALESCE(c.course_code, 'N/A') AS course_code, " +
+            "       COALESCE(c.course_name, 'General Session') AS course_name, " +
+            "       te.day_of_week, " +
+            "       DATE_FORMAT(te.start_time, '%H:%i') AS start_time, " +
+            "       DATE_FORMAT(te.end_time, '%H:%i') AS end_time, " +
+            "       te.hall, te.session_type, " +
+            "       t.academic_year, t.semester, " +
+            "       COALESCE(d.department_name, 'Faculty of Technology') AS department_name " +
+            "FROM timetable_entries te " +
+            "JOIN timetables t ON te.timetable_id = t.timetable_id " +
+            "LEFT JOIN courses c ON te.course_id = c.course_id " +
+            "LEFT JOIN departments d ON t.department_id = d.department_id " +
+            "WHERE 1=1 "
+        );
+
+        List<Object> params = new ArrayList<>();
+
+        if (departmentFilter != null && !departmentFilter.trim().isEmpty() && !departmentFilter.equalsIgnoreCase("All Departments") && !departmentFilter.equalsIgnoreCase("All")) {
+            sql.append(" AND (d.department_name LIKE ? OR d.department_code LIKE ?) ");
+            params.add("%" + departmentFilter.trim() + "%");
+            params.add("%" + departmentFilter.trim() + "%");
+        }
+
+        if (yearFilter != null && yearFilter > 0) {
+            sql.append(" AND t.academic_year = ? ");
+            params.add(yearFilter);
+        }
+
+        if (semFilter != null && semFilter > 0) {
+            sql.append(" AND t.semester = ? ");
+            params.add(semFilter);
+        }
+
+        if (dayFilter != null && !dayFilter.trim().isEmpty() && !dayFilter.equalsIgnoreCase("All Days") && !dayFilter.equalsIgnoreCase("All")) {
+            sql.append(" AND te.day_of_week = ? ");
+            params.add(dayFilter.trim());
+        }
+
+        if (sessionTypeFilter != null && !sessionTypeFilter.trim().isEmpty() && !sessionTypeFilter.equalsIgnoreCase("All Types") && !sessionTypeFilter.equalsIgnoreCase("All")) {
+            sql.append(" AND te.session_type = ? ");
+            params.add(sessionTypeFilter.trim());
+        }
+
+        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+            sql.append(" AND (c.course_code LIKE ? OR c.course_name LIKE ? OR te.hall LIKE ?) ");
+            String q = "%" + searchQuery.trim() + "%";
+            params.add(q);
+            params.add(q);
+            params.add(q);
+        }
+
+        sql.append(" ORDER BY FIELD(te.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), te.start_time ");
+
+        try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String timeSlot = rs.getString("start_time") + " - " + rs.getString("end_time");
+                    Timetable t = new Timetable(
+                        rs.getInt("entry_id"),
+                        String.valueOf(rs.getInt("timetable_id")),
+                        rs.getString("day_of_week"),
+                        timeSlot,
+                        rs.getString("course_code"),
+                        rs.getString("course_name"),
+                        rs.getString("hall"),
+                        rs.getString("session_type"),
+                        rs.getInt("academic_year"),
+                        rs.getInt("semester"),
+                        rs.getString("department_name")
+                    );
+                    list.add(t);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("TechnicalOfficerDAO: Error querying timetables: " + e.getMessage());
+        }
+
+        return list;
+    }
+
+    /**
+     * Retrieves faculty notices from the database with optional audience filter and search query.
+     */
+    public List<Notice> getFacultyNotices(String targetAudience, String searchKeyword) {
+        List<Notice> list = new ArrayList<>();
+        Connection conn = DatabaseConnection.getConnection();
+        if (conn == null) {
+            return list;
+        }
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT n.notice_id, n.title, n.description, n.published_date, n.target_audience, " +
+            "       COALESCE(u.username, 'Administration') AS publisher_name, " +
+            "       COALESCE(u.role, 'Admin') AS publisher_role " +
+            "FROM notices n " +
+            "LEFT JOIN users u ON n.published_by = u.user_id " +
+            "WHERE 1=1 "
+        );
+
+        List<Object> params = new ArrayList<>();
+
+        if (targetAudience != null && !targetAudience.trim().isEmpty() && !targetAudience.equalsIgnoreCase("All Audiences") && !targetAudience.equalsIgnoreCase("All")) {
+            sql.append(" AND (n.target_audience = ? OR n.target_audience = 'All') ");
+            params.add(targetAudience.trim());
+        }
+
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            sql.append(" AND (n.title LIKE ? OR n.description LIKE ?) ");
+            String q = "%" + searchKeyword.trim() + "%";
+            params.add(q);
+            params.add(q);
+        }
+
+        sql.append(" ORDER BY n.published_date DESC, n.notice_id DESC ");
+
+        try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Timestamp ts = rs.getTimestamp("published_date");
+                    LocalDate pDate = (ts != null) ? ts.toLocalDateTime().toLocalDate() : LocalDate.now();
+                    String pub = rs.getString("publisher_name");
+                    String role = rs.getString("publisher_role");
+                    String publishedBy = (role != null ? role + " (" + pub + ")" : pub);
+
+                    Notice notice = new Notice(
+                        String.valueOf(rs.getInt("notice_id")),
+                        rs.getString("title"),
+                        rs.getString("description"),
+                        pDate,
+                        publishedBy,
+                        rs.getString("target_audience")
+                    );
+                    list.add(notice);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("TechnicalOfficerDAO: Error querying notices: " + e.getMessage());
+        }
+
+        return list;
+    }
+
+    /**
+     * Retrieves notices received by the Technical Officer.
+     * By default, returns notices targeted to Technical Officers and All Faculty.
+     *
+     * @param categoryFilter Filter option ("TO_ONLY", "GENERAL", "ALL_CIRCULARS", or "TO_DEFAULT")
+     * @param searchKeyword Search string in title or description
+     * @return List of Notice objects
+     */
+    public List<Notice> getTechnicalOfficerNotices(String categoryFilter, String searchKeyword) {
+        List<Notice> list = new ArrayList<>();
+        Connection conn = DatabaseConnection.getConnection();
+        if (conn == null) {
+            return list;
+        }
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT n.notice_id, n.title, n.description, n.published_date, n.target_audience, " +
+            "       COALESCE(u.username, 'Administration') AS publisher_name, " +
+            "       COALESCE(u.role, 'Admin') AS publisher_role " +
+            "FROM notices n " +
+            "LEFT JOIN users u ON n.published_by = u.user_id " +
+            "WHERE 1=1 "
+        );
+
+        List<Object> params = new ArrayList<>();
+
+        if ("ALL_CIRCULARS".equalsIgnoreCase(categoryFilter)) {
+            // Include all circulars
+        } else if ("TO_ONLY".equalsIgnoreCase(categoryFilter)) {
+            sql.append(" AND n.target_audience = 'Technical_Officers' ");
+        } else if ("GENERAL".equalsIgnoreCase(categoryFilter)) {
+            sql.append(" AND n.target_audience = 'All' ");
+        } else {
+            // Default: Notices received by Technical Officer ('All' or 'Technical_Officers')
+            sql.append(" AND n.target_audience IN ('All', 'Technical_Officers') ");
+        }
+
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            sql.append(" AND (n.title LIKE ? OR n.description LIKE ?) ");
+            String q = "%" + searchKeyword.trim() + "%";
+            params.add(q);
+            params.add(q);
+        }
+
+        sql.append(" ORDER BY n.published_date DESC, n.notice_id DESC ");
+
+        try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Timestamp ts = rs.getTimestamp("published_date");
+                    LocalDate pDate = (ts != null) ? ts.toLocalDateTime().toLocalDate() : LocalDate.now();
+                    String pub = rs.getString("publisher_name");
+                    String role = rs.getString("publisher_role");
+                    String publishedBy = (role != null ? role + " (" + pub + ")" : pub);
+
+                    Notice notice = new Notice(
+                        String.valueOf(rs.getInt("notice_id")),
+                        rs.getString("title"),
+                        rs.getString("description"),
+                        pDate,
+                        publishedBy,
+                        rs.getString("target_audience")
+                    );
+                    list.add(notice);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("TechnicalOfficerDAO: Error querying notices: " + e.getMessage());
+        }
+
+        return list;
     }
 }
