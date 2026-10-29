@@ -41,7 +41,8 @@ public class AttendanceDAO {
                 "INNER JOIN attendance_sessions s ON a.session_id = s.session_id " +
                 "INNER JOIN courses c ON s.course_id = c.course_id " +
                 "INNER JOIN students stu ON a.student_id = stu.student_id " +
-                "WHERE stu.student_reg_no = ? OR CAST(stu.student_id AS CHAR) = ? " +
+                "WHERE (stu.student_reg_no = ? OR CAST(stu.student_id AS CHAR) = ?) " +
+                "AND c.academic_year = 2 AND c.semester = 1 " +
                 "ORDER BY c.course_code ASC, s.session_number ASC";
 
         Connection conn = null;
@@ -106,7 +107,8 @@ public class AttendanceDAO {
                 "INNER JOIN courses c ON cr.course_id = c.course_id " +
                 "LEFT JOIN attendance_sessions s ON s.course_id = c.course_id " +
                 "LEFT JOIN attendances a ON a.session_id = s.session_id AND a.student_id = stu.student_id " +
-                "WHERE stu.student_reg_no = ? OR CAST(stu.student_id AS CHAR) = ? " +
+                "WHERE (stu.student_reg_no = ? OR CAST(stu.student_id AS CHAR) = ?) " +
+                "AND c.academic_year = 2 AND c.semester = 1 " +
                 "GROUP BY c.course_id, c.course_code, c.course_name " +
                 "ORDER BY c.course_code ASC";
 
