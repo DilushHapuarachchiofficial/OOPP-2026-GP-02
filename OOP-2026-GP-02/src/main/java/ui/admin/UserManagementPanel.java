@@ -560,7 +560,7 @@ public class UserManagementPanel extends JPanel {
         String designation = (String) designationCombo.getSelectedItem();
         
         if(name.isEmpty() || username.isEmpty() || email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill in required fields.");
+            ModernDialog.showMessageDialog(this, "Please fill in required fields.", "Validation Error", ModernDialog.WARNING_MESSAGE);
             return;
         }
         
@@ -571,23 +571,23 @@ public class UserManagementPanel extends JPanel {
                 deptId, acadYear, regNo, gender, dob, nic, phone, address, enrollDate, studentStatus, designation
             );
             if (success) {
-                JOptionPane.showMessageDialog(this, "User added successfully!");
+                ModernDialog.showMessageDialog(this, "User added successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
                 refreshTableData();
                 clearForm();
                 cardLayout.show(this, "List");
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to add user.");
+                ModernDialog.showMessageDialog(this, "Failed to add user.", "Error", ModernDialog.ERROR_MESSAGE);
             }
         } else {
             // Edit Mode
             boolean success = UserDAO.updateUser(editingUserId, name, username, email, role);
             if (success) {
-                JOptionPane.showMessageDialog(this, "User updated successfully!");
+                ModernDialog.showMessageDialog(this, "User updated successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
                 refreshTableData();
                 clearForm();
                 cardLayout.show(this, "List");
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to update user.");
+                ModernDialog.showMessageDialog(this, "Failed to update user.", "Error", ModernDialog.ERROR_MESSAGE);
             }
         }
     }
@@ -731,13 +731,13 @@ public class UserManagementPanel extends JPanel {
                     String displayId = (String) tableModel.getValueAt(modelRow, 0);
                     int userId = Integer.parseInt(displayId.substring(1));
                     
-                    int confirm = JOptionPane.showConfirmDialog(panel, "Delete user " + displayId + "?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
-                    if (confirm == JOptionPane.YES_OPTION) {
+                    int confirm = ModernDialog.showConfirmDialog(panel, "Delete user " + displayId + "?", "Confirm Delete", ModernDialog.YES_NO_OPTION);
+                    if (confirm == ModernDialog.YES_OPTION) {
                         if (UserDAO.deleteUser(userId)) {
                             tableModel.removeRow(modelRow);
-                            JOptionPane.showMessageDialog(panel, "User deleted.");
+                            ModernDialog.showMessageDialog(panel, "User deleted.", "Success", ModernDialog.INFORMATION_MESSAGE);
                         } else {
-                            JOptionPane.showMessageDialog(panel, "Failed to delete user.");
+                            ModernDialog.showMessageDialog(panel, "Failed to delete user.", "Error", ModernDialog.ERROR_MESSAGE);
                         }
                     }
                 }
