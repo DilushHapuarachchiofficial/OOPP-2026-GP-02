@@ -173,7 +173,7 @@ public class UndergraduateAttendanceUI extends JPanel {
         scrollContent.add(Box.createVerticalStrut(20));
 
         // 4. Course-Wise Breakdown Cards
-        scrollContent.add(createSectionTitle("Course-Wise Attendance Breakdown", "Course components & minimum 80% requirement"));
+        scrollContent.add(createSectionTitle("Course-Wise Attendance Breakdown (Level II Semester I)", "Current semester course components & minimum 80% requirement"));
         scrollContent.add(Box.createVerticalStrut(10));
         courseCardsContainer = new JPanel();
         courseCardsContainer.setLayout(new BoxLayout(courseCardsContainer, BoxLayout.Y_AXIS));
@@ -182,7 +182,7 @@ public class UndergraduateAttendanceUI extends JPanel {
         scrollContent.add(Box.createVerticalStrut(24));
 
         // 5. Attendance Session Log Section (Filter & Table)
-        scrollContent.add(createSectionTitle("Attendance Session History Log", "Complete history of lectures and practicals held"));
+        scrollContent.add(createSectionTitle("Attendance Session History Log (Level II Semester I)", "Complete history of lectures and practicals held"));
         scrollContent.add(Box.createVerticalStrut(10));
         scrollContent.add(createFilterPanel());
         scrollContent.add(Box.createVerticalStrut(10));
@@ -883,7 +883,7 @@ public class UndergraduateAttendanceUI extends JPanel {
 
                     // Update subtitle status
                     if (statusSubtitleLabel != null) {
-                        statusSubtitleLabel.setText("Showing attendance for " + studentIdentifier + "  •  " +
+                        statusSubtitleLabel.setText("Showing attendance for Level II Semester I (" + studentIdentifier + ")  •  " +
                                 allAttendanceRecords.size() + " total sessions logged");
                     }
                 } catch (Exception e) {
