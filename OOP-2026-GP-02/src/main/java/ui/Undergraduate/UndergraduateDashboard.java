@@ -8,6 +8,7 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -138,6 +139,12 @@ public class UndergraduateDashboard extends JFrame {
                 currentStudent.setEnrollmentYear(dbProfile.getEnrollmentYear());
                 if (dbProfile.getStudentId() != null) currentStudent.setStudentId(dbProfile.getStudentId());
                 if (dbProfile.getRegistrationNo() != null) currentStudent.setRegistrationNo(dbProfile.getRegistrationNo());
+                if (dbProfile.getProfilePicture() != null) currentStudent.setProfilePicture(dbProfile.getProfilePicture());
+                if (dbProfile.getAddress() != null) currentStudent.setAddress(dbProfile.getAddress());
+                if (dbProfile.getNic() != null) currentStudent.setNic(dbProfile.getNic());
+                if (dbProfile.getDob() != null) currentStudent.setDob(dbProfile.getDob());
+                if (dbProfile.getUserId() != null) currentStudent.setUserId(dbProfile.getUserId());
+                if (dbProfile.getUsername() != null) currentStudent.setUsername(dbProfile.getUsername());
             }
 
             // 2. Fetch live notices
@@ -934,15 +941,41 @@ public class UndergraduateDashboard extends JFrame {
     private Icon renderAvatarIcon(int size, String imagePath, String name) {
         if (imagePath != null && !imagePath.trim().isEmpty() && !imagePath.equalsIgnoreCase("default_avatar.png")) {
             File f = new File(imagePath.trim());
+            if (!f.isAbsolute()) {
+                File rel = new File(System.getProperty("user.dir"), imagePath.trim());
+                if (rel.exists() && rel.isFile()) {
+                    f = rel;
+                }
+            }
             if (f.exists() && f.isFile()) {
                 try {
                     ImageIcon icon = new ImageIcon(f.getAbsolutePath());
-                    Image img = icon.getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
-                    return new ImageIcon(img);
+                    Image img = icon.getImage();
+                    return createCircularAvatarIcon(img, size);
                 } catch (Exception ignored) {}
             }
         }
         return createVectorInitialsIcon(size, name);
+    }
+
+    private Icon createCircularAvatarIcon(Image rawImg, int size) {
+        BufferedImage circular = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = circular.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+        // Circular clipping mask
+        g2.setClip(new java.awt.geom.Ellipse2D.Float(0, 0, size, size));
+        g2.drawImage(rawImg, 0, 0, size, size, null);
+
+        // Smooth circular border outline
+        g2.setClip(null);
+        g2.setColor(COLOR_BORDER);
+        g2.setStroke(new BasicStroke(1.5f));
+        g2.drawOval(0, 0, size - 1, size - 1);
+        g2.dispose();
+
+        return new ImageIcon(circular);
     }
 
     private Icon createVectorInitialsIcon(int size, String name) {
@@ -1044,7 +1077,7 @@ public class UndergraduateDashboard extends JFrame {
     private static Undergraduate createDefaultTestStudent() {
         Undergraduate student = new Undergraduate(
                 "USR-1085", "tg2085", "", "H.D.W.B. Hapuarachchi",
-                "tg2085@fot.ruh.ac.lk", "+94 77 123 4567", "",
+                "tg2085@fot.ruh.ac.lk", "+94 77 123 4567", "C:\\Users\\VICTUS\\Downloads\\TG2024 2083.jpg",
                 "STU-2085", "TG/2024/2085", "2023/2024",
                 "Department of Information and Communication Technology", 2024
         );

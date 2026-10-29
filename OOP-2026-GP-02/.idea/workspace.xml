@@ -6,40 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2122_Lec01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2122_Lec02.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2122_Lec03.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2132_Lab01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2132_Lab02.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2132_Lec01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2142_Lec01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2142_Lec02.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2142_Lec03.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2152_Lec01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2152_Lec02.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2152_Lec03.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2162_Lec01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2162_Lec02.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/ICT2162_Lec03.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/TCS1212_Lec01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/TCS1212_Lec02.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/TCS2112_Lec01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/TCS2112_Lec02.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/TCS2121_Lec01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/TCS2121_Lec02.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/TMS1233_Lec01.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/TMS1233_Lec02.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/TMS1233_Lec03.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/insert_year1_and_ca_marks.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/materials/tecfams_real_subjects_insert.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/Undergraduate/CourseDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/Undergraduate/CourseDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/Undergraduate/GradesDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/Undergraduate/GradesDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/Undergraduate/LectureNotesDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/Undergraduate/LectureNotesDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/Undergraduate/UndergraduateDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/Undergraduate/UndergraduateDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Undergraduate/CourseMaterial.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Undergraduate/CourseMaterial.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Undergraduate/LectureNoteItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Undergraduate/LectureNoteItem.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateDashboard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateLectureNotesUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Undergraduate/UndergraduateLectureNotesUI.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
