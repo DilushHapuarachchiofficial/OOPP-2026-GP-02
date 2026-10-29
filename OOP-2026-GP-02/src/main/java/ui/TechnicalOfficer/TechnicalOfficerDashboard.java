@@ -58,6 +58,16 @@ public class TechnicalOfficerDashboard extends JFrame {
     private JLabel headerWelcomeLabel;
     private TechnicalOfficerNavigationBar navigationBar;
 
+    // Single-Window Multi-View Navigation (CardLayout)
+    private CardLayout cardLayout;
+    private JPanel centerCardPanel;
+
+    private AttendanceManagementForm attendanceForm;
+    private MedicalManagementForm medicalForm;
+    private DepartmentTimetableForm timetableForm;
+    private FacultyNoticesForm noticesForm;
+    private TechnicalOfficerProfileForm profileForm;
+
     public TechnicalOfficerDashboard() {
         this(new TechnicalOfficerDAO());
     }
@@ -73,8 +83,8 @@ public class TechnicalOfficerDashboard extends JFrame {
     private void initFrameSettings() {
         setTitle("TecFAMS - Technical Officer Dashboard");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(1240, 780);
-        setMinimumSize(new Dimension(1020, 680));
+        setSize(1280, 820);
+        setMinimumSize(new Dimension(1080, 700));
         setLocationRelativeTo(null);
     }
 
@@ -95,12 +105,19 @@ public class TechnicalOfficerDashboard extends JFrame {
 
         getContentPane().add(topContainer, BorderLayout.NORTH);
 
-        // 3. Central Dashboard Content
+        // 3. Central Card Panel for Single-Window Multi-Page Navigation
+        cardLayout = new CardLayout();
+        centerCardPanel = new JPanel(cardLayout);
+        centerCardPanel.setBackground(BG_COLOR);
+
+        // Primary Card: Home Dashboard
         JScrollPane centerScroll = new JScrollPane(createDashboardContent());
         centerScroll.setBorder(null);
         centerScroll.setBackground(BG_COLOR);
         centerScroll.getVerticalScrollBar().setUnitIncrement(16);
-        getContentPane().add(centerScroll, BorderLayout.CENTER);
+        centerCardPanel.add(centerScroll, "DASHBOARD");
+
+        getContentPane().add(centerCardPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -195,6 +212,14 @@ public class TechnicalOfficerDashboard extends JFrame {
             }
         };
         avatarBadge.setPreferredSize(new Dimension(40, 40));
+        avatarBadge.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        avatarBadge.setToolTipText("View / Edit Profile");
+        avatarBadge.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                showProfileDialog();
+            }
+        });
 
         rightInfo.add(textBlock);
         rightInfo.add(avatarBadge);
@@ -457,10 +482,31 @@ public class TechnicalOfficerDashboard extends JFrame {
         return p;
     }
 
+    /**
+     * Switches the center view to the main Dashboard card.
+     */
+    public void showDashboardView() {
+        if (cardLayout != null && centerCardPanel != null) {
+            cardLayout.show(centerCardPanel, "DASHBOARD");
+        }
+        if (navigationBar != null) {
+            navigationBar.selectNav("DASHBOARD");
+        }
+    }
+
+    /**
+     * Switches the center view to Attendance Management inside the same window.
+     */
     public void openAttendanceManagement() {
         try {
-            AttendanceManagementForm form = new AttendanceManagementForm(this, currentOfficer);
-            form.setVisible(true);
+            if (attendanceForm == null) {
+                attendanceForm = new AttendanceManagementForm(this, currentOfficer);
+                centerCardPanel.add(attendanceForm.getContentPane(), "ATTENDANCE");
+            }
+            cardLayout.show(centerCardPanel, "ATTENDANCE");
+            if (navigationBar != null) {
+                navigationBar.selectNav("ATTENDANCE");
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Failed to open Attendance Management: " + ex.getMessage(),
@@ -470,10 +516,19 @@ public class TechnicalOfficerDashboard extends JFrame {
         }
     }
 
+    /**
+     * Switches the center view to Medical Records Management inside the same window.
+     */
     public void openMedicalManagement() {
         try {
-            MedicalManagementForm form = new MedicalManagementForm(this, currentOfficer);
-            form.setVisible(true);
+            if (medicalForm == null) {
+                medicalForm = new MedicalManagementForm(this, currentOfficer);
+                centerCardPanel.add(medicalForm.getContentPane(), "MEDICAL");
+            }
+            cardLayout.show(centerCardPanel, "MEDICAL");
+            if (navigationBar != null) {
+                navigationBar.selectNav("MEDICAL");
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Failed to open Medical Records Management: " + ex.getMessage(),
@@ -483,10 +538,19 @@ public class TechnicalOfficerDashboard extends JFrame {
         }
     }
 
+    /**
+     * Switches the center view to Department Timetable inside the same window.
+     */
     public void openDepartmentTimetable() {
         try {
-            DepartmentTimetableForm form = new DepartmentTimetableForm(this, currentOfficer);
-            form.setVisible(true);
+            if (timetableForm == null) {
+                timetableForm = new DepartmentTimetableForm(this, currentOfficer);
+                centerCardPanel.add(timetableForm.getContentPane(), "TIMETABLE");
+            }
+            cardLayout.show(centerCardPanel, "TIMETABLE");
+            if (navigationBar != null) {
+                navigationBar.selectNav("TIMETABLE");
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Failed to open Department Timetable: " + ex.getMessage(),
@@ -496,10 +560,19 @@ public class TechnicalOfficerDashboard extends JFrame {
         }
     }
 
+    /**
+     * Switches the center view to Faculty Notices inside the same window.
+     */
     public void openFacultyNotices() {
         try {
-            FacultyNoticesForm form = new FacultyNoticesForm(this, currentOfficer);
-            form.setVisible(true);
+            if (noticesForm == null) {
+                noticesForm = new FacultyNoticesForm(this, currentOfficer);
+                centerCardPanel.add(noticesForm.getContentPane(), "NOTICES");
+            }
+            cardLayout.show(centerCardPanel, "NOTICES");
+            if (navigationBar != null) {
+                navigationBar.selectNav("NOTICES");
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Failed to open Faculty Notices: " + ex.getMessage(),
@@ -519,17 +592,30 @@ public class TechnicalOfficerDashboard extends JFrame {
     }
 
     /**
-     * Opens the Technical Officer Profile Form to view and edit profile details,
-     * upload/preview profile photos, and change passwords.
+     * Switches the center view to the Technical Officer Profile Form inside the same window.
      */
     public void showProfileDialog() {
-        TechnicalOfficerProfileForm form = new TechnicalOfficerProfileForm(this, currentOfficer, dao);
-        form.setOnProfileSavedCallback(() -> {
-            if (currentOfficer != null && headerWelcomeLabel != null) {
-                headerWelcomeLabel.setText("Welcome back, " + currentOfficer.getName() + "!");
+        try {
+            if (profileForm == null) {
+                profileForm = new TechnicalOfficerProfileForm(this, currentOfficer, dao);
+                profileForm.setOnProfileSavedCallback(() -> {
+                    if (currentOfficer != null && headerWelcomeLabel != null) {
+                        headerWelcomeLabel.setText("Welcome back, " + currentOfficer.getName() + "!");
+                    }
+                });
+                centerCardPanel.add(profileForm.getContentPane(), "PROFILE");
             }
-        });
-        form.setVisible(true);
+            cardLayout.show(centerCardPanel, "PROFILE");
+            if (navigationBar != null) {
+                navigationBar.selectNav("PROFILE");
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to open Profile Form: " + ex.getMessage(),
+                    "Navigation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
     }
 
     public void handleLogout() {
