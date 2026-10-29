@@ -54,7 +54,7 @@ public class GradesDAO {
            .append("LEFT JOIN marks m ON cr.student_id = m.student_id ")
            .append("LEFT JOIN evaluation_components ec ON m.component_id = ec.component_id AND ec.course_id = c.course_id ")
            .append("LEFT JOIN view_student_course_grades v ON v.student_id = cr.student_id AND v.course_id = c.course_id ")
-           .append("WHERE (s.student_id = ? OR s.student_reg_no = ?) ");
+           .append("WHERE (s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ?) ");
 
         if (yearFilter != null) {
             sql.append("AND c.academic_year = ? ");
@@ -169,7 +169,7 @@ public class GradesDAO {
            .append("JOIN evaluation_components ec ON m.component_id = ec.component_id ")
            .append("JOIN courses c ON ec.course_id = c.course_id ")
            .append("JOIN students s ON m.student_id = s.student_id ")
-           .append("WHERE (s.student_id = ? OR s.student_reg_no = ?) ");
+           .append("WHERE (s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ?) ");
 
         if (yearFilter != null) {
             sql.append("AND c.academic_year = ? ");
@@ -290,7 +290,7 @@ public class GradesDAO {
                   .append("COUNT(v.course_id) AS total_evaluated_courses ")
                   .append("FROM view_student_course_grades v ")
                   .append("JOIN courses c ON v.course_id = c.course_id ")
-                  .append("WHERE (v.student_id = ? OR v.student_reg_no = ?) AND v.final_mark IS NOT NULL ");
+                  .append("WHERE (v.student_reg_no = ? OR CAST(v.student_id AS CHAR) = ?) AND v.final_mark IS NOT NULL ");
 
             if (yearFilter != null) sqlGpa.append("AND c.academic_year = ? ");
             if (semFilter != null) sqlGpa.append("AND c.semester = ? ");
@@ -319,7 +319,7 @@ public class GradesDAO {
                   .append("FROM course_registrations cr ")
                   .append("JOIN students s ON cr.student_id = s.student_id ")
                   .append("JOIN courses c ON cr.course_id = c.course_id ")
-                  .append("WHERE (s.student_id = ? OR s.student_reg_no = ?) ");
+                  .append("WHERE (s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ?) ");
 
             if (yearFilter != null) sqlReg.append("AND c.academic_year = ? ");
             if (semFilter != null) sqlReg.append("AND c.semester = ? ");

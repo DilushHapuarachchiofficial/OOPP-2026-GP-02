@@ -15,7 +15,8 @@ import java.util.List;
  * Data Access Object (DAO) for Lecture Notes operations.
  * Handles database queries strictly for retrieving enrolled courses
  * and the lecture notes uploaded for those enrolled courses.
- * Follows parameterized PreparedStatement queries and safe JDBC practices.
+ * Reflects the new TecFAMS database schema where course_materials
+ * stores file_name and file_data (LONGBLOB) directly in MySQL.
  */
 public class LectureNotesDAO {
 
@@ -39,7 +40,7 @@ public class LectureNotesDAO {
                 "INNER JOIN students s ON cr.student_id = s.student_id " +
                 "INNER JOIN courses c ON cr.course_id = c.course_id " +
                 "LEFT JOIN departments d ON c.department_id = d.department_id " +
-                "WHERE s.student_id = ? OR s.student_reg_no = ? " +
+                "WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? " +
                 "ORDER BY c.course_code ASC";
 
         Connection conn = null;
@@ -95,8 +96,7 @@ public class LectureNotesDAO {
             return lectureNotes;
         }
 
-        // Enforce the course-based restriction in the SQL query:
-        // Join course_materials with courses, then join with course_registrations and students.
+        // Query course_materials matching the enrolled courses of the student
         String sql = "SELECT m.material_id, " +
                 "c.course_id, " +
                 "c.course_code, " +
@@ -104,14 +104,15 @@ public class LectureNotesDAO {
                 "COALESCE(l.lecturer_name, 'Assigned Lecturer') AS lecturer_name, " +
                 "m.material_title, " +
                 "m.material_description, " +
-                "m.file_path, " +
+                "m.file_name, " +
+                "COALESCE(m.file_size, 0) AS file_size, " +
                 "DATE_FORMAT(m.uploaded_date, '%Y-%m-%d') AS uploaded_date " +
                 "FROM course_materials m " +
                 "INNER JOIN courses c ON m.course_id = c.course_id " +
                 "INNER JOIN course_registrations cr ON c.course_id = cr.course_id " +
                 "INNER JOIN students s ON cr.student_id = s.student_id " +
                 "LEFT JOIN lecturers l ON m.lecturer_id = l.lecturer_id " +
-                "WHERE s.student_id = ? OR s.student_reg_no = ? " +
+                "WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? " +
                 "ORDER BY c.course_code ASC, m.uploaded_date DESC";
 
         Connection conn = null;
@@ -139,7 +140,8 @@ public class LectureNotesDAO {
                         rs.getString("lecturer_name"),
                         rs.getString("material_title"),
                         rs.getString("material_description"),
-                        rs.getString("file_path"),
+                        rs.getString("file_name"),
+                        rs.getLong("file_size"),
                         rs.getString("uploaded_date")
                 );
                 lectureNotes.add(note);
@@ -151,6 +153,42 @@ public class LectureNotesDAO {
         }
 
         return lectureNotes;
+    }
+
+    /**
+     * Retrieves the binary file data (LONGBLOB) for a specific lecture note from MySQL.
+     * Allows downloading and opening lecture notes directly without relying on a disk folder.
+     *
+     * @param materialId The unique ID of the lecture note material.
+     * @return byte[] array containing the raw file data, or null if not found.
+     */
+    public byte[] getMaterialFileData(int materialId) {
+        String sql = "SELECT file_data FROM course_materials WHERE material_id = ?";
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            if (conn == null) {
+                System.err.println("Database Notice: Unable to connect to MySQL database.");
+                return null;
+            }
+
+            stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, materialId);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getBytes("file_data");
+            }
+        } catch (SQLException e) {
+            System.err.println("Database Notice: Error retrieving material file blob: " + e.getMessage());
+        } finally {
+            closeQuietly(rs, stmt, conn);
+        }
+
+        return null;
     }
 
     /**

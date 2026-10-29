@@ -23,8 +23,8 @@ import java.util.List;
  *
  * Displays lecture notes grouped course-by-course for each course
  * the logged-in student is enrolled in.
- * Each course has its own distinct card/box, and each lecture note
- * includes an 'Open Note' and 'Download' button right beside it.
+ * Supports loading and downloading files directly from the MySQL database
+ * (course_materials.file_data LONGBLOB) without needing local disk files.
  */
 public class UndergraduateLectureNotesUI extends JPanel {
 
@@ -126,7 +126,7 @@ public class UndergraduateLectureNotesUI extends JPanel {
         headingBar.add(leftBox, BorderLayout.WEST);
 
         if (parentDashboard != null) {
-            JButton backBtn = new JButton("← Back to Dashboard");
+            JButton backBtn = new JButton("<- Back to Dashboard");
             backBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
             backBtn.setForeground(COLOR_MAIN_BLUE);
             backBtn.setBackground(COLOR_WHITE);
@@ -319,7 +319,7 @@ public class UndergraduateLectureNotesUI extends JPanel {
 
     /**
      * Creates an individual lecture note row with title, metadata,
-     * and immediate Open/Download action buttons on the right.
+     * file size, and immediate Open/Download action buttons on the right.
      */
     private JPanel createNoteRowItem(LectureNoteItem note, int index) {
         JPanel row = new JPanel(new BorderLayout(14, 0));
@@ -346,10 +346,12 @@ public class UndergraduateLectureNotesUI extends JPanel {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         titleLabel.setForeground(COLOR_TEXT_PRIMARY);
 
+        String sizeInfo = (note.getFormattedFileSize() != null && !note.getFormattedFileSize().isEmpty())
+                ? "  |  Size: " + note.getFormattedFileSize() : "";
         String desc = (note.getDescription() != null && !note.getDescription().isEmpty())
                 ? " • " + note.getDescription() : "";
         String metaText = "Lecturer: " + (note.getLecturerName() != null ? note.getLecturerName() : "Course Lecturer") +
-                "  |  Type: " + note.getFileType() +
+                "  |  Type: " + note.getFileType() + sizeInfo +
                 "  |  Uploaded: " + (note.getUploadedDate() != null ? note.getUploadedDate() : "N/A") + desc;
         JLabel metaLabel = new JLabel(metaText);
         metaLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
@@ -539,30 +541,59 @@ public class UndergraduateLectureNotesUI extends JPanel {
 
     /**
      * Directly opens the specified lecture note file.
+     * Fetches the file blob directly from the database (course_materials.file_data).
+     * If found, writes to a temporary file and opens with default system application (e.g., PDF viewer, browser).
      */
     private void openNote(LectureNoteItem note) {
         if (note == null) return;
 
-        String filePath = note.getFilePath();
-        if (filePath == null || filePath.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "No file path is registered for this lecture note in the database.",
-                    "File Unavailable",
-                    JOptionPane.WARNING_MESSAGE
-            );
-            return;
+        File targetFile = null;
+
+        // 1. First attempt to load binary data directly from MySQL database
+        byte[] fileBytes = lectureNotesDAO.getMaterialFileData(note.getMaterialId());
+        if (fileBytes != null && fileBytes.length > 0) {
+            try {
+                String safeName = (note.getFileName() != null && !note.getFileName().trim().isEmpty())
+                        ? note.getFileName().trim() : "lecture_note_" + note.getMaterialId() + ".pdf";
+
+                String prefix = "tecfams_";
+                String suffix = ".pdf";
+                int dotIdx = safeName.lastIndexOf('.');
+                if (dotIdx > 0) {
+                    prefix = safeName.substring(0, dotIdx);
+                    suffix = safeName.substring(dotIdx);
+                }
+                if (prefix.length() < 3) {
+                    prefix = "note_" + prefix;
+                }
+
+                targetFile = File.createTempFile(prefix + "_", suffix);
+                targetFile.deleteOnExit();
+
+                try (FileOutputStream fos = new FileOutputStream(targetFile)) {
+                    fos.write(fileBytes);
+                    fos.flush();
+                }
+            } catch (IOException ex) {
+                System.err.println("Could not create temp file for lecture note: " + ex.getMessage());
+            }
         }
 
-        File targetFile = resolveFile(filePath);
+        // 2. Fallback to disk storage if not found in database
+        if (targetFile == null || !targetFile.exists()) {
+            String filePath = note.getFilePath();
+            if (filePath != null && !filePath.trim().isEmpty()) {
+                targetFile = resolveFile(filePath);
+            }
+        }
 
-        if (!targetFile.exists()) {
+        if (targetFile == null || !targetFile.exists()) {
             JOptionPane.showMessageDialog(
                     this,
-                    "The lecture note file was not found on the server storage.\n\n" +
+                    "The lecture note file could not be retrieved from the database.\n\n" +
                             "Note Title: " + note.getTitle() + "\n" +
                             "Course: " + note.getCourseCode() + " - " + note.getCourseName() + "\n" +
-                            "File Path: " + targetFile.getAbsolutePath() + "\n\n" +
+                            "File Name: " + note.getFileName() + "\n\n" +
                             "Please contact the lecturer (" + note.getLecturerName() + ") or Technical Officer.",
                     "File Not Found",
                     JOptionPane.WARNING_MESSAGE
@@ -576,10 +607,10 @@ public class UndergraduateLectureNotesUI extends JPanel {
             } else {
                 JOptionPane.showMessageDialog(
                         this,
-                        "Your operating system does not support opening files directly from Java.\n" +
-                                "File Location: " + targetFile.getAbsolutePath(),
+                        "Your operating system does not support opening files directly.\n" +
+                                "Saved to temporary location: " + targetFile.getAbsolutePath(),
                         "Action Unsupported",
-                        JOptionPane.WARNING_MESSAGE
+                        JOptionPane.INFORMATION_MESSAGE
                 );
             }
         } catch (IOException ex) {
@@ -594,75 +625,71 @@ public class UndergraduateLectureNotesUI extends JPanel {
 
     /**
      * Directly downloads the specified lecture note file.
+     * Fetches file bytes directly from MySQL database and saves it to user's selected location.
      */
     private void downloadNote(LectureNoteItem note) {
         if (note == null) return;
 
-        String filePath = note.getFilePath();
-        if (filePath == null || filePath.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "No file path is registered for this lecture note in the database.",
-                    "Download Unavailable",
-                    JOptionPane.WARNING_MESSAGE
-            );
-            return;
-        }
-
-        File sourceFile = resolveFile(filePath);
-
-        if (!sourceFile.exists()) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "The lecture note file could not be retrieved from the server storage.\n\n" +
-                            "File Path: " + sourceFile.getAbsolutePath() + "\n\n" +
-                            "Please contact the course lecturer (" + note.getLecturerName() + ").",
-                    "File Retrieval Failed",
-                    JOptionPane.WARNING_MESSAGE
-            );
-            return;
-        }
+        String suggestedName = (note.getFileName() != null && !note.getFileName().trim().isEmpty())
+                ? note.getFileName().trim() : (note.getTitle() + ".pdf");
 
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setSelectedFile(new File(sourceFile.getName()));
+        fileChooser.setSelectedFile(new File(suggestedName));
         fileChooser.setDialogTitle("Save Lecture Note As...");
 
         int choice = fileChooser.showSaveDialog(this);
         if (choice == JFileChooser.APPROVE_OPTION) {
             File destinationFile = fileChooser.getSelectedFile();
 
-            FileInputStream inStream = null;
-            FileOutputStream outStream = null;
-            try {
-                inStream = new FileInputStream(sourceFile);
-                outStream = new FileOutputStream(destinationFile);
+            // 1. Fetch file bytes from database LONGBLOB
+            byte[] fileBytes = lectureNotesDAO.getMaterialFileData(note.getMaterialId());
+            boolean success = false;
+            String errorMsg = null;
 
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = inStream.read(buffer)) != -1) {
-                    outStream.write(buffer, 0, bytesRead);
+            if (fileBytes != null && fileBytes.length > 0) {
+                try (FileOutputStream fos = new FileOutputStream(destinationFile)) {
+                    fos.write(fileBytes);
+                    fos.flush();
+                    success = true;
+                } catch (IOException ex) {
+                    errorMsg = ex.getMessage();
                 }
+            } else {
+                // 2. Fallback to disk file if available
+                String filePath = note.getFilePath();
+                File sourceFile = (filePath != null) ? resolveFile(filePath) : null;
+                if (sourceFile != null && sourceFile.exists()) {
+                    try (FileInputStream fis = new FileInputStream(sourceFile);
+                         FileOutputStream fos = new FileOutputStream(destinationFile)) {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = fis.read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
+                        }
+                        fos.flush();
+                        success = true;
+                    } catch (IOException ex) {
+                        errorMsg = ex.getMessage();
+                    }
+                } else {
+                    errorMsg = "Lecture note file data was not found in the database.";
+                }
+            }
 
+            if (success) {
                 JOptionPane.showMessageDialog(
                         this,
                         "Lecture note successfully downloaded to:\n" + destinationFile.getAbsolutePath(),
                         "Download Complete",
                         JOptionPane.INFORMATION_MESSAGE
                 );
-            } catch (IOException ex) {
+            } else {
                 JOptionPane.showMessageDialog(
                         this,
-                        "An error occurred while saving the file: " + ex.getMessage(),
+                        "An error occurred while saving the file: " + (errorMsg != null ? errorMsg : "Unknown error"),
                         "Download Error",
                         JOptionPane.ERROR_MESSAGE
                 );
-            } finally {
-                if (inStream != null) {
-                    try { inStream.close(); } catch (IOException ignored) {}
-                }
-                if (outStream != null) {
-                    try { outStream.close(); } catch (IOException ignored) {}
-                }
             }
         }
     }

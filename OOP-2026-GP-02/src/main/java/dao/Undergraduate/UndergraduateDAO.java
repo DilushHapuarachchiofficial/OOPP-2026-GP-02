@@ -79,10 +79,6 @@ public class UndergraduateDAO {
     }
 
     /**
-     * Updates permitted contact details (phone and email) in the database.
-     * Complies with SRS Undergraduate profile update restrictions.
-     */
-    /**
      * Updates full student profile details in database (students and users tables).
      * Updates: Name, Email, Phone, Address, NIC, DOB, and Profile Picture.
      */
@@ -201,7 +197,7 @@ public class UndergraduateDAO {
     public GPA getStudentGPA(String studentId) {
         String query = "SELECT ROUND(SUM(grade_point * credit) / SUM(credit), 2) AS calculated_gpa " +
                 "FROM view_student_course_grades " +
-                "WHERE (student_id = ? OR student_reg_no = ?) AND final_mark IS NOT NULL";
+                "WHERE (student_reg_no = ? OR CAST(student_id AS CHAR) = ?) AND final_mark IS NOT NULL";
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -236,10 +232,10 @@ public class UndergraduateDAO {
                 "COUNT(a.attendance_id) AS total_sessions, " +
                 "SUM(CASE WHEN a.attendance_status = 'Present' THEN 1 ELSE 0 END) AS attended_sessions, " +
                 "(SELECT COUNT(*) FROM medicals m JOIN students s2 ON m.student_id = s2.student_id " +
-                " WHERE (s2.student_id = ? OR s2.student_reg_no = ?) AND m.approval_status = 'Approved') AS medical_sessions " +
+                " WHERE (s2.student_reg_no = ? OR CAST(s2.student_id AS CHAR) = ?) AND m.approval_status = 'Approved') AS medical_sessions " +
                 "FROM students s " +
                 "LEFT JOIN attendances a ON s.student_id = a.student_id " +
-                "WHERE s.student_id = ? OR s.student_reg_no = ? " +
+                "WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? " +
                 "GROUP BY s.student_id";
 
         Connection conn = null;
@@ -410,14 +406,18 @@ public class UndergraduateDAO {
     }
 
     /**
-     * Retrieves lecturer course materials from the database.
+     * Retrieves lecturer course materials from the database for enrolled courses.
+     * Complies with the new course_materials table schema (file_name, file_size).
      */
     public List<CourseMaterial> getCourseMaterialsForStudent(String studentId) {
         String query = "SELECT m.material_id, c.course_code, m.material_title AS title, " +
-                "m.material_description AS description, m.file_path, " +
+                "m.material_description AS description, m.file_name, COALESCE(m.file_size, 0) AS file_size, " +
                 "DATE_FORMAT(m.uploaded_date, '%Y-%m-%d') AS uploaded_date " +
                 "FROM course_materials m " +
                 "INNER JOIN courses c ON m.course_id = c.course_id " +
+                "INNER JOIN course_registrations cr ON c.course_id = cr.course_id " +
+                "INNER JOIN students s ON cr.student_id = s.student_id " +
+                "WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? " +
                 "ORDER BY m.uploaded_date DESC";
 
         List<CourseMaterial> list = new ArrayList<>();
@@ -429,6 +429,8 @@ public class UndergraduateDAO {
             conn = DatabaseConnection.getConnection();
             if (conn == null) return list;
             stmt = conn.prepareStatement(query);
+            stmt.setString(1, studentId.trim());
+            stmt.setString(2, studentId.trim());
             rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -437,7 +439,8 @@ public class UndergraduateDAO {
                         rs.getString("course_code"),
                         rs.getString("title"),
                         rs.getString("description"),
-                        rs.getString("file_path"),
+                        rs.getString("file_name"),
+                        rs.getLong("file_size"),
                         rs.getString("uploaded_date")
                 );
                 list.add(cm);
@@ -460,7 +463,7 @@ public class UndergraduateDAO {
                 "INNER JOIN students s ON cr.student_id = s.student_id " +
                 "INNER JOIN courses c ON cr.course_id = c.course_id " +
                 "LEFT JOIN departments d ON c.department_id = d.department_id " +
-                "WHERE s.student_id = ? OR s.student_reg_no = ? " +
+                "WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? " +
                 "ORDER BY c.course_code ASC";
 
         List<Course> courses = new ArrayList<>();
@@ -472,8 +475,8 @@ public class UndergraduateDAO {
             conn = DatabaseConnection.getConnection();
             if (conn == null) return courses;
             stmt = conn.prepareStatement(query);
-            stmt.setString(1, studentId);
-            stmt.setString(2, studentId);
+            stmt.setString(1, studentId.trim());
+            stmt.setString(2, studentId.trim());
             rs = stmt.executeQuery();
 
             while (rs.next()) {

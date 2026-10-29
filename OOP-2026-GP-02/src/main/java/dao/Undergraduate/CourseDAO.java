@@ -11,21 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Data Access Object (DAO) for Undergraduate Course Details.
- * Handles database queries strictly for retrieving all enrolled/registered courses,
- * academic credit counts, departments, course types, and registration status.
- *
- * Implements parameterized JDBC queries and safe connection closure.
- * Also includes robust offline fallback support to ensure UI continuity.
+ * Data Access Object (DAO) for Course management.
+ * Responsible for fetching undergraduate enrolled and registered courses
+ * from TecFAMS MySQL database with course metadata (codes, names, credits, types).
  */
 public class CourseDAO {
 
     /**
-     * Retrieves all registered courses for the specified student identifier (student ID or Reg No).
-     * Joins course_registrations, courses, students, and departments tables.
+     * Retrieves all courses registered by the student from the database.
+     * Enforces the real student registration association via 'course_registrations'.
      *
-     * @param studentIdOrRegNo Student registration number (e.g. "TG/2024/2085") or student ID.
-     * @return List of enrolled Course objects.
+     * @param studentIdOrRegNo Student registration number (e.g. TG/2024/2085) or ID.
+     * @return List of registered Course objects.
      */
     public List<Course> getRegisteredCoursesForStudent(String studentIdOrRegNo) {
         List<Course> courses = new ArrayList<>();
@@ -44,7 +41,7 @@ public class CourseDAO {
                 "INNER JOIN students s ON cr.student_id = s.student_id " +
                 "INNER JOIN courses c ON cr.course_id = c.course_id " +
                 "LEFT JOIN departments d ON c.department_id = d.department_id " +
-                "WHERE s.student_id = ? OR s.student_reg_no = ? " +
+                "WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? " +
                 "ORDER BY course_year DESC, course_sem ASC, c.course_code ASC";
 
         Connection conn = null;
@@ -71,12 +68,10 @@ public class CourseDAO {
                 String type = rs.getString("course_type");
                 int sem = rs.getInt("course_sem");
                 int year = rs.getInt("course_year");
-                if (year > 10) {
-                    if (code != null && code.length() >= 4 && Character.isDigit(code.charAt(3))) {
-                        year = Character.getNumericValue(code.charAt(3));
-                    } else {
-                        year = 2;
-                    }
+                if (sem == 0) sem = 1;
+                if (year == 0) {
+                    year = (code.length() >= 4 && Character.isDigit(code.charAt(3)))
+                            ? Character.getNumericValue(code.charAt(3)) : 2;
                 }
                 String dept = rs.getString("dept_code");
                 String status = rs.getString("reg_status");

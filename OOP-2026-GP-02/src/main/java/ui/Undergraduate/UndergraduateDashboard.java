@@ -1114,8 +1114,8 @@ public class UndergraduateDashboard extends JFrame {
         student.setTimetable(tt);
 
         Course c1 = new Course(1, "ICT2132", "OOP Practicum", 2, "DICT", "Java OOP principles and GUI.");
-        c1.addMaterial(new CourseMaterial(1, "ICT2132", "Lecture 05 - Java Swing GUI", "Swing GUI layout design.", "materials/swing.pdf", "2026-10-12"));
-        c1.addMaterial(new CourseMaterial(2, "ICT2132", "Lab Sheet 06 - JDBC & DAO", "PreparedStatement connectivity.", "materials/jdbc.pdf", "2026-10-14"));
+        c1.addMaterial(new CourseMaterial(1, "ICT2132", "Lecture 05 - Java Swing GUI", "Swing GUI layout design.", "swing.pdf", "2026-10-12"));
+        c1.addMaterial(new CourseMaterial(2, "ICT2132", "Lab Sheet 06 - JDBC & DAO", "PreparedStatement connectivity.", "jdbc.pdf", "2026-10-14"));
         List<Course> cList = new ArrayList<>();
         cList.add(c1);
         student.setCourses(cList);

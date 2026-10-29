@@ -3,6 +3,7 @@ package main.java.model.Undergraduate;
 /**
  * Model class representing an undergraduate lecture note / course material.
  * Contains course and lecturer metadata for clean display in the Lecture Notes UI.
+ * Supports file metadata (file_name, file_size) reflecting the course_materials database schema.
  * Designed for beginner-friendly Java OOP understanding.
  */
 public class LectureNoteItem {
@@ -13,6 +14,8 @@ public class LectureNoteItem {
     private String lecturerName;
     private String title;
     private String description;
+    private String fileName;
+    private long fileSize;
     private String filePath;
     private String uploadedDate;
 
@@ -20,7 +23,7 @@ public class LectureNoteItem {
     public LectureNoteItem() {
     }
 
-    // Parameterized constructor
+    // Parameterized constructor (Legacy / FilePath based)
     public LectureNoteItem(int materialId, int courseId, String courseCode, String courseName,
                            String lecturerName, String title, String description,
                            String filePath, String uploadedDate) {
@@ -32,6 +35,24 @@ public class LectureNoteItem {
         this.title = title;
         this.description = description;
         this.filePath = filePath;
+        this.fileName = filePath;
+        this.uploadedDate = uploadedDate;
+    }
+
+    // New Parameterized constructor (Database Schema with file_name and file_size)
+    public LectureNoteItem(int materialId, int courseId, String courseCode, String courseName,
+                           String lecturerName, String title, String description,
+                           String fileName, long fileSize, String uploadedDate) {
+        this.materialId = materialId;
+        this.courseId = courseId;
+        this.courseCode = courseCode;
+        this.courseName = courseName;
+        this.lecturerName = lecturerName;
+        this.title = title;
+        this.description = description;
+        this.fileName = fileName;
+        this.filePath = fileName;
+        this.fileSize = fileSize;
         this.uploadedDate = uploadedDate;
     }
 
@@ -39,10 +60,11 @@ public class LectureNoteItem {
      * Determines a human-readable file type from the file extension.
      */
     public String getFileType() {
-        if (filePath == null || filePath.trim().isEmpty()) {
-            return "Unknown";
+        String name = (fileName != null && !fileName.trim().isEmpty()) ? fileName : filePath;
+        if (name == null || name.trim().isEmpty()) {
+            return "Document";
         }
-        String lowerPath = filePath.toLowerCase();
+        String lowerPath = name.toLowerCase();
         if (lowerPath.endsWith(".pdf")) {
             return "PDF Document";
         } else if (lowerPath.endsWith(".doc") || lowerPath.endsWith(".docx")) {
@@ -54,7 +76,23 @@ public class LectureNoteItem {
         } else if (lowerPath.endsWith(".zip") || lowerPath.endsWith(".rar")) {
             return "Archive";
         }
-        return "File";
+        return "Document";
+    }
+
+    /**
+     * Returns a human-friendly formatted file size (e.g. 100 KB, 1.5 MB).
+     */
+    public String getFormattedFileSize() {
+        if (fileSize <= 0) {
+            return "";
+        }
+        if (fileSize >= 1024 * 1024) {
+            return String.format("%.1f MB", (double) fileSize / (1024.0 * 1024.0));
+        } else if (fileSize >= 1024) {
+            return String.format("%d KB", fileSize / 1024);
+        } else {
+            return fileSize + " B";
+        }
     }
 
     // Getters and Setters
@@ -114,12 +152,34 @@ public class LectureNoteItem {
         this.description = description;
     }
 
+    public String getFileName() {
+        return (fileName != null && !fileName.trim().isEmpty()) ? fileName : filePath;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+        if (this.filePath == null) {
+            this.filePath = fileName;
+        }
+    }
+
+    public long getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(long fileSize) {
+        this.fileSize = fileSize;
+    }
+
     public String getFilePath() {
-        return filePath;
+        return (filePath != null && !filePath.trim().isEmpty()) ? filePath : fileName;
     }
 
     public void setFilePath(String filePath) {
         this.filePath = filePath;
+        if (this.fileName == null) {
+            this.fileName = filePath;
+        }
     }
 
     public String getUploadedDate() {
