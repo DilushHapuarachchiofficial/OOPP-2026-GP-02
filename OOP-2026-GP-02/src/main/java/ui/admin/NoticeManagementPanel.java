@@ -345,7 +345,7 @@ public class NoticeManagementPanel extends JPanel {
         String attachment = attachmentField.getText();
         
         if (title.isEmpty() || desc.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill in all required fields.");
+            ModernDialog.showMessageDialog(this, "Please fill in all required fields.", "Validation Error", ModernDialog.WARNING_MESSAGE);
             return;
         }
         
@@ -355,11 +355,11 @@ public class NoticeManagementPanel extends JPanel {
         
         // Assume publishedBy = 1 for admin session placeholder
         if (NoticeDAO.addNotice(title, desc, audience, 1, attachment)) {
-            JOptionPane.showMessageDialog(this, "Notice published successfully!");
+            ModernDialog.showMessageDialog(this, "Notice published successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
             refreshTableData((DefaultTableModel) table.getModel());
             cardLayout.show(this, "List");
         } else {
-            JOptionPane.showMessageDialog(this, "Failed to publish notice.");
+            ModernDialog.showMessageDialog(this, "Failed to publish notice.", "Error", ModernDialog.ERROR_MESSAGE);
         }
     }
     
@@ -495,12 +495,12 @@ public class NoticeManagementPanel extends JPanel {
                         fireEditingStopped();
                         String idStr = (String) table.getValueAt(currentRow, 0);
                         int id = Integer.parseInt(idStr.substring(1));
-                        int confirm = JOptionPane.showConfirmDialog(panel, "Delete notice " + idStr + "?", "Confirm", JOptionPane.YES_NO_OPTION);
-                        if (confirm == JOptionPane.YES_OPTION) {
+                        int confirm = ModernDialog.showConfirmDialog(panel, "Delete notice " + idStr + "?", "Confirm Delete", ModernDialog.YES_NO_OPTION);
+                        if (confirm == ModernDialog.YES_OPTION) {
                             if (NoticeDAO.deleteNotice(id)) {
                                 ((DefaultTableModel)table.getModel()).removeRow(currentRow);
                             } else {
-                                JOptionPane.showMessageDialog(panel, "Failed to delete notice.");
+                                ModernDialog.showMessageDialog(panel, "Failed to delete notice.", "Error", ModernDialog.ERROR_MESSAGE);
                             }
                         }
                     }
