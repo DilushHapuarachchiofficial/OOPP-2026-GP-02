@@ -50,7 +50,7 @@ public class MedicalDAO {
         } finally {
             closeQuietly(rs, stmt, conn);
         }
-        return 21;
+        return -1;
     }
 
     /**

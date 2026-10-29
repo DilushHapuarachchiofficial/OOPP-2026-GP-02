@@ -321,43 +321,6 @@ public class UndergraduateDAO {
                 );
                 list.add(schedule);
             }
-
-            // Fallback for weekends / empty days: return regular active timetable schedule
-            if (list.isEmpty()) {
-                String fallbackQuery = "SELECT te.entry_id, te.day_of_week, " +
-                        "TIME_FORMAT(te.start_time, '%h:%i %p') AS start_time_str, " +
-                        "TIME_FORMAT(te.end_time, '%h:%i %p') AS end_time_str, " +
-                        "te.hall, te.session_type, c.course_code, c.course_name, " +
-                        "COALESCE((SELECT l.lecturer_name FROM lecturers l WHERE l.department_id = c.department_id LIMIT 1), 'Assigned Lecturer') AS lecturer_name " +
-                        "FROM timetable_entries te " +
-                        "INNER JOIN courses c ON te.course_id = c.course_id " +
-                        "INNER JOIN timetables t ON te.timetable_id = t.timetable_id " +
-                        "ORDER BY FIELD(te.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'), te.start_time ASC " +
-                        "LIMIT 5";
-                try (PreparedStatement fbStmt = conn.prepareStatement(fallbackQuery);
-                     ResultSet fbRs = fbStmt.executeQuery()) {
-                    while (fbRs.next()) {
-                        SessionType type = SessionType.THEORY;
-                        String typeStr = fbRs.getString("session_type");
-                        if (typeStr != null && typeStr.equalsIgnoreCase("PRACTICAL")) {
-                            type = SessionType.PRACTICAL;
-                        }
-
-                        Schedule schedule = new Schedule(
-                                fbRs.getInt("entry_id"),
-                                fbRs.getString("day_of_week"),
-                                fbRs.getString("start_time_str"),
-                                fbRs.getString("end_time_str"),
-                                fbRs.getString("hall"),
-                                type,
-                                fbRs.getString("course_code"),
-                                fbRs.getString("course_name"),
-                                fbRs.getString("lecturer_name")
-                        );
-                        list.add(schedule);
-                    }
-                }
-            }
         } catch (SQLException e) {
             System.err.println("Database Notice: Could not retrieve today's lectures: " + e.getMessage());
         } finally {

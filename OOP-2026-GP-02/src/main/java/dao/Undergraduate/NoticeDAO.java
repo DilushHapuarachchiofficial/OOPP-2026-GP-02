@@ -12,16 +12,13 @@ import java.util.List;
 
 /**
  * Data Access Object (DAO) for Faculty Notices and Announcements.
- * Queries notices published for undergraduates, ordered chronologically with the
- * newest notices always appearing at the top.
- *
- * Implements parameterized JDBC queries and safe connection closure,
- * with full offline fallback support to ensure UI continuity.
+ * Queries notices published for undergraduates directly from TecFAMS MySQL database.
  */
 public class NoticeDAO {
 
     /**
-     * Retrieves all active notices for undergraduates, sorted with the newest notices at the top.
+     * Retrieves all active notices for undergraduates from database,
+     * sorted with the newest notices at the top.
      *
      * @return List of Notice objects ordered by published_date DESC, notice_id DESC.
      */
@@ -45,8 +42,8 @@ public class NoticeDAO {
         try {
             conn = DatabaseConnection.getConnection();
             if (conn == null) {
-                System.err.println("Database Notice: Could not connect to MySQL. Using academic preview notices.");
-                return getFallbackNotices();
+                System.err.println("Database Error: Could not connect to MySQL database.");
+                return list;
             }
 
             stmt = conn.prepareStatement(query);
@@ -64,77 +61,11 @@ public class NoticeDAO {
                 );
                 list.add(notice);
             }
-
-            if (list.isEmpty()) {
-                return getFallbackNotices();
-            }
-
         } catch (SQLException e) {
-            System.err.println("Database Notice: Error retrieving notices: " + e.getMessage());
-            return getFallbackNotices();
+            System.err.println("Database Error: Error retrieving notices: " + e.getMessage());
         } finally {
             closeQuietly(rs, stmt, conn);
         }
-
-        return list;
-    }
-
-    /**
-     * Fallback notices displayed if database is temporarily offline,
-     * ordered with the newest notices at the top.
-     */
-    public List<Notice> getFallbackNotices() {
-        List<Notice> list = new ArrayList<>();
-
-        list.add(new Notice(
-                5,
-                "Mid-Semester Examination Schedule & Regulations Released",
-                "The examination timetable and hall arrangements for Level II Semester I mid-semester examinations have been published. All students are advised to check their respective examination slots and bring their Student ID card.",
-                "2026-10-18 09:30 AM",
-                "2026-10-31",
-                "Students",
-                "Senior Assistant Registrar / Examination Division"
-        ));
-
-        list.add(new Notice(
-                4,
-                "Submission of Medical Certificates for Missed Sessions",
-                "Undergraduates who missed lecture or practical sessions due to illness must submit official medical certificates certified by the University Medical Officer (UMO) to the Department Technical Officer within 14 days.",
-                "2026-10-12 11:15 AM",
-                "2026-10-26",
-                "Students",
-                "Dean's Office / Faculty of Technology"
-        ));
-
-        list.add(new Notice(
-                3,
-                "Final Continuous Assessment (CA) Marks Verification Notice",
-                "Continuous Assessment (CA) marks for ICT2113, ICT2122, and ENG2122 have been uploaded. Undergraduates are requested to verify their component scores and submit any inquiries before the final examination eligibility cutoff.",
-                "2026-10-09 02:00 PM",
-                "2026-10-23",
-                "Students",
-                "Department of ICT / Course Coordinators"
-        ));
-
-        list.add(new Notice(
-                2,
-                "Commencement of Level II Semester I Academic Activities",
-                "All Level II undergraduates are hereby notified that the academic timetable has been published and lectures will commence as scheduled. Minimum 80% attendance is strictly required for final examination eligibility.",
-                "2026-10-07 08:00 AM",
-                "2026-10-21",
-                "All",
-                "Faculty Administration"
-        ));
-
-        list.add(new Notice(
-                1,
-                "Library Digital Resources & IEEE Xplore Access Credentials",
-                "Students can now access university library online databases and IEEE Xplore digital library using their institutional student email credentials. For assistance, contact the Faculty Computer Center.",
-                "2026-10-01 10:00 AM",
-                "2026-10-30",
-                "All",
-                "Faculty Librarian"
-        ));
 
         return list;
     }

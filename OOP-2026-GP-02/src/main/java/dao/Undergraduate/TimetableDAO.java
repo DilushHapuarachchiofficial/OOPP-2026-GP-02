@@ -14,10 +14,7 @@ import java.util.List;
 /**
  * Data Access Object (DAO) for Academic Timetable & Lecture Schedules.
  * Handles database queries for weekly lecture schedules, session time slots,
- * assigned lecture halls/labs, course details, and lecturers.
- *
- * Implements parameterized JDBC queries and safe connection closure,
- * with complete offline fallback support to ensure UI continuity.
+ * assigned lecture halls/labs, course details, and lecturers directly from TecFAMS MySQL database.
  */
 public class TimetableDAO {
 
@@ -50,8 +47,8 @@ public class TimetableDAO {
         try {
             conn = DatabaseConnection.getConnection();
             if (conn == null) {
-                System.err.println("Database Notice: Could not connect to MySQL. Using academic preview timetable.");
-                return getFallbackWeeklyTimetable();
+                System.err.println("Database Error: Could not connect to MySQL database.");
+                return list;
             }
 
             stmt = conn.prepareStatement(query);
@@ -81,18 +78,17 @@ public class TimetableDAO {
             }
 
             if (list.isEmpty()) {
-                // If query returns empty for specific parameters, fallback to all entries in database
+                // Fetch active database entries if any exist
                 return fetchAllDatabaseEntries(conn);
             }
 
         } catch (SQLException e) {
-            System.err.println("Database Notice: Error retrieving timetable: " + e.getMessage());
-            return getFallbackWeeklyTimetable();
+            System.err.println("Database Error: Error retrieving timetable: " + e.getMessage());
         } finally {
             closeQuietly(rs, stmt, conn);
         }
 
-        return list.isEmpty() ? getFallbackWeeklyTimetable() : list;
+        return list;
     }
 
     /**
@@ -122,6 +118,8 @@ public class TimetableDAO {
 
     private List<Schedule> fetchAllDatabaseEntries(Connection conn) {
         List<Schedule> list = new ArrayList<>();
+        if (conn == null) return list;
+
         String query = "SELECT te.entry_id, te.day_of_week, " +
                 "TIME_FORMAT(te.start_time, '%h:%i %p') AS start_time_str, " +
                 "TIME_FORMAT(te.end_time, '%h:%i %p') AS end_time_str, " +
@@ -153,49 +151,6 @@ public class TimetableDAO {
                 list.add(schedule);
             }
         } catch (SQLException ignored) {}
-        return list.isEmpty() ? getFallbackWeeklyTimetable() : list;
-    }
-
-    /**
-     * Fallback weekly timetable for Level II - Semester I (matching faculty database records).
-     */
-    public List<Schedule> getFallbackWeeklyTimetable() {
-        List<Schedule> list = new ArrayList<>();
-
-        // Monday
-        list.add(new Schedule(1, "Monday", "09:00 AM", "11:00 AM", "ICT Lab 11", SessionType.THEORY,
-                "ICT2113", "Data Structures and Algorithms", "Dr. Kasun Fernando"));
-        list.add(new Schedule(2, "Monday", "11:00 AM", "01:00 PM", "ICT Lab 11", SessionType.PRACTICAL,
-                "ICT2113", "Data Structures and Algorithms", "Dr. Kasun Fernando"));
-
-        // Tuesday
-        list.add(new Schedule(3, "Tuesday", "09:00 AM", "12:00 PM", "ICT New Lab", SessionType.THEORY,
-                "ICT2142", "E-Business Systems", "Dr. Priyantha Dissanayake"));
-        list.add(new Schedule(4, "Tuesday", "01:00 PM", "03:00 PM", "ICT Lab 12", SessionType.THEORY,
-                "ICT2152", "Object Oriented Analysis and Design", "Prof. Nadeeka Jayawardena"));
-
-        // Wednesday
-        list.add(new Schedule(5, "Wednesday", "08:00 AM", "09:00 AM", "ICT ILT", SessionType.THEORY,
-                "TCS2112", "Business Economics", "Ms. Kumari Senanayake"));
-        list.add(new Schedule(6, "Wednesday", "10:00 AM", "12:00 PM", "ICT Hardware Lab", SessionType.PRACTICAL,
-                "TCS2121", "Soft Skills", "Mr. Saman Rathnayake"));
-
-        // Thursday
-        list.add(new Schedule(7, "Thursday", "09:00 AM", "11:00 AM", "ICT Lab 11", SessionType.THEORY,
-                "ICT2122", "Object Oriented Programming", "Dr. Kasun Fernando"));
-        list.add(new Schedule(8, "Thursday", "11:00 AM", "01:00 PM", "ICT Lab 11", SessionType.PRACTICAL,
-                "ICT2132", "Object Oriented Programming Practicum", "Dr. Kasun Fernando"));
-        list.add(new Schedule(9, "Thursday", "02:00 PM", "04:00 PM", "ICT Lab 11", SessionType.PRACTICAL,
-                "ICT2132", "Object Oriented Programming Practicum", "Dr. Kasun Fernando"));
-
-        // Friday
-        list.add(new Schedule(10, "Friday", "08:00 AM", "10:00 AM", "ICT Hardware Lab", SessionType.THEORY,
-                "TCS2112", "Business Economics", "Ms. Kumari Senanayake"));
-        list.add(new Schedule(11, "Friday", "10:00 AM", "12:00 PM", "ICT New Lab", SessionType.THEORY,
-                "ICT2162", "Management Information Systems", "Dr. Anura Bandara"));
-        list.add(new Schedule(12, "Friday", "01:00 PM", "03:00 PM", "ICT Hardware Lab", SessionType.THEORY,
-                "ENG2122", "English III", "Dr. Dilhani Gunasekara"));
-
         return list;
     }
 

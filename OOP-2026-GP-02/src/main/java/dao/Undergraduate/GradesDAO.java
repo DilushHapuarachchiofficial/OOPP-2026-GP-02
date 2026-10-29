@@ -13,22 +13,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Data Access Object (DAO) for Undergraduate Grades, Marks, and GPA.
- * Handles database queries for student examination results, continuous assessment (CA) marks,
- * individual quizzes/assignments/mid-exams, final course grades, and year/semester-specific GPA calculations.
- *
- * Implements parameterized JDBC queries and safe connection closure.
- * Also includes robust offline fallback support to ensure UI continuity.
+ * Data Access Object (DAO) for Academic Grades, Component Marks & GPA computations.
+ * Interfaces with TecFAMS MySQL database views and tables (marks, evaluation_components,
+ * view_student_course_grades, view_student_gpa).
  */
 public class GradesDAO {
 
     /**
-     * Retrieves overall course grades and CA breakdown for the student,
+     * Retrieves course unit results and component mark breakdowns for the student,
      * with optional academic year and semester filtering.
      *
-     * @param studentIdOrRegNo Student registration number or student ID.
-     * @param yearFilter       Academic year filter (1 = Level I, 2 = Level II, null for all).
-     * @param semFilter        Semester filter (1 = Sem I, 2 = Sem II, null for all).
+     * @param studentIdOrRegNo Student registration number (e.g. TG/2024/2085) or ID.
+     * @param yearFilter       Academic year (1, 2) or null for all.
+     * @param semFilter        Semester (1, 2) or null for all.
      * @return List of CourseGradeItem objects.
      */
     public List<CourseGradeItem> getStudentCourseGrades(String studentIdOrRegNo, Integer yearFilter, Integer semFilter) {
@@ -39,21 +36,20 @@ public class GradesDAO {
         }
 
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT c.course_id, c.course_code, c.course_name, c.credit, c.academic_year, c.semester, ")
+        sql.append("SELECT ")
+           .append("c.course_id, c.course_code, c.course_name, c.credit, c.academic_year, c.semester, ")
            .append("MAX(CASE WHEN ec.component_name LIKE '%Quiz%' THEN m.marks_obtained END) AS quiz_mark, ")
-           .append("MAX(CASE WHEN ec.component_name LIKE '%Assign%' OR ec.component_name LIKE '%Project%' ")
-           .append("              OR ec.component_name LIKE '%Presentation%' OR ec.component_name LIKE '%Lab%' ")
-           .append("              OR ec.component_name LIKE '%Case Study%' THEN m.marks_obtained END) AS assignment_mark, ")
+           .append("MAX(CASE WHEN ec.component_name LIKE '%Assign%' THEN m.marks_obtained END) AS assignment_mark, ")
            .append("MAX(CASE WHEN ec.component_name LIKE '%Mid%' THEN m.marks_obtained END) AS mid_exam_mark, ")
-           .append("ROUND(SUM(CASE WHEN ec.component_type = 'CA' THEN (m.marks_obtained / ec.maximum_marks) * ec.weight_percentage END), 2) AS ca_total, ")
+           .append("SUM(CASE WHEN ec.component_type = 'CA' THEN (m.marks_obtained / ec.maximum_marks) * ec.weight_percentage END) AS ca_total, ")
            .append("MAX(CASE WHEN ec.component_type = 'Final' THEN m.marks_obtained END) AS final_exam_mark, ")
            .append("v.final_mark, v.grade, v.grade_point ")
            .append("FROM course_registrations cr ")
            .append("JOIN students s ON cr.student_id = s.student_id ")
            .append("JOIN courses c ON cr.course_id = c.course_id ")
-           .append("LEFT JOIN marks m ON cr.student_id = m.student_id ")
-           .append("LEFT JOIN evaluation_components ec ON m.component_id = ec.component_id AND ec.course_id = c.course_id ")
-           .append("LEFT JOIN view_student_course_grades v ON v.student_id = cr.student_id AND v.course_id = c.course_id ")
+           .append("LEFT JOIN evaluation_components ec ON c.course_id = ec.course_id ")
+           .append("LEFT JOIN marks m ON ec.component_id = m.component_id AND s.student_id = m.student_id ")
+           .append("LEFT JOIN view_student_course_grades v ON c.course_id = v.course_id AND s.student_id = v.student_id ")
            .append("WHERE (s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ?) ");
 
         if (yearFilter != null) {
@@ -74,8 +70,8 @@ public class GradesDAO {
         try {
             conn = DatabaseConnection.getConnection();
             if (conn == null) {
-                System.err.println("Database Notice: Could not connect to MySQL. Using academic preview grades.");
-                return filterFallbackGrades(getFallbackCourseGrades(), yearFilter, semFilter);
+                System.err.println("Database Error: Could not connect to MySQL database.");
+                return grades;
             }
 
             stmt = conn.prepareStatement(sql.toString());
@@ -126,13 +122,8 @@ public class GradesDAO {
                 grades.add(item);
             }
 
-            if (grades.isEmpty() && yearFilter == null && semFilter == null) {
-                return getFallbackCourseGrades();
-            }
-
         } catch (SQLException e) {
             System.err.println("Database Error: Could not retrieve course grades: " + e.getMessage());
-            return filterFallbackGrades(getFallbackCourseGrades(), yearFilter, semFilter);
         } finally {
             closeQuietly(rs, stmt, conn);
         }
@@ -151,7 +142,7 @@ public class GradesDAO {
      * @param studentIdOrRegNo Student registration number or student ID.
      * @param yearFilter       Academic year filter (null for all).
      * @param semFilter        Semester filter (null for all).
-     * @return List of ExamMarkItem objects.
+     * @return List of ExamMarkItem records from database.
      */
     public List<ExamMarkItem> getStudentExamMarks(String studentIdOrRegNo, Integer yearFilter, Integer semFilter) {
         List<ExamMarkItem> marksList = new ArrayList<>();
@@ -161,10 +152,12 @@ public class GradesDAO {
         }
 
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT m.mark_id, c.course_code, c.course_name, c.academic_year, c.semester, ")
-           .append("ec.component_name, ec.component_type, ec.maximum_marks, ec.weight_percentage, m.marks_obtained, ")
+        sql.append("SELECT ")
+           .append("m.mark_id, c.course_code, c.course_name, c.academic_year, c.semester, ")
+           .append("ec.component_name, ec.component_type, ec.maximum_marks, ec.weight_percentage, ")
+           .append("m.marks_obtained, ")
            .append("ROUND((m.marks_obtained / ec.maximum_marks) * ec.weight_percentage, 2) AS weighted_contribution, ")
-           .append("DATE_FORMAT(m.uploaded_date, '%Y-%m-%d') AS uploaded_date ")
+           .append("DATE_FORMAT(m.created_at, '%Y-%m-%d') AS uploaded_date ")
            .append("FROM marks m ")
            .append("JOIN evaluation_components ec ON m.component_id = ec.component_id ")
            .append("JOIN courses c ON ec.course_id = c.course_id ")
@@ -187,8 +180,8 @@ public class GradesDAO {
         try {
             conn = DatabaseConnection.getConnection();
             if (conn == null) {
-                System.err.println("Database Notice: Could not connect to MySQL. Using academic preview exam marks.");
-                return filterFallbackExamMarks(getFallbackExamMarks(), yearFilter, semFilter);
+                System.err.println("Database Error: Could not connect to MySQL database.");
+                return marksList;
             }
 
             stmt = conn.prepareStatement(sql.toString());
@@ -224,13 +217,8 @@ public class GradesDAO {
                 marksList.add(item);
             }
 
-            if (marksList.isEmpty() && yearFilter == null && semFilter == null) {
-                return getFallbackExamMarks();
-            }
-
         } catch (SQLException e) {
             System.err.println("Database Error: Could not retrieve exam marks: " + e.getMessage());
-            return filterFallbackExamMarks(getFallbackExamMarks(), yearFilter, semFilter);
         } finally {
             closeQuietly(rs, stmt, conn);
         }
@@ -279,7 +267,8 @@ public class GradesDAO {
         try {
             conn = DatabaseConnection.getConnection();
             if (conn == null) {
-                return getFallbackGPASummary(yearFilter, semFilter);
+                System.err.println("Database Error: Could not connect to MySQL database.");
+                return new StudentGPASummary(0.0, 0.0, 0, 0, 0, 0, periodLabel);
             }
 
             // 1. Calculate GPA from evaluated courses for this period
@@ -338,15 +327,11 @@ public class GradesDAO {
                 totalRegCourses = rsReg.getInt("total_courses");
             }
 
-            if (evaluatedCredits == 0 && gpa == 0.0) {
-                return getFallbackGPASummary(yearFilter, semFilter);
-            }
-
             return new StudentGPASummary(gpa, gpa, totalRegCredits, evaluatedCredits, totalRegCourses, evaluatedCourses, periodLabel);
 
         } catch (SQLException e) {
             System.err.println("Database Error: Could not compute student GPA: " + e.getMessage());
-            return getFallbackGPASummary(yearFilter, semFilter);
+            return new StudentGPASummary(0.0, 0.0, 0, 0, 0, 0, periodLabel);
         } finally {
             closeQuietly(rsGpa, stmtGpa, null);
             closeQuietly(rsReg, stmtReg, conn);
@@ -360,95 +345,6 @@ public class GradesDAO {
     private Double getNullableDouble(ResultSet rs, String colName) throws SQLException {
         double val = rs.getDouble(colName);
         return rs.wasNull() ? null : val;
-    }
-
-    private List<CourseGradeItem> filterFallbackGrades(List<CourseGradeItem> all, Integer year, Integer sem) {
-        if (year == null && sem == null) return all;
-        List<CourseGradeItem> filtered = new ArrayList<>();
-        for (CourseGradeItem c : all) {
-            boolean matchYear = (year == null || c.getAcademicYear() == year);
-            boolean matchSem = (sem == null || c.getSemester() == sem);
-            if (matchYear && matchSem) filtered.add(c);
-        }
-        return filtered;
-    }
-
-    private List<ExamMarkItem> filterFallbackExamMarks(List<ExamMarkItem> all, Integer year, Integer sem) {
-        if (year == null && sem == null) return all;
-        List<ExamMarkItem> filtered = new ArrayList<>();
-        for (ExamMarkItem m : all) {
-            boolean matchYear = (year == null || m.getAcademicYear() == year);
-            boolean matchSem = (sem == null || m.getSemester() == sem);
-            if (matchYear && matchSem) filtered.add(m);
-        }
-        return filtered;
-    }
-
-    public StudentGPASummary getFallbackGPASummary(Integer year, Integer sem) {
-        if (year != null && year == 1 && sem != null && sem == 1) {
-            return new StudentGPASummary(3.96, 3.96, 15, 15, 6, 6, "Year 1 Semester 1");
-        } else if (year != null && year == 1 && sem != null && sem == 2) {
-            return new StudentGPASummary(4.00, 4.00, 13, 13, 6, 6, "Year 1 Semester 2");
-        } else if (year != null && year == 2) {
-            return new StudentGPASummary(4.00, 4.00, 18, 11, 9, 5, "Year 2 Semester 1");
-        }
-        return new StudentGPASummary(3.98, 3.98, 46, 39, 21, 17, "All Academic Years (Cumulative)");
-    }
-
-    public List<CourseGradeItem> getFallbackCourseGrades() {
-        List<CourseGradeItem> list = new ArrayList<>();
-        // Year 1 Sem 1
-        list.add(new CourseGradeItem(15, "ENG1112", "English I", 2, 1, 1, 80.0, 85.0, 78.0, 32.45, 76.0, 78.05, "A-", 3.70, "Completed"));
-        list.add(new CourseGradeItem(12, "ICT1113", "Fundamentals of Information Technology", 3, 1, 1, 88.0, 90.0, 84.0, 34.90, 86.0, 86.50, "A+", 4.00, "Completed"));
-        list.add(new CourseGradeItem(13, "ICT1123", "Structured Programming", 3, 1, 1, 92.0, 95.0, 86.0, 36.35, 88.0, 89.15, "A+", 4.00, "Completed"));
-        list.add(new CourseGradeItem(14, "ICT1132", "Database Management Systems I", 2, 1, 1, 85.0, 88.0, 82.0, 34.00, 80.0, 82.00, "A", 4.00, "Completed"));
-        list.add(new CourseGradeItem(17, "TCS1112", "Essential Skills for Technology", 2, 1, 1, 95.0, 92.0, 90.0, 36.80, 88.0, 89.60, "A+", 4.00, "Completed"));
-        list.add(new CourseGradeItem(16, "TMS1113", "Mathematics for Technology", 3, 1, 1, 90.0, 85.0, 80.0, 33.75, 82.0, 82.95, "A", 4.00, "Completed"));
-
-        // Year 1 Sem 2
-        list.add(new CourseGradeItem(21, "ENG1212", "English II", 2, 1, 2, 84.0, 86.0, 80.0, 33.30, 82.0, 82.50, "A", 4.00, "Completed"));
-        list.add(new CourseGradeItem(18, "ICT1212", "Web Technologies", 2, 1, 2, 94.0, 96.0, 90.0, 37.30, 92.0, 92.50, "A+", 4.00, "Completed"));
-        list.add(new CourseGradeItem(19, "ICT1222", "Operating Systems", 2, 1, 2, 82.0, 85.0, 78.0, 32.65, 80.0, 80.65, "A", 4.00, "Completed"));
-        list.add(new CourseGradeItem(20, "ICT1232", "Data Communication and Networks", 2, 1, 2, 88.0, 86.0, 84.0, 34.30, 85.0, 85.30, "A+", 4.00, "Completed"));
-        list.add(new CourseGradeItem(10, "TCS1212", "Fundamentals of Management", 2, 1, 2, 85.0, 88.0, 80.0, 33.70, 82.0, 82.90, "A", 4.00, "Completed"));
-        list.add(new CourseGradeItem(11, "TMS1233", "Discrete Mathematics", 3, 1, 2, 90.0, 92.0, 88.0, 36.00, 85.0, 87.00, "A+", 4.00, "Completed"));
-
-        // Year 2 Sem 1
-        list.add(new CourseGradeItem(4, "ENG2122", "English III", 2, 2, 1, 85.0, 88.0, 82.0, 34.00, 80.0, 82.00, "A", 4.00, "Completed"));
-        list.add(new CourseGradeItem(2, "ICT2113", "Data Structures and Algorithms", 3, 2, 1, 90.0, 92.0, 85.0, 35.55, 88.0, 88.35, "A+", 4.00, "Completed"));
-        list.add(new CourseGradeItem(3, "ICT2122", "Object Oriented Programming", 2, 2, 1, 80.0, 82.0, 78.0, 32.00, 85.0, 83.00, "A", 4.00, "Completed"));
-        list.add(new CourseGradeItem(1, "ICT2132", "Object Oriented Programming Practicum", 2, 2, 1, 90.0, 95.0, 88.0, 36.10, 92.0, 91.30, "A+", 4.00, "Completed"));
-        list.add(new CourseGradeItem(5, "ICT2142", "E-Business Systems", 2, 2, 1, 88.0, 90.0, 85.0, 35.05, 86.0, 86.65, "A+", 4.00, "Completed"));
-        list.add(new CourseGradeItem(6, "ICT2152", "Object Oriented Analysis and Design", 2, 2, 1, null, null, null, null, null, null, "Pending", null, "In Progress"));
-        list.add(new CourseGradeItem(7, "ICT2162", "Management Information Systems", 2, 2, 1, null, null, null, null, null, null, "Pending", null, "In Progress"));
-        list.add(new CourseGradeItem(8, "TCS2112", "Business Economics", 2, 2, 1, null, null, null, null, null, null, "Pending", null, "In Progress"));
-        list.add(new CourseGradeItem(9, "TCS2121", "Soft Skills", 1, 2, 1, null, null, null, null, null, null, "Pending", null, "In Progress"));
-
-        return list;
-    }
-
-    public List<ExamMarkItem> getFallbackExamMarks() {
-        List<ExamMarkItem> list = new ArrayList<>();
-        list.add(new ExamMarkItem(1, "ICT1113", "Fundamentals of Information Technology", 1, 1, "Quiz 01", "CA", 100.0, 10.0, 88.0, 8.8, "2026-10-26"));
-        list.add(new ExamMarkItem(2, "ICT1113", "Fundamentals of Information Technology", 1, 1, "Assignment 01", "CA", 100.0, 15.0, 90.0, 13.5, "2026-10-26"));
-        list.add(new ExamMarkItem(3, "ICT1113", "Fundamentals of Information Technology", 1, 1, "Mid-Semester Exam", "CA", 100.0, 15.0, 84.0, 12.6, "2026-10-26"));
-        list.add(new ExamMarkItem(4, "ICT1113", "Fundamentals of Information Technology", 1, 1, "Final Examination", "Final", 100.0, 60.0, 86.0, 51.6, "2026-10-26"));
-
-        list.add(new ExamMarkItem(5, "ICT1123", "Structured Programming", 1, 1, "Quiz 01 (Coding)", "CA", 100.0, 10.0, 92.0, 9.2, "2026-10-26"));
-        list.add(new ExamMarkItem(6, "ICT1123", "Structured Programming", 1, 1, "Programming Assignment", "CA", 100.0, 15.0, 95.0, 14.25, "2026-10-26"));
-        list.add(new ExamMarkItem(7, "ICT1123", "Structured Programming", 1, 1, "Mid-Semester Exam", "CA", 100.0, 15.0, 86.0, 12.9, "2026-10-26"));
-        list.add(new ExamMarkItem(8, "ICT1123", "Structured Programming", 1, 1, "Final Theory & Practical", "Final", 100.0, 60.0, 88.0, 52.8, "2026-10-26"));
-
-        list.add(new ExamMarkItem(9, "ICT1212", "Web Technologies", 1, 2, "Quiz 01 (HTML/CSS)", "CA", 100.0, 10.0, 94.0, 9.4, "2026-10-26"));
-        list.add(new ExamMarkItem(10, "ICT1212", "Web Technologies", 1, 2, "Web Project Assignment", "CA", 100.0, 15.0, 96.0, 14.4, "2026-10-26"));
-        list.add(new ExamMarkItem(11, "ICT1212", "Web Technologies", 1, 2, "Mid-Semester Exam", "CA", 100.0, 15.0, 90.0, 13.5, "2026-10-26"));
-        list.add(new ExamMarkItem(12, "ICT1212", "Web Technologies", 1, 2, "Final Practical Exam", "Final", 100.0, 60.0, 92.0, 55.2, "2026-10-26"));
-
-        list.add(new ExamMarkItem(13, "ICT2132", "Object Oriented Programming Practicum", 2, 1, "Quiz 01", "CA", 100.0, 10.0, 90.0, 9.0, "2026-10-07"));
-        list.add(new ExamMarkItem(14, "ICT2132", "Object Oriented Programming Practicum", 2, 1, "Mini Project Assignment", "CA", 100.0, 10.0, 95.0, 9.5, "2026-10-07"));
-        list.add(new ExamMarkItem(15, "ICT2132", "Object Oriented Programming Practicum", 2, 1, "Mid-Semester Exam", "CA", 100.0, 20.0, 88.0, 17.6, "2026-10-07"));
-        list.add(new ExamMarkItem(16, "ICT2132", "Object Oriented Programming Practicum", 2, 1, "Final Practical & Theory Exam", "Final", 100.0, 60.0, 92.0, 55.2, "2026-10-07"));
-        return list;
     }
 
     /**

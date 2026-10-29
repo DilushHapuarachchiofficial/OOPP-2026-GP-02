@@ -61,7 +61,16 @@ public class UndergraduateDashboard extends JFrame {
 
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
-        this.currentStudent = (student != null) ? student : createDefaultTestStudent();
+        if (student == null) {
+            student = dao.getUndergraduateByStudentId("TG/2024/2085");
+        }
+        if (student == null) {
+            JOptionPane.showMessageDialog(null,
+                    "Database connection failed! Unable to connect to MySQL database.\nPlease verify MySQL Server is running.",
+                    "Database Connection Error", JOptionPane.ERROR_MESSAGE);
+            throw new IllegalStateException("Database connection failed. No student profile available.");
+        }
+        this.currentStudent = student;
         loadDatabaseData();
         initializeUI();
     }
@@ -181,7 +190,7 @@ public class UndergraduateDashboard extends JFrame {
                 currentStudent.setCourses(dbCourses);
             }
         } catch (Exception e) {
-            System.err.println("Notice: Running with fallback preview state: " + e.getMessage());
+            System.err.println("Database Notice: Could not load data from database: " + e.getMessage());
         }
     }
 
@@ -1074,40 +1083,6 @@ public class UndergraduateDashboard extends JFrame {
     // ==========================================
     // 9. PREVIEW DATA & ENTRY POINT
     // ==========================================
-    private static Undergraduate createDefaultTestStudent() {
-        Undergraduate student = new Undergraduate(
-                "USR-1085", "tg2085", "", "H.D.W.B. Hapuarachchi",
-                "tg2085@fot.ruh.ac.lk", "+94 77 123 4567", "C:\\Users\\VICTUS\\Downloads\\TG2024 2083.jpg",
-                "STU-2085", "TG/2024/2085", "2023/2024",
-                "Department of Information and Communication Technology", 2024
-        );
-
-        student.setNic("200113401237");
-        student.setDob("2001-11-25");
-        student.setAddress("Kandy");
-        student.setGpa(new GPA(3.65, 3.58));
-        student.setAttendanceSummary(new AttendanceSummary(30, 26, 2));
-
-        Timetable tt = new Timetable(1, "Semester I", "2026");
-        String today = LocalDate.now().getDayOfWeek().toString();
-        tt.addSchedule(new Schedule(1, today, "08:30 AM", "10:30 AM", "Lab 02, Tech Building", SessionType.PRACTICAL, "ICT2132", "OOP Practicum", "Dr. K. A. Perera"));
-        tt.addSchedule(new Schedule(2, today, "10:45 AM", "12:45 PM", "Lecture Hall 01", SessionType.THEORY, "ICT2113", "Data Structures", "Prof. S. R. Fernando"));
-        tt.addSchedule(new Schedule(3, today, "01:30 PM", "03:30 PM", "Lab 04, Tech Complex", SessionType.PRACTICAL, "ICT2122", "Database Systems", "Dr. M. Silva"));
-        student.setTimetable(tt);
-
-        Course c1 = new Course(1, "ICT2132", "OOP Practicum", 2, "DICT", "Java OOP principles and GUI.");
-        List<Course> cList = new ArrayList<>();
-        cList.add(c1);
-        student.setCourses(cList);
-
-        List<Notice> notices = new ArrayList<>();
-        notices.add(new Notice(1, "Mid-Semester Examination Schedule Released", "Level II Semester I exam timetable published.", "2026-10-14", "2026-10-30"));
-        notices.add(new Notice(2, "Submission of Medical Certificates for Level II", "All medical certificates must be certified by UMO.", "2026-10-12", "2026-10-25"));
-        student.setNotices(notices);
-
-        return student;
-    }
-
     public static void main(String[] args) {
         System.setProperty("awt.useSystemAAFontSettings", "on");
         System.setProperty("swing.aatext", "true");
@@ -1117,8 +1092,15 @@ public class UndergraduateDashboard extends JFrame {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             } catch (Exception ignored) {}
 
-            Undergraduate sampleStudent = createDefaultTestStudent();
-            UndergraduateDashboard dashboard = new UndergraduateDashboard(sampleStudent);
+            UndergraduateDAO dao = new UndergraduateDAO();
+            Undergraduate student = dao.getUndergraduateByStudentId("TG/2024/2085");
+            if (student == null) {
+                JOptionPane.showMessageDialog(null,
+                        "Database connection failed! Unable to connect to MySQL database.\nPlease verify MySQL Server is running.",
+                        "Database Connection Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            UndergraduateDashboard dashboard = new UndergraduateDashboard(student);
             dashboard.setVisible(true);
         });
     }
