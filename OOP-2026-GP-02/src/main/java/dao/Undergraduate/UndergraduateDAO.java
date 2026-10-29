@@ -23,11 +23,12 @@ public class UndergraduateDAO {
      */
     public Undergraduate getUndergraduateByStudentId(String studentId) {
         String query = "SELECT u.user_id, u.username, s.full_name, s.email, s.phone, u.profile_picture, " +
-                "s.student_id, s.student_reg_no, s.academic_year, d.department_name, YEAR(s.enrollment_date) AS enrollment_year " +
+                "s.student_id, s.student_reg_no, s.academic_year, d.department_name, YEAR(s.enrollment_date) AS enrollment_year, " +
+                "s.dob, s.nic, s.address " +
                 "FROM users u " +
                 "INNER JOIN students s ON u.user_id = s.student_id " +
                 "LEFT JOIN departments d ON s.department_id = d.department_id " +
-                "WHERE s.student_id = ? OR s.student_reg_no = ? OR u.username = ?";
+                "WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ? OR u.username = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -64,6 +65,9 @@ public class UndergraduateDAO {
                         deptName,
                         enYear > 0 ? enYear : 2024
                 );
+                student.setDob(rs.getString("dob"));
+                student.setNic(rs.getString("nic"));
+                student.setAddress(rs.getString("address"));
                 return student;
             }
         } catch (SQLException e) {
@@ -78,8 +82,68 @@ public class UndergraduateDAO {
      * Updates permitted contact details (phone and email) in the database.
      * Complies with SRS Undergraduate profile update restrictions.
      */
+    /**
+     * Updates full student profile details in database (students and users tables).
+     * Updates: Name, Email, Phone, Address, NIC, DOB, and Profile Picture.
+     */
+    public boolean updateFullProfile(String studentId, String name, String email, String phone,
+                                     String address, String nic, String dob, String profilePicture) {
+        String studentQuery = "UPDATE students SET full_name = ?, email = ?, phone = ?, address = ?, nic = ?, dob = ? " +
+                "WHERE student_reg_no = ? OR CAST(student_id AS CHAR) = ?";
+        String userQuery = "UPDATE users u INNER JOIN students s ON u.user_id = s.student_id " +
+                "SET u.profile_picture = ? WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ?";
+
+        Connection conn = null;
+        PreparedStatement stmtStudent = null;
+        PreparedStatement stmtUser = null;
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            if (conn == null) return false;
+
+            // 1. Update students table
+            stmtStudent = conn.prepareStatement(studentQuery);
+            stmtStudent.setString(1, name);
+            stmtStudent.setString(2, email);
+            stmtStudent.setString(3, phone);
+            stmtStudent.setString(4, address);
+            stmtStudent.setString(5, nic);
+
+            if (dob != null && !dob.trim().isEmpty()) {
+                try {
+                    stmtStudent.setDate(6, java.sql.Date.valueOf(dob.trim()));
+                } catch (IllegalArgumentException ex) {
+                    stmtStudent.setString(6, dob.trim());
+                }
+            } else {
+                stmtStudent.setNull(6, java.sql.Types.DATE);
+            }
+
+            stmtStudent.setString(7, studentId);
+            stmtStudent.setString(8, studentId);
+            int studentAffected = stmtStudent.executeUpdate();
+
+            // 2. Update users table for profile picture if provided
+            if (profilePicture != null && !profilePicture.trim().isEmpty()) {
+                stmtUser = conn.prepareStatement(userQuery);
+                stmtUser.setString(1, profilePicture.trim());
+                stmtUser.setString(2, studentId);
+                stmtUser.setString(3, studentId);
+                stmtUser.executeUpdate();
+            }
+
+            return studentAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Database Notice: Could not update full student profile: " + e.getMessage());
+            return false;
+        } finally {
+            closeQuietly(null, stmtStudent, null);
+            closeQuietly(null, stmtUser, conn);
+        }
+    }
+
     public boolean updateContactDetails(String studentId, String phone, String email) {
-        String query = "UPDATE students SET phone = ?, email = ? WHERE student_id = ? OR student_reg_no = ?";
+        String query = "UPDATE students SET phone = ?, email = ? WHERE student_reg_no = ? OR CAST(student_id AS CHAR) = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -108,7 +172,7 @@ public class UndergraduateDAO {
      */
     public boolean updateProfilePicture(String studentId, String imagePath) {
         String query = "UPDATE users u INNER JOIN students s ON u.user_id = s.student_id " +
-                "SET u.profile_picture = ? WHERE s.student_id = ? OR s.student_reg_no = ?";
+                "SET u.profile_picture = ? WHERE s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
