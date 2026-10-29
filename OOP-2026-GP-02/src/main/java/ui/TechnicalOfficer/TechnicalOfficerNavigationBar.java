@@ -59,12 +59,16 @@ public class   TechnicalOfficerNavigationBar extends JPanel {
         });
         addNavItem(menuPanel, "TIMETABLE",  "📅", "Department Timetable", () -> {
             if (dashboard != null) {
-                dashboard.openSectionAction("Department Timetable", "Department Academic Timetable section.\n(Lecture Halls, Computer Laboratories, and Scheduled Timeslots)");
+                dashboard.openDepartmentTimetable();
+            } else {
+                new DepartmentTimetableForm().setVisible(true);
             }
         });
         addNavItem(menuPanel, "NOTICES",    "📢", "Notices", () -> {
             if (dashboard != null) {
-                dashboard.openSectionAction("Faculty Notices", "Faculty Notices and Circulars section.\n(View-Only Access - Managed by Administration)");
+                dashboard.openFacultyNotices();
+            } else {
+                new FacultyNoticesForm().setVisible(true);
             }
         });
         addNavItem(menuPanel, "PROFILE",    "👤", "My Profile", () -> {
