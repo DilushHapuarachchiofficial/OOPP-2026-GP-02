@@ -200,7 +200,7 @@ public class UndergraduateMedicalUI extends JPanel {
         titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 22));
         titleLbl.setForeground(COLOR_PRIMARY_NAVY);
 
-        JLabel subtitleLbl = new JLabel("Submit a medical certificate covering your absent days and all missed lectures.");
+        JLabel subtitleLbl = new JLabel("Submit and view medical certificates for Level II Semester I missed lectures.");
         subtitleLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         subtitleLbl.setForeground(COLOR_TEXT_MUTED);
 
@@ -208,7 +208,7 @@ public class UndergraduateMedicalUI extends JPanel {
         leftBox.add(subtitleLbl);
         header.add(leftBox, BorderLayout.WEST);
 
-        JButton backBtn = new JButton("← Back to Dashboard");
+        JButton backBtn = new JButton("<- Back to Dashboard");
         backBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         backBtn.setForeground(COLOR_MAIN_BLUE);
         backBtn.setBackground(COLOR_WHITE);
@@ -382,7 +382,7 @@ public class UndergraduateMedicalUI extends JPanel {
         endDateField.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(4, 8, 4, 8)));
         datesRow.add(endDateField);
 
-        JButton checkSessionsBtn = createColoredButton("🔍 Find Missed Lectures in Period",
+        JButton checkSessionsBtn = createColoredButton("Find Missed Lectures in Period",
                 new Color(0x25, 0x63, 0xEB), new Color(0x1D, 0x4E, 0xD8), Color.WHITE, new Dimension(245, 34));
         checkSessionsBtn.addActionListener(e -> findMissedLecturesForRange());
         datesRow.add(checkSessionsBtn);
@@ -491,7 +491,7 @@ public class UndergraduateMedicalUI extends JPanel {
         uploadLbl.setPreferredSize(new Dimension(170, 32));
         uploadLeft.add(uploadLbl);
 
-        JButton chooseFileBtn = new JButton("📁 Choose Photo / Slip (JPG, PNG, PDF)...");
+        JButton chooseFileBtn = new JButton("Choose Photo / Slip (JPG, PNG, PDF)...");
         chooseFileBtn.setUI(new javax.swing.plaf.basic.BasicButtonUI());
         chooseFileBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
         chooseFileBtn.setForeground(COLOR_MAIN_BLUE);
@@ -526,7 +526,7 @@ public class UndergraduateMedicalUI extends JPanel {
         actionRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         actionRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
 
-        JButton submitBtn = createColoredButton("✓  Submit Medical Certificate Application",
+        JButton submitBtn = createColoredButton("Submit Medical Certificate Application",
                 new Color(0x10, 0xB9, 0x81), new Color(0x05, 0x96, 0x69), Color.WHITE, new Dimension(330, 42));
         submitBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         submitBtn.addActionListener(e -> submitMedicalForm());
@@ -602,7 +602,7 @@ public class UndergraduateMedicalUI extends JPanel {
         promptCard.setAlignmentX(Component.LEFT_ALIGNMENT);
         promptCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
-        JLabel promptLbl = new JLabel("<html><font color='#2563EB'><b>📅 Enter your medical leave dates (From Date & To Date) above</b></font> and click <b>'🔍 Find Missed Lectures in Period'</b> to check your absent sessions.</html>");
+        JLabel promptLbl = new JLabel("<html><font color='#2563EB'><b>Enter your medical leave dates (From Date & To Date) above</b></font> and click <b>'Find Missed Lectures in Period'</b> to select missed sessions (Level II Semester I only).</html>");
         promptLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         promptLbl.setForeground(COLOR_TEXT_PRIMARY);
         promptCard.add(promptLbl);
@@ -775,6 +775,15 @@ public class UndergraduateMedicalUI extends JPanel {
             }
         }
 
+        if (selectedSessionIds.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "You can only submit medical certificates for missed lectures in the current semester (Level II Semester I).\n" +
+                    "Please search for your absent lectures in the current semester and select at least one missed session before submitting.",
+                    "Current Semester Only",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         int studentNumericId = medicalDAO.getStudentNumericId(studentIdentifier);
         String savedDocPath = saveMedicalFile(chosenMedicalFile, studentNumericId);
 
@@ -784,7 +793,7 @@ public class UndergraduateMedicalUI extends JPanel {
         if (primaryMedicalId > 0) {
             String referenceNumber = "MED-REF-" + String.format("%04d", primaryMedicalId);
             String msg = "<html><body style='width: 360px; font-family: Segoe UI;'>" +
-                    "<h3 style='color: #10B981; margin-bottom: 6px;'>✓ Medical Certificate Submitted Successfully!</h3>" +
+                    "<h3 style='color: #10B981; margin-bottom: 6px;'>Medical Certificate Submitted Successfully!</h3>" +
                     "<p>Your medical certificate has been registered in the TecFAMS system.</p>" +
                     "<div style='background-color: #EAF2FF; padding: 10px; border: 1px solid #2563EB; border-radius: 4px; margin: 10px 0;'>" +
                     "<b>Reference Number: </b><span style='color: #2563EB; font-size: 14px; font-weight: bold;'>" + referenceNumber + "</span><br>" +
@@ -865,7 +874,7 @@ public class UndergraduateMedicalUI extends JPanel {
         tableSubHeader.setBackground(COLOR_WHITE);
         tableSubHeader.setBorder(new EmptyBorder(12, 16, 10, 16));
 
-        JLabel title = new JLabel("Submitted Medical Certificates Registry");
+        JLabel title = new JLabel("Submitted Medical Certificates (Level II Semester I)");
         title.setFont(new Font("Segoe UI", Font.BOLD, 13));
         title.setForeground(COLOR_PRIMARY_NAVY);
 
@@ -1086,7 +1095,7 @@ public class UndergraduateMedicalUI extends JPanel {
                         if (approvedCountLabel != null) approvedCountLabel.setText(String.valueOf(approved));
                         if (pendingCountLabel != null) pendingCountLabel.setText(String.valueOf(pending));
                         if (missedSessionsCountLabel != null) missedSessionsCountLabel.setText(String.valueOf(allAbsentSessions.size()));
-                        if (tableCountLabel != null) tableCountLabel.setText("Showing " + submittedMedicals.size() + " submitted certificate record(s)");
+                        if (tableCountLabel != null) tableCountLabel.setText("Showing " + submittedMedicals.size() + " submitted certificate(s)");
                     }
                 } catch (Exception e) {
                     System.err.println("Notice: Could not finish medical data update: " + e.getMessage());

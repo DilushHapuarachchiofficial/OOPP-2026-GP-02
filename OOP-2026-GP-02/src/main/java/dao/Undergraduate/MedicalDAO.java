@@ -190,18 +190,24 @@ public class MedicalDAO {
             }
 
             int newMedicalId = currentMax + 1;
+            Integer primarySessionId = (sessionIds != null && !sessionIds.isEmpty()) ? sessionIds.get(0) : null;
 
             String insertSql = "INSERT INTO medicals (medical_id, student_id, session_id, start_date, end_date, " +
                     "reason, document_path, submitted_date, approval_status, verified_by) " +
-                    "VALUES (?, ?, NULL, ?, ?, ?, ?, CURDATE(), 'Pending', NULL)";
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE(), 'Pending', NULL)";
 
             insertStmt = conn.prepareStatement(insertSql);
             insertStmt.setInt(1, newMedicalId);
             insertStmt.setInt(2, studentId);
-            insertStmt.setString(3, startDate);
-            insertStmt.setString(4, endDate);
-            insertStmt.setString(5, reason);
-            insertStmt.setString(6, documentPath);
+            if (primarySessionId != null) {
+                insertStmt.setInt(3, primarySessionId);
+            } else {
+                insertStmt.setNull(3, java.sql.Types.INTEGER);
+            }
+            insertStmt.setString(4, startDate);
+            insertStmt.setString(5, endDate);
+            insertStmt.setString(6, reason);
+            insertStmt.setString(7, documentPath);
             insertStmt.executeUpdate();
 
             return newMedicalId;
@@ -240,7 +246,14 @@ public class MedicalDAO {
                 "INNER JOIN students stu ON m.student_id = stu.student_id " +
                 "LEFT JOIN attendance_sessions s ON m.session_id = s.session_id " +
                 "LEFT JOIN courses c ON s.course_id = c.course_id " +
-                "WHERE stu.student_reg_no = ? OR CAST(stu.student_id AS CHAR) = ? " +
+                "WHERE (stu.student_reg_no = ? OR CAST(stu.student_id AS CHAR) = ?) " +
+                "AND ((c.academic_year = 2 AND c.semester = 1) " +
+                "     OR (m.session_id IS NULL AND EXISTS (" +
+                "         SELECT 1 FROM attendance_sessions s2 " +
+                "         INNER JOIN courses c2 ON s2.course_id = c2.course_id " +
+                "         WHERE c2.academic_year = 2 AND c2.semester = 1 " +
+                "         AND (s2.session_date BETWEEN m.start_date AND m.end_date)" +
+                "     ))) " +
                 "ORDER BY m.medical_id DESC";
 
         Connection conn = null;
