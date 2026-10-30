@@ -1,4 +1,5 @@
-package main.java.dao.TechnicalOfficer;
+ 
+ package main.java.dao.TechnicalOfficer;
 
 import main.java.model.Notice;
 import main.java.model.TechnicalOfficer.TechnicalOfficer;
@@ -22,16 +23,6 @@ import java.util.List;
  * verification, duplicate email checks, and dashboard summary metrics.
  */
 public class TechnicalOfficerDAO {
-
-    static {
-        // Ensure users.profile_picture column in tecfams_db is LONGBLOB to store image binary directly
-        Connection conn = DatabaseConnection.getConnection();
-        if (conn != null) {
-            try (Statement s = conn.createStatement()) {
-                s.executeUpdate("ALTER TABLE users MODIFY COLUMN profile_picture LONGBLOB");
-            } catch (SQLException ignored) {}
-        }
-    }
 
     private TechnicalOfficer currentOfficer;
 
@@ -111,41 +102,8 @@ public class TechnicalOfficerDAO {
                     currentOfficer.setPhone(rs.getString("phone"));
                     String dept = rs.getString("department_name");
                     currentOfficer.setDepartment(dept != null ? dept : "Faculty of Technology");
-
-                    // Retrieve profile picture directly from database as bytes (BLOB)
-                    byte[] photoBytes = rs.getBytes("profile_picture");
-                    if (photoBytes != null && photoBytes.length > 0) {
-                        try {
-                            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(photoBytes));
-                            if (img != null) {
-                                currentOfficer.setProfilePictureBytes(photoBytes);
-                                currentOfficer.setProfilePicture("database_blob");
-                            } else {
-                                // Existing disk file path string (e.g. from previous upload)
-                                String pathStr = new String(photoBytes, java.nio.charset.StandardCharsets.UTF_8).trim();
-                                java.io.File diskFile = new java.io.File(pathStr);
-                                if (diskFile.exists() && diskFile.isFile()) {
-                                    byte[] diskBytes = java.nio.file.Files.readAllBytes(diskFile.toPath());
-                                    // Automatically migrate file bytes directly into users table in database!
-                                    try (PreparedStatement fixPs = conn.prepareStatement("UPDATE users SET profile_picture = ? WHERE user_id = ?")) {
-                                        fixPs.setBytes(1, diskBytes);
-                                        fixPs.setInt(2, officerId);
-                                        fixPs.executeUpdate();
-                                    }
-                                    currentOfficer.setProfilePictureBytes(diskBytes);
-                                    currentOfficer.setProfilePicture("database_blob");
-                                } else {
-                                    currentOfficer.setProfilePicture(pathStr);
-                                }
-                            }
-                        } catch (Exception ex) {
-                            currentOfficer.setProfilePictureBytes(photoBytes);
-                        }
-                    } else {
-                        currentOfficer.setProfilePicture("default_avatar.png");
-                        currentOfficer.setProfilePictureBytes(null);
-                    }
-
+                    String pic = rs.getString("profile_picture");
+                    currentOfficer.setProfilePicture((pic != null && !pic.trim().isEmpty()) ? pic.trim() : "default_avatar.png");
                     currentOfficer.setRole(rs.getString("role"));
                     return true;
                 }
@@ -214,16 +172,17 @@ public class TechnicalOfficerDAO {
     }
 
     /**
-     * Updates permitted profile information and photo binary (BLOB) directly into users table.
+     * Updates permitted profile information and photo in the database using JDBC PreparedStatement.
+     * Adheres to database schema and transaction safety.
      *
      * @param officerId Target officer ID
      * @param name New Full Name
      * @param email New Email Address
      * @param phone New Contact Number
-     * @param photoBytes New profile photo binary bytes (or null to keep existing)
+     * @param profilePicture New profile photo path (or null to keep existing)
      * @return true if update succeeded
      */
-    public boolean updateProfile(int officerId, String name, String email, String phone, byte[] photoBytes) {
+    public boolean updateProfile(int officerId, String name, String email, String phone, String profilePicture) {
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) {
             return false;
@@ -243,11 +202,11 @@ public class TechnicalOfficerDAO {
                     ps.executeUpdate();
                 }
 
-                // 2. Update profile_picture directly in users table as binary LONGBLOB if new photoBytes provided
-                if (photoBytes != null && photoBytes.length > 0) {
+                // 2. Update profile_picture in users table if new photo provided
+                if (profilePicture != null && !profilePicture.trim().isEmpty()) {
                     String sqlUser = "UPDATE users SET profile_picture = ? WHERE user_id = ?";
                     try (PreparedStatement ps = conn.prepareStatement(sqlUser)) {
-                        ps.setBytes(1, photoBytes);
+                        ps.setString(1, profilePicture.trim());
                         ps.setInt(2, officerId);
                         ps.executeUpdate();
                     }
@@ -257,15 +216,7 @@ public class TechnicalOfficerDAO {
                 conn.setAutoCommit(originalAutoCommit);
 
                 // Update in-memory model
-                if (currentOfficer != null) {
-                    currentOfficer.setName(name.trim());
-                    currentOfficer.setEmail(email.trim());
-                    currentOfficer.setPhone(phone != null ? phone.trim() : null);
-                    if (photoBytes != null && photoBytes.length > 0) {
-                        currentOfficer.setProfilePictureBytes(photoBytes);
-                        currentOfficer.setProfilePicture("database_blob");
-                    }
-                }
+                updateInMemory(name, email, phone, profilePicture);
 
                 // Synchronize active UserSession if matching current user
                 if (UserSession.isLoggedIn() && UserSession.getCurrentSession().getUserId() == officerId) {
@@ -294,30 +245,11 @@ public class TechnicalOfficerDAO {
     }
 
     /**
-     * Updates permitted profile information and photo in the database using JDBC PreparedStatement.
-     * Adheres to database schema and transaction safety.
-     *
-     * @param officerId Target officer ID
-     * @param name New Full Name
-     * @param email New Email Address
-     * @param phone New Contact Number
-     * @param profilePicture New profile photo path (or null to keep existing)
-     * @return true if update succeeded
-     */
-    public boolean updateProfile(int officerId, String name, String email, String phone, String profilePicture) {
-        byte[] bytes = null;
-        if (profilePicture != null && !profilePicture.trim().isEmpty()) {
-            bytes = profilePicture.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        }
-        return updateProfile(officerId, name, email, phone, bytes);
-    }
-
-    /**
      * Backward-compatible overload for existing code.
      */
     public boolean updateProfile(String name, String email, String phone) {
         int id = parseOfficerId(currentOfficer);
-        return updateProfile(id, name, email, phone, (byte[]) null);
+        return updateProfile(id, name, email, phone, (String) null);
     }
 
     private void updateInMemory(String name, String email, String phone, String profilePicture) {

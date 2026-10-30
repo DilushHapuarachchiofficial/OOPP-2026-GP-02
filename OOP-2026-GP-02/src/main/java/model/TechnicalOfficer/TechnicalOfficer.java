@@ -16,7 +16,6 @@ public class TechnicalOfficer extends User {
     private String phone;
     private String department;
     private String profilePicture;
-    private byte[] profilePictureBytes;
 
     /**
      * Default constructor initializing empty technical officer fields.
@@ -141,24 +140,28 @@ public class TechnicalOfficer extends User {
         this.profilePicture = profilePicture;
     }
 
-    public byte[] getProfilePictureBytes() {
-        return profilePictureBytes;
-    }
-
-    public void setProfilePictureBytes(byte[] profilePictureBytes) {
-        this.profilePictureBytes = profilePictureBytes;
-    }
-
     /**
-     * Converts the profile picture bytes stored in database to a BufferedImage.
-     * Returns null if no picture is stored or if bytes are invalid.
+     * Resolves and returns the profile picture as a BufferedImage using the path/name from users table.
+     * Returns null if no picture is set, default avatar, or file is not accessible.
      */
     public java.awt.image.BufferedImage getProfileImage() {
-        if (profilePictureBytes != null && profilePictureBytes.length > 0) {
-            try {
-                return javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(profilePictureBytes));
-            } catch (Exception ignored) {}
+        if (profilePicture == null || profilePicture.trim().isEmpty() || "default_avatar.png".equalsIgnoreCase(profilePicture.trim())) {
+            return null;
         }
+        try {
+            java.io.File f = new java.io.File(profilePicture.trim());
+            if (f.exists() && f.isFile()) {
+                return javax.imageio.ImageIO.read(f);
+            }
+            java.io.File fUp = new java.io.File("uploads/profiles", f.getName());
+            if (fUp.exists() && fUp.isFile()) {
+                return javax.imageio.ImageIO.read(fUp);
+            }
+            java.io.File fRes = new java.io.File("src/main/resources/images/profiles", f.getName());
+            if (fRes.exists() && fRes.isFile()) {
+                return javax.imageio.ImageIO.read(fRes);
+            }
+        } catch (Exception ignored) {}
         return null;
     }
 

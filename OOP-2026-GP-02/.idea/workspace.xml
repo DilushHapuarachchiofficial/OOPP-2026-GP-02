@@ -8,11 +8,7 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/dao/TechnicalOfficer/TechnicalOfficerDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/TechnicalOfficer/TechnicalOfficerDAO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/model/TechnicalOfficer/TechnicalOfficer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/TechnicalOfficer/TechnicalOfficer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerDashboard.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerProfileForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerProfileForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/uploads/profiles/officer_12_test_1792746309070.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/uploads/profiles/officer_12_test_1792752333633.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/uploads/profiles/officer_12_test_1792752727606.png" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
