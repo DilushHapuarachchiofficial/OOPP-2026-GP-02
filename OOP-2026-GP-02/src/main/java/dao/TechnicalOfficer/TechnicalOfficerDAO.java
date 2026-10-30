@@ -1,5 +1,4 @@
- 
- package main.java.dao.TechnicalOfficer;
+package main.java.dao.TechnicalOfficer;
 
 import main.java.model.Notice;
 import main.java.model.TechnicalOfficer.TechnicalOfficer;
@@ -47,13 +46,38 @@ public class TechnicalOfficerDAO {
      */
     private void loadDefaultOrSessionOfficer() {
         if (UserSession.isLoggedIn()) {
-            int sessionUserId = UserSession.getCurrentSession().getUserId();
-            if (loadOfficerFromDatabase(sessionUserId)) {
+            UserSession session = UserSession.getCurrentSession();
+            int sessionUserId = session.getUserId();
+            if (sessionUserId > 0 && loadOfficerFromDatabase(sessionUserId)) {
                 return;
             }
+            if (session.getUsername() != null && !session.getUsername().trim().isEmpty()) {
+                if (loadOfficerByUsername(session.getUsername().trim())) {
+                    return;
+                }
+            }
+
+            // Fallback for static known officers if database connection is offline
+            TechnicalOfficer fallback = getStaticFallbackOfficer(session.getUsername(), sessionUserId);
+            if (fallback != null) {
+                this.currentOfficer = fallback;
+                return;
+            }
+
+            // Fallback: initialize officer details directly from the authenticated session
+            if (this.currentOfficer == null) {
+                this.currentOfficer = new TechnicalOfficer();
+            }
+            this.currentOfficer.setOfficerId(String.valueOf(session.getUserId() > 0 ? session.getUserId() : 12));
+            this.currentOfficer.setUsername(session.getUsername() != null ? session.getUsername() : "to_kamal");
+            this.currentOfficer.setName(session.getFullName() != null && !session.getFullName().isEmpty() ? session.getFullName() : session.getUsername());
+            this.currentOfficer.setEmail(session.getEmail() != null ? session.getEmail() : "");
+            this.currentOfficer.setDepartment(session.getDepartmentName() != null && !session.getDepartmentName().isEmpty() ? session.getDepartmentName() : "Faculty of Technology");
+            this.currentOfficer.setRole("Technical Officer");
+            return;
         }
 
-        // Attempt to query the first technical officer from the database
+        // Only when no session is active, attempt to query the first technical officer from the database
         Connection conn = DatabaseConnection.getConnection();
         if (conn != null) {
             try (Statement stmt = conn.createStatement();
@@ -69,6 +93,32 @@ public class TechnicalOfficerDAO {
     }
 
     /**
+     * Returns pre-configured technical officer profile details for offline / fallback mode.
+     */
+    public static TechnicalOfficer getStaticFallbackOfficer(String username, int officerId) {
+        String cleanUser = username != null ? username.trim().toLowerCase() : "";
+        if ("to_kamal".equals(cleanUser) || officerId == 12) {
+            return new TechnicalOfficer("12", "to_kamal", "Mr. Kamal Wickrama", "to.kamal@fot.ruh.ac.lk", "0751234561", "Department of Information and Communication Technology");
+        }
+        if ("to_nimal".equals(cleanUser) || officerId == 13) {
+            return new TechnicalOfficer("13", "to_nimal", "Mr. Nimal Abeywickrama", "to.nimal@fot.ruh.ac.lk", "0751234562", "Department of Information and Communication Technology");
+        }
+        if ("to_sunil".equals(cleanUser) || officerId == 14) {
+            return new TechnicalOfficer("14", "to_sunil", "Mr. Sunil Shantha", "to.sunil@fot.ruh.ac.lk", "0751234563", "Department of Engineering Technology");
+        }
+        if ("to_ruwan".equals(cleanUser) || officerId == 15) {
+            return new TechnicalOfficer("15", "to_ruwan", "Mr. Ruwan Jayasuriya", "to.ruwan@fot.ruh.ac.lk", "0751234564", "Department of Engineering Technology");
+        }
+        if ("to_asanka".equals(cleanUser) || officerId == 16) {
+            return new TechnicalOfficer("16", "to_asanka", "Mr. Asanka Priyadarshana", "to.asanka@fot.ruh.ac.lk", "0751234565", "Department of Biosystems Technology");
+        }
+        if ("to_malik".equals(cleanUser) || officerId == 17) {
+            return new TechnicalOfficer("17", "to_malik", "Mr. Malik Jayatilleke", "to.malik@fot.ruh.ac.lk", "0751234566", "Department of Multidisciplinary Studies");
+        }
+        return null;
+    }
+
+    /**
      * Loads the Technical Officer details from the database by officerId (which matches users.user_id).
      *
      * @param officerId Target officer ID
@@ -77,6 +127,11 @@ public class TechnicalOfficerDAO {
     public boolean loadOfficerFromDatabase(int officerId) {
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) {
+            TechnicalOfficer fallback = getStaticFallbackOfficer(null, officerId);
+            if (fallback != null) {
+                this.currentOfficer = fallback;
+                return true;
+            }
             return false;
         }
 
@@ -111,6 +166,12 @@ public class TechnicalOfficerDAO {
         } catch (SQLException e) {
             System.err.println("TechnicalOfficerDAO: Error loading officer " + officerId + ": " + e.getMessage());
         }
+
+        TechnicalOfficer fallback = getStaticFallbackOfficer(null, officerId);
+        if (fallback != null) {
+            this.currentOfficer = fallback;
+            return true;
+        }
         return false;
     }
 
@@ -120,9 +181,16 @@ public class TechnicalOfficerDAO {
     public boolean loadOfficerByUsername(String username) {
         if (username == null || username.trim().isEmpty()) return false;
         Connection conn = DatabaseConnection.getConnection();
-        if (conn == null) return false;
+        if (conn == null) {
+            TechnicalOfficer fallback = getStaticFallbackOfficer(username, -1);
+            if (fallback != null) {
+                this.currentOfficer = fallback;
+                return true;
+            }
+            return false;
+        }
 
-        String sql = "SELECT user_id FROM users WHERE username = ? AND role = 'Technical_Officer'";
+        String sql = "SELECT user_id FROM users WHERE username = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username.trim());
             try (ResultSet rs = ps.executeQuery()) {
@@ -132,6 +200,12 @@ public class TechnicalOfficerDAO {
             }
         } catch (SQLException e) {
             System.err.println("TechnicalOfficerDAO: Error loading by username: " + e.getMessage());
+        }
+
+        TechnicalOfficer fallback = getStaticFallbackOfficer(username, -1);
+        if (fallback != null) {
+            this.currentOfficer = fallback;
+            return true;
         }
         return false;
     }

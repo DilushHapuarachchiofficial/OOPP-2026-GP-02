@@ -161,6 +161,42 @@ public class LoginLogic {
                                             }
                                         }
                                     }
+                                } else if ("Technical Officer".equalsIgnoreCase(mappedRole) || "Technical_Officer".equalsIgnoreCase(mappedRole) || "Officer".equalsIgnoreCase(mappedRole)) {
+                                    String toSql = "SELECT t.officer_id, t.officer_name, t.email, t.phone, d.department_name " +
+                                                   "FROM technical_officers t " +
+                                                   "LEFT JOIN departments d ON t.department_id = d.department_id " +
+                                                   "WHERE t.officer_id = ?";
+                                    try (PreparedStatement toStmt = conn.prepareStatement(toSql)) {
+                                        toStmt.setInt(1, userId);
+                                        try (ResultSet toRs = toStmt.executeQuery()) {
+                                            if (toRs.next()) {
+                                                UserSession.setCurrentSession(new UserSession(
+                                                        userId, cleanUsername, mappedRole,
+                                                        toRs.getString("officer_name"),
+                                                        "Technical Officer",
+                                                        toRs.getString("department_name") != null ? toRs.getString("department_name") : "Faculty of Technology",
+                                                        toRs.getString("email")
+                                                ));
+                                            } else {
+                                                main.java.model.TechnicalOfficer.TechnicalOfficer fb =
+                                                        main.java.dao.TechnicalOfficer.TechnicalOfficerDAO.getStaticFallbackOfficer(cleanUsername, userId);
+                                                if (fb != null) {
+                                                    UserSession.setCurrentSession(new UserSession(
+                                                            userId, cleanUsername, mappedRole,
+                                                            fb.getName(),
+                                                            "Technical Officer",
+                                                            fb.getDepartment(),
+                                                            fb.getEmail()
+                                                    ));
+                                                } else {
+                                                    UserSession.setCurrentSession(new UserSession(
+                                                            userId, cleanUsername, mappedRole,
+                                                            cleanUsername, "Technical Officer", "Faculty of Technology", ""
+                                                    ));
+                                                }
+                                            }
+                                        }
+                                    }
                                 } else {
                                     UserSession.setCurrentSession(new UserSession(
                                             userId, cleanUsername, mappedRole,
@@ -185,15 +221,30 @@ public class LoginLogic {
         if (sqlUser != null) {
             if (cleanPassword.equals(sqlUser.getPasswordHash())) {
                 String mappedRole = DBConnection.normalizeRole(sqlUser.getRole());
-                int inferredId = 1;
+                int inferredId = sqlUser.getUserId() > 0 ? sqlUser.getUserId() : 1;
                 String displayName = cleanUsername;
+                String deptName = "Faculty of Technology";
+                String email = "";
+
                 if ("Lecturer".equalsIgnoreCase(mappedRole)) {
-                    inferredId = 4;
+                    inferredId = sqlUser.getUserId() > 0 ? sqlUser.getUserId() : 4;
                     displayName = "Dr. Chinthaka Premachandra";
+                } else if ("Technical Officer".equalsIgnoreCase(mappedRole)) {
+                    inferredId = sqlUser.getUserId() > 0 ? sqlUser.getUserId() : 12;
+                    main.java.model.TechnicalOfficer.TechnicalOfficer toInfo =
+                            main.java.dao.TechnicalOfficer.TechnicalOfficerDAO.getStaticFallbackOfficer(cleanUsername, inferredId);
+                    if (toInfo != null) {
+                        displayName = toInfo.getName();
+                        deptName = toInfo.getDepartment();
+                        email = toInfo.getEmail();
+                        if (toInfo.getOfficerId() != null && !toInfo.getOfficerId().isEmpty()) {
+                            try { inferredId = Integer.parseInt(toInfo.getOfficerId()); } catch (Exception ignored) {}
+                        }
+                    }
                 }
                 UserSession.setCurrentSession(new UserSession(
                         inferredId, cleanUsername, mappedRole,
-                        displayName, mappedRole, "Faculty of Technology", ""
+                        displayName, mappedRole, deptName, email
                 ));
                 return new AuthResult(true, "Authentication successful!", mappedRole);
             } else {
@@ -219,10 +270,30 @@ public class LoginLogic {
             return new AuthResult(true, "Lecturer authentication successful!", "Lecturer");
         }
 
+        if (cleanUsername.startsWith("to_") && ("to123".equals(cleanPassword) || OFFICER_PASSWORD.equals(cleanPassword))) {
+            main.java.model.TechnicalOfficer.TechnicalOfficer toInfo =
+                    main.java.dao.TechnicalOfficer.TechnicalOfficerDAO.getStaticFallbackOfficer(cleanUsername, 0);
+            int id = 12;
+            String name = cleanUsername;
+            String dept = "Faculty of Technology";
+            String email = "to@fot.ruh.ac.lk";
+            if (toInfo != null) {
+                try { id = Integer.parseInt(toInfo.getOfficerId()); } catch (Exception ignored) {}
+                name = toInfo.getName();
+                dept = toInfo.getDepartment();
+                email = toInfo.getEmail();
+            }
+            UserSession.setCurrentSession(new UserSession(
+                    id, cleanUsername, "Technical Officer",
+                    name, "Technical Officer", dept, email
+            ));
+            return new AuthResult(true, "Technical Officer authentication successful!", "Technical Officer");
+        }
+
         if (OFFICER_USERNAME.equals(cleanUsername) && OFFICER_PASSWORD.equals(cleanPassword)) {
             UserSession.setCurrentSession(new UserSession(
                     12, cleanUsername, "Technical Officer",
-                    "Mr. Kamal Perera", "Technical Officer", "Faculty of Technology", "kamal@fot.ruh.ac.lk"
+                    "Mr. Kamal Wickrama", "Technical Officer", "Department of Information and Communication Technology", "to.kamal@fot.ruh.ac.lk"
             ));
             return new AuthResult(true, "Technical Officer authentication successful!", "Technical Officer");
         }
@@ -459,6 +530,35 @@ public class LoginLogic {
 
     public static void openTechnicalOfficerDashboard() {
         javax.swing.SwingUtilities.invokeLater(() -> {
+            UserSession session = UserSession.getCurrentSession();
+            main.java.dao.TechnicalOfficer.TechnicalOfficerDAO dao = new main.java.dao.TechnicalOfficer.TechnicalOfficerDAO();
+            main.java.model.TechnicalOfficer.TechnicalOfficer officer = null;
+
+            if (session != null) {
+                if (session.getUserId() > 0) {
+                    dao.loadOfficerFromDatabase(session.getUserId());
+                    officer = dao.getCurrentOfficer();
+                }
+                if ((officer == null || officer.getUsername() == null || officer.getUsername().isEmpty()) && session.getUsername() != null) {
+                    dao.loadOfficerByUsername(session.getUsername());
+                    officer = dao.getCurrentOfficer();
+                }
+                if (officer == null || officer.getUsername() == null || officer.getUsername().isEmpty()) {
+                    officer = dao.getCurrentOfficer();
+                }
+            }
+
+            if (officer != null && officer.getName() != null && !officer.getName().isEmpty()) {
+                try {
+                    main.java.ui.TechnicalOfficer.TechnicalOfficerDashboard dashboard =
+                            new main.java.ui.TechnicalOfficer.TechnicalOfficerDashboard(officer);
+                    dashboard.setVisible(true);
+                    return;
+                } catch (Exception e) {
+                    System.err.println("Error opening TechnicalOfficerDashboard with officer instance: " + e.getMessage());
+                }
+            }
+
             boolean opened = tryOpenDashboard(
                 "main.java.ui.TechnicalOfficer.TechnicalOfficerDashboard",
                 "main.java.ui.technicalofficer.TechnicalOfficerDashboard",
@@ -475,7 +575,7 @@ public class LoginLogic {
             );
             if (!opened) {
                 JOptionPane.showMessageDialog(null,
-                        "✓ Login Successful!\n\nRole: Technical Officer\nWelcome to TecFAMS Resource Portal.\n\n[TechnicalOfficerDashboard UI class will open here once created by your team member]",
+                        "✓ Login Successful!\n\nRole: Technical Officer\nWelcome to TecFAMS Resource Portal.",
                         "TecFAMS - Technical Officer Portal",
                         JOptionPane.INFORMATION_MESSAGE);
             }

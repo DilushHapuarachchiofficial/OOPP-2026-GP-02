@@ -74,12 +74,32 @@ public class TechnicalOfficerDashboard extends JFrame {
     private TechnicalOfficerProfileForm profileForm;
 
     public TechnicalOfficerDashboard() {
-        this(new TechnicalOfficerDAO());
+        this((TechnicalOfficer) null);
     }
 
     public TechnicalOfficerDashboard(TechnicalOfficerDAO dao) {
         this.dao = dao != null ? dao : new TechnicalOfficerDAO();
         this.currentOfficer = this.dao.getCurrentOfficer();
+
+        initFrameSettings();
+        buildUI();
+    }
+
+    public TechnicalOfficerDashboard(TechnicalOfficer officer) {
+        if (officer != null) {
+            this.currentOfficer = officer;
+            int officerId = -1;
+            try {
+                if (officer.getOfficerId() != null && !officer.getOfficerId().trim().isEmpty()) {
+                    officerId = Integer.parseInt(officer.getOfficerId().trim());
+                }
+            } catch (Exception ignored) {}
+            this.dao = new TechnicalOfficerDAO(officerId);
+            this.dao.setCurrentOfficer(this.currentOfficer);
+        } else {
+            this.dao = new TechnicalOfficerDAO();
+            this.currentOfficer = this.dao.getCurrentOfficer();
+        }
 
         initFrameSettings();
         buildUI();
@@ -706,8 +726,15 @@ public class TechnicalOfficerDashboard extends JFrame {
         );
 
         if (choice == JOptionPane.YES_OPTION) {
+            if (currentOfficer != null) {
+                currentOfficer.logout();
+            }
+            main.java.model.UserSession.clearSession();
             dispose();
-            JOptionPane.showMessageDialog(null, "You have successfully logged out of TecFAMS.", "Logged Out", JOptionPane.INFORMATION_MESSAGE);
+            SwingUtilities.invokeLater(() -> {
+                main.java.ui.LoginUI loginUI = new main.java.ui.LoginUI();
+                loginUI.setVisible(true);
+            });
         }
     }
 

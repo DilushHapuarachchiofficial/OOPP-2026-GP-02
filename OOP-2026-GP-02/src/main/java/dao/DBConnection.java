@@ -31,14 +31,24 @@ public class DBConnection {
     private static Map<String, UserRecord> sqlDumpUsers = null;
 
     public static class UserRecord {
+        private final int userId;
         private final String username;
         private final String passwordHash;
         private final String role;
 
-        public UserRecord(String username, String passwordHash, String role) {
+        public UserRecord(int userId, String username, String passwordHash, String role) {
+            this.userId = userId;
             this.username = username;
             this.passwordHash = passwordHash;
             this.role = role;
+        }
+
+        public UserRecord(String username, String passwordHash, String role) {
+            this(0, username, passwordHash, role);
+        }
+
+        public int getUserId() {
+            return userId;
         }
 
         public String getUsername() {
@@ -188,8 +198,8 @@ public class DBConnection {
         try (BufferedReader br = reader) {
             String line;
             boolean inUsersTable = false;
-            // Matches tuples: (1, 'username', 'password', 'Role', ...)
-            Pattern pattern = Pattern.compile("\\(\\s*\\d+\\s*,\\s*'([^']+)'\\s*,\\s*'([^']+)'\\s*,\\s*'([^']+)'");
+            // Matches tuples: (12, 'username', 'password', 'Role', ...)
+            Pattern pattern = Pattern.compile("\\(\\s*(\\d+)\\s*,\\s*'([^']+)'\\s*,\\s*'([^']+)'\\s*,\\s*'([^']+)'");
 
             while ((line = br.readLine()) != null) {
                 if (line.contains("INSERT INTO `users`") || line.contains("INSERT INTO users")) {
@@ -199,10 +209,14 @@ public class DBConnection {
                 if (inUsersTable) {
                     Matcher matcher = pattern.matcher(line);
                     while (matcher.find()) {
-                        String username = matcher.group(1);
-                        String passwordHash = matcher.group(2);
-                        String role = matcher.group(3);
-                        sqlDumpUsers.put(username, new UserRecord(username, passwordHash, role));
+                        int uid = 0;
+                        try {
+                            uid = Integer.parseInt(matcher.group(1));
+                        } catch (Exception ignored) {}
+                        String username = matcher.group(2);
+                        String passwordHash = matcher.group(3);
+                        String role = matcher.group(4);
+                        sqlDumpUsers.put(username, new UserRecord(uid, username, passwordHash, role));
                     }
 
                     if (line.trim().endsWith(";")) {
