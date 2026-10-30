@@ -6,8 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/TechnicalOfficer/TechnicalOfficerDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/TechnicalOfficer/TechnicalOfficerDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/TechnicalOfficer/TechnicalOfficer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/TechnicalOfficer/TechnicalOfficer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/AttendanceManagementForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/AttendanceManagementForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/MedicalManagementForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/MedicalManagementForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerProfileForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerProfileForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/database/DatabaseConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/database/DatabaseConnection.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,7 +47,7 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;W__Technical__officer__version5&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;W__Technical__officer__version6&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;E:/OOP_mini_project/OOPP-2026-GP-02/OOP-2026-GP-02&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,

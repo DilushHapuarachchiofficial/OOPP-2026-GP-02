@@ -1,4 +1,4 @@
-package main.java.ui.TechnicalOfficer;
+  package main.java.ui.TechnicalOfficer;
 
 import main.java.model.TechnicalOfficer.TechnicalOfficer;
 import main.resources.database.DatabaseConnection;
@@ -11,6 +11,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.sql.*;
 import java.sql.Date;
@@ -29,8 +31,8 @@ import static main.java.ui.TechnicalOfficer.TechnicalOfficerDashboard.*;
  * - Summary metric cards (Total, Pending, Approved, Rejected)
  * - Filter & Search bar (Reg No/Name, Status, Date range, Search & Reset)
  * - Medical Records table with DB columns, status badges, and details trigger
- * - Medical Details panel (student info, absence dates, session info, certificate Browse/View, approval status)
- * - Actions: Save New, Update (persists Approval Status), Clear, Refresh
+ * - Medical Details panel (view-only student info, dates, clinical reason, certificate View, approval status)
+ * - Actions: Approve Medical, Reject Medical, Save Status, Clear, Refresh, View Document
  */
 public class MedicalManagementForm extends JFrame {
 
@@ -58,7 +60,7 @@ public class MedicalManagementForm extends JFrame {
     private JTextField txtStudentRegNo, txtStudentName, txtStudentLevel, txtStudentContact;
     private JTextField txtStartDate, txtEndDate, txtSubmittedDate, txtDocumentPath;
     private JTextArea txtReason;
-    private JButton btnBrowseDoc, btnViewDoc, btnSaveNew, btnUpdate, btnClear, btnRefresh;
+    private JButton btnViewDoc, btnApprove, btnReject, btnUpdate, btnClear, btnRefresh;
 
     // State
     private int currentMedicalId = -1;
@@ -363,7 +365,7 @@ public class MedicalManagementForm extends JFrame {
         title.setFont(FONT_HEADER_MEDIUM);
         title.setForeground(PRIMARY_NAVY);
 
-        lblDetailsBadge = new JLabel("Mode: New Record");
+        lblDetailsBadge = new JLabel("Mode: Review & Verification");
         lblDetailsBadge.setFont(FONT_SMALL);
         lblDetailsBadge.setForeground(PRIMARY_BLUE);
         lblDetailsBadge.setBackground(LIGHT_BLUE);
@@ -384,11 +386,7 @@ public class MedicalManagementForm extends JFrame {
         // 1. Student Information
         cmbStudentSelect = new JComboBox<>();
         cmbStudentSelect.setFont(FONT_REGULAR);
-        cmbStudentSelect.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                updateStudentDisplayFields((StudentItem) cmbStudentSelect.getSelectedItem());
-            }
-        });
+        cmbStudentSelect.setEnabled(false);
 
         JPanel studentGrid = new JPanel(new GridLayout(2, 2, 10, 8));
         studentGrid.setOpaque(false);
@@ -396,76 +394,72 @@ public class MedicalManagementForm extends JFrame {
         txtStudentName = createReadOnlyField();
         txtStudentLevel = createReadOnlyField();
         txtStudentContact = createReadOnlyField();
-        studentGrid.add(createFieldWrapper("Registration No:", txtStudentRegNo));
+        studentGrid.add(createFieldWrapper("Registration No (Student):", txtStudentRegNo));
         studentGrid.add(createFieldWrapper("Full Name:", txtStudentName));
         studentGrid.add(createFieldWrapper("Academic Level:", txtStudentLevel));
         studentGrid.add(createFieldWrapper("Official Contact / Email:", txtStudentContact));
-        addSection(formBody, "1. Student Information", createFieldWrapper("Select Student:", cmbStudentSelect), studentGrid);
+        addSection(formBody, "1. Student Information (Read-Only)", studentGrid);
 
         // 2. Absence Period & Reason
         JPanel datesGrid = new JPanel(new GridLayout(1, 3, 10, 0));
         datesGrid.setOpaque(false);
-        String today = LocalDate.now().toString();
-        txtStartDate = new JTextField(today);
-        txtStartDate.setFont(FONT_REGULAR);
-        txtEndDate = new JTextField(today);
-        txtEndDate.setFont(FONT_REGULAR);
-        txtSubmittedDate = new JTextField(today);
-        txtSubmittedDate.setFont(FONT_REGULAR);
-        datesGrid.add(createFieldWrapper("Start Date (YYYY-MM-DD):", txtStartDate));
-        datesGrid.add(createFieldWrapper("End Date (YYYY-MM-DD):", txtEndDate));
+        txtStartDate = createReadOnlyField();
+        txtEndDate = createReadOnlyField();
+        txtSubmittedDate = createReadOnlyField();
+        datesGrid.add(createFieldWrapper("Start Date (Submitted):", txtStartDate));
+        datesGrid.add(createFieldWrapper("End Date (Submitted):", txtEndDate));
         datesGrid.add(createFieldWrapper("Submitted Date:", txtSubmittedDate));
 
         txtReason = new JTextArea(3, 20);
         txtReason.setFont(FONT_REGULAR);
         txtReason.setLineWrap(true);
         txtReason.setWrapStyleWord(true);
+        txtReason.setEditable(false);
+        txtReason.setFocusable(false);
+        txtReason.setCursor(Cursor.getDefaultCursor());
+        txtReason.setForeground(TEXT_MAIN);
+        txtReason.setBackground(Color.decode("#F1F5F9"));
         JScrollPane reasonScroll = new JScrollPane(txtReason);
         reasonScroll.setBorder(new LineBorder(BORDER_COLOR, 1));
-        addSection(formBody, "2. Absence Period & Reason", datesGrid, createFieldWrapper("Reason / Medical Condition:", reasonScroll));
+        addSection(formBody, "2. Absence Period & Reason (Submitted by Student)", datesGrid, createFieldWrapper("Reason / Medical Condition:", reasonScroll));
 
         // 3. Associated Academic Session
         cmbSessionSelect = new JComboBox<>();
         cmbSessionSelect.setFont(FONT_REGULAR);
-        cmbSessionSelect.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                SessionItem sItem = (SessionItem) cmbSessionSelect.getSelectedItem();
-                lblSessionDisplay.setText(sItem != null ? sItem.getDetailsDescription() : "None");
-            }
-        });
+        cmbSessionSelect.setEnabled(false);
+
         lblSessionDisplay = new JLabel("No specific session associated (General Medical Absence)");
-        lblSessionDisplay.setFont(FONT_SMALL);
-        lblSessionDisplay.setForeground(TEXT_SECONDARY);
-        addSection(formBody, "3. Associated Academic Session (Optional)", createFieldWrapper("Link to Scheduled Session:", cmbSessionSelect), lblSessionDisplay);
+        lblSessionDisplay.setFont(FONT_REGULAR);
+        lblSessionDisplay.setForeground(TEXT_MAIN);
+        lblSessionDisplay.setBackground(Color.decode("#F1F5F9"));
+        lblSessionDisplay.setOpaque(true);
+        lblSessionDisplay.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(8, 10, 8, 10)));
+        addSection(formBody, "3. Associated Academic Session (Submitted by Student)", lblSessionDisplay);
 
         // 4. Medical Certificate Document
         JPanel docRow = new JPanel(new BorderLayout(8, 0));
         docRow.setOpaque(false);
-        txtDocumentPath = new JTextField("medicals/certificate_sample.pdf");
-        txtDocumentPath.setFont(FONT_REGULAR);
+        txtDocumentPath = createReadOnlyField();
 
-        JPanel docBtnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        docBtnRow.setOpaque(false);
-        btnBrowseDoc = createPrimaryButton("📁 Browse...");
-        btnBrowseDoc.addActionListener(e -> browseDocument());
-        btnViewDoc = createPrimaryButton("👁 View Document");
+        btnViewDoc = createPrimaryButton("👁 View Medical Certificate");
         btnViewDoc.addActionListener(e -> viewDocument());
-        docBtnRow.add(btnBrowseDoc);
-        docBtnRow.add(btnViewDoc);
 
         docRow.add(txtDocumentPath, BorderLayout.CENTER);
-        docRow.add(docBtnRow, BorderLayout.EAST);
-        addSection(formBody, "4. Medical Certificate Document", createFieldWrapper("Certificate File Path (PDF / Image):", docRow));
+        docRow.add(btnViewDoc, BorderLayout.EAST);
+        addSection(formBody, "4. Medical Certificate Document", createFieldWrapper("Certificate File Reference:", docRow));
 
         // 5. Verification & Approval Status
         JPanel statusGrid = new JPanel(new GridLayout(1, 2, 10, 0));
         statusGrid.setOpaque(false);
         cmbApprovalStatus = new JComboBox<>(new String[]{"Pending", "Approved", "Rejected"});
         cmbApprovalStatus.setFont(FONT_MEDIUM);
+        cmbApprovalStatus.setBackground(WHITE);
         lblVerifiedBy = new JLabel("Review Status: Unreviewed");
         lblVerifiedBy.setFont(FONT_SMALL);
         lblVerifiedBy.setForeground(TEXT_SECONDARY);
-        statusGrid.add(createFieldWrapper("Approval Status:", cmbApprovalStatus));
+        statusGrid.add(createFieldWrapper("Approval Decision (Editable by Technical Officer):", cmbApprovalStatus));
         statusGrid.add(createFieldWrapper("Verified By:", lblVerifiedBy));
         addSection(formBody, "5. Verification & Approval Status", statusGrid);
 
@@ -494,31 +488,79 @@ public class MedicalManagementForm extends JFrame {
     }
 
     private JPanel createActionButtonsSection() {
-        JPanel mgmtRow = new JPanel(new GridLayout(1, 4, 8, 0));
-        mgmtRow.setOpaque(false);
+        JPanel container = new JPanel(new GridLayout(2, 1, 0, 8));
+        container.setOpaque(false);
 
-        btnSaveNew = createPrimaryButton("💾 Save New");
-        btnSaveNew.addActionListener(e -> saveMedicalRecord(false));
-        btnUpdate = createPrimaryButton("🔄 Update");
-        btnUpdate.addActionListener(e -> saveMedicalRecord(true));
+        // Row 1: Fast Approval Decisions
+        JPanel decisionRow = new JPanel(new GridLayout(1, 2, 8, 0));
+        decisionRow.setOpaque(false);
+
+        btnApprove = createColorButton("✅ Approve Medical", Color.decode("#10B981"), Color.decode("#059669"));
+        btnApprove.addActionListener(e -> updateApprovalDecision("Approved"));
+
+        btnReject = createColorButton("❌ Reject Medical", Color.decode("#EF4444"), Color.decode("#DC2626"));
+        btnReject.addActionListener(e -> updateApprovalDecision("Rejected"));
+
+        decisionRow.add(btnApprove);
+        decisionRow.add(btnReject);
+
+        // Row 2: Status Save, Clear and Refresh Buttons
+        JPanel subRow = new JPanel(new GridLayout(1, 3, 8, 0));
+        subRow.setOpaque(false);
+
+        btnUpdate = createPrimaryButton("💾 Save Status");
+        btnUpdate.addActionListener(e -> saveApprovalStatus());
+
         btnClear = createSecondaryButton("🧹 Clear");
         btnClear.addActionListener(e -> clearDetailsPanel());
+
         btnRefresh = createSecondaryButton("↺ Refresh");
         btnRefresh.addActionListener(e -> refreshAll());
 
-        mgmtRow.add(btnSaveNew);
-        mgmtRow.add(btnUpdate);
-        mgmtRow.add(btnClear);
-        mgmtRow.add(btnRefresh);
-        return mgmtRow;
+        subRow.add(btnUpdate);
+        subRow.add(btnClear);
+        subRow.add(btnRefresh);
+
+        container.add(decisionRow);
+        container.add(subRow);
+        return container;
+    }
+
+    private static JButton createColorButton(String text, Color bg, Color hoverBg) {
+        JButton button = new JButton(text);
+        button.setFont(FONT_MEDIUM);
+        button.setForeground(WHITE);
+        button.setBackground(bg);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(new EmptyBorder(8, 16, 8, 16));
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(hoverBg);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(bg);
+            }
+        });
+        return button;
     }
 
     private JTextField createReadOnlyField() {
         JTextField tf = new JTextField();
         tf.setEditable(false);
+        tf.setFocusable(false);
+        tf.setCursor(Cursor.getDefaultCursor());
         tf.setFont(FONT_REGULAR);
-        tf.setBackground(Color.decode("#F8FAFC"));
-        tf.setBorder(BorderFactory.createCompoundBorder(new LineBorder(BORDER_COLOR, 1), new EmptyBorder(4, 6, 4, 6)));
+        tf.setForeground(TEXT_MAIN);
+        tf.setBackground(Color.decode("#F1F5F9"));
+        tf.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(6, 8, 6, 8)));
         return tf;
     }
 
@@ -670,6 +712,9 @@ public class MedicalManagementForm extends JFrame {
                     });
                 }
                 lblTableInfo.setText("Displaying " + tableModel.getRowCount() + " records");
+                if (tableModel.getRowCount() > 0 && currentMedicalId <= 0) {
+                    tblMedicals.setRowSelectionInterval(0, 0);
+                }
             }
         } catch (SQLException e) {
             lblTableInfo.setText("SQL Error: " + e.getMessage());
@@ -681,10 +726,12 @@ public class MedicalManagementForm extends JFrame {
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) return;
 
-        String sql = "SELECT m.medical_id, m.student_id, m.session_id, sess.session_number, sess.session_type, sess.session_date, " +
+        String sql = "SELECT m.medical_id, m.student_id, st.student_reg_no, st.full_name, st.academic_year, st.email, st.phone, " +
+                "m.session_id, sess.session_number, sess.session_type, sess.session_date, " +
                 "c.course_code, m.start_date, m.end_date, m.reason, m.document_path, m.submitted_date, m.approval_status, " +
                 "m.verified_by, to_off.officer_name as verified_by_name " +
                 "FROM medicals m " +
+                "LEFT JOIN students st ON m.student_id = st.student_id " +
                 "LEFT JOIN attendance_sessions sess ON m.session_id = sess.session_id " +
                 "LEFT JOIN courses c ON sess.course_id = c.course_id " +
                 "LEFT JOIN technical_officers to_off ON m.verified_by = to_off.officer_id " +
@@ -697,15 +744,16 @@ public class MedicalManagementForm extends JFrame {
                     currentMedicalId = medicalId;
                     lblDetailsBadge.setText("Record ID: #" + medicalId);
 
-                    int studentId = rs.getInt("student_id");
-                    for (int i = 0; i < cmbStudentSelect.getItemCount(); i++) {
-                        StudentItem item = cmbStudentSelect.getItemAt(i);
-                        if (item.getStudentId() == studentId) {
-                            cmbStudentSelect.setSelectedIndex(i);
-                            updateStudentDisplayFields(item);
-                            break;
-                        }
-                    }
+                    String regNo = rs.getString("student_reg_no");
+                    String fullName = rs.getString("full_name");
+                    int acYear = rs.getInt("academic_year");
+                    String email = rs.getString("email");
+                    String phone = rs.getString("phone");
+
+                    txtStudentRegNo.setText(regNo != null ? regNo : "N/A");
+                    txtStudentName.setText(fullName != null ? fullName : "N/A");
+                    txtStudentLevel.setText(acYear > 0 ? "Level " + acYear + " Undergraduate" : "Undergraduate");
+                    txtStudentContact.setText((email != null ? email : "") + ((phone != null && !phone.isEmpty()) ? " • " + phone : ""));
 
                     txtStartDate.setText(formatDate(rs.getDate("start_date")));
                     txtEndDate.setText(formatDate(rs.getDate("end_date")));
@@ -743,6 +791,16 @@ public class MedicalManagementForm extends JFrame {
                     } else {
                         lblVerifiedBy.setText("Review Status: Unreviewed");
                     }
+
+                    for (int r = 0; r < tableModel.getRowCount(); r++) {
+                        Object val = tableModel.getValueAt(r, 1);
+                        if (val instanceof Integer && ((Integer) val) == medicalId) {
+                            if (tblMedicals.getSelectedRow() != r) {
+                                tblMedicals.setRowSelectionInterval(r, r);
+                            }
+                            break;
+                        }
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -777,55 +835,17 @@ public class MedicalManagementForm extends JFrame {
         }
     }
 
-    private boolean showValidationWarning(String message) {
-        JOptionPane.showMessageDialog(this, message, "Validation Error", JOptionPane.WARNING_MESSAGE);
-        return false;
-    }
-
     /**
-     * Save (New) or Update an existing Medical Record.
-     * When updating, the selected Approval Status from cmbApprovalStatus is persisted to the database.
+     * Fast action to update approval status directly to "Approved" or "Rejected".
+     * Saves the decision to the database and logs the Technical Officer who verified it.
      */
-    private void saveMedicalRecord(boolean isUpdate) {
-        StudentItem student = (StudentItem) cmbStudentSelect.getSelectedItem();
-        if (student == null) {
-            showValidationWarning("Please select an undergraduate student.");
+    private void updateApprovalDecision(String newStatus) {
+        if (currentMedicalId <= 0) {
+            JOptionPane.showMessageDialog(this, "Please select a medical record from the table first.", "No Record Selected", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String startStr = txtStartDate.getText().trim();
-        String endStr = txtEndDate.getText().trim();
-        String submittedStr = txtSubmittedDate.getText().trim();
-        String reason = txtReason.getText().trim();
-        String docPath = txtDocumentPath.getText().trim();
-        String status = (String) cmbApprovalStatus.getSelectedItem();
-
-        if (startStr.isEmpty() || endStr.isEmpty()) {
-            showValidationWarning("Medical start date and end date are required.");
-            return;
-        }
-
-        LocalDate startDate, endDate, submittedDate;
-        try {
-            startDate = LocalDate.parse(startStr);
-            endDate = LocalDate.parse(endStr);
-            submittedDate = submittedStr.isEmpty() ? LocalDate.now() : LocalDate.parse(submittedStr);
-        } catch (DateTimeParseException e) {
-            showValidationWarning("Invalid date format. Please use YYYY-MM-DD (e.g. 2024-04-15).");
-            return;
-        }
-
-        if (endDate.isBefore(startDate)) {
-            showValidationWarning("Medical End Date cannot be earlier than Start Date.");
-            return;
-        }
-
-        if (reason.isEmpty()) {
-            showValidationWarning("Please enter the medical reason or clinical condition.");
-            return;
-        }
-
-        if (isUpdate && "Rejected".equalsIgnoreCase(status)) {
+        if ("Rejected".equalsIgnoreCase(newStatus)) {
             int conf = JOptionPane.showConfirmDialog(
                     this,
                     "Are you sure you want to mark Medical Record #" + currentMedicalId + " as REJECTED?",
@@ -835,11 +855,24 @@ public class MedicalManagementForm extends JFrame {
             if (conf != JOptionPane.YES_OPTION) return;
         }
 
-        if (docPath.isEmpty()) docPath = "medicals/default_certificate.pdf";
+        cmbApprovalStatus.setSelectedItem(newStatus);
+        saveApprovalStatus();
+    }
 
-        SessionItem sessionItem = (SessionItem) cmbSessionSelect.getSelectedItem();
-        Integer sessionId = (sessionItem != null && sessionItem.getSessionId() != null && sessionItem.getSessionId() > 0)
-                ? sessionItem.getSessionId() : null;
+    /**
+     * Saves or updates the Approval Status for the selected Medical Record.
+     * Technical Officers can only verify and approve/reject; student medical submission details are preserved.
+     */
+    private void saveApprovalStatus() {
+        if (currentMedicalId <= 0) {
+            JOptionPane.showMessageDialog(this, "Please select a medical record from the table first.", "Notice", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String status = (String) cmbApprovalStatus.getSelectedItem();
+        if (status == null || status.trim().isEmpty()) {
+            status = "Pending";
+        }
 
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) {
@@ -849,41 +882,32 @@ public class MedicalManagementForm extends JFrame {
 
         try {
             int officerId = resolveTechnicalOfficerId(conn);
-            if (("Approved".equalsIgnoreCase(status) || "Rejected".equalsIgnoreCase(status)) && officerId <= 0) {
-                JOptionPane.showMessageDialog(this, "Could not identify Technical Officer account in database for verification.", "Authentication Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
             String sql;
-            if (isUpdate) {
-                if (currentMedicalId <= 0) {
-                    JOptionPane.showMessageDialog(this, "No existing medical record selected to update. Select a record from the table first.", "Notice", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                sql = "UPDATE medicals SET student_id = ?, session_id = ?, start_date = ?, end_date = ?, " +
-                      "reason = ?, document_path = ?, submitted_date = ?, approval_status = ?, verified_by = ? WHERE medical_id = ?";
+            if (("Approved".equalsIgnoreCase(status) || "Rejected".equalsIgnoreCase(status)) && officerId > 0) {
+                sql = "UPDATE medicals SET approval_status = ?, verified_by = ? WHERE medical_id = ?";
             } else {
-                sql = "INSERT INTO medicals (medical_id, student_id, session_id, start_date, end_date, " +
-                      "reason, document_path, submitted_date, approval_status, verified_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                sql = "UPDATE medicals SET approval_status = ?, verified_by = NULL WHERE medical_id = ?";
             }
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                int targetId = isUpdate ? currentMedicalId : getNextMedicalId(conn);
-                if (isUpdate) {
-                    bindMedicalParameters(ps, 1, student.getStudentId(), sessionId, startDate, endDate, reason, docPath, submittedDate, status, officerId);
-                    ps.setInt(10, targetId);
+                ps.setString(1, status);
+                if (("Approved".equalsIgnoreCase(status) || "Rejected".equalsIgnoreCase(status)) && officerId > 0) {
+                    ps.setInt(2, officerId);
+                    ps.setInt(3, currentMedicalId);
                 } else {
-                    ps.setInt(1, targetId);
-                    bindMedicalParameters(ps, 2, student.getStudentId(), sessionId, startDate, endDate, reason, docPath, submittedDate, status, officerId);
+                    ps.setInt(2, currentMedicalId);
                 }
 
-                if (ps.executeUpdate() > 0) {
-                    String msg = isUpdate ? "Medical Record #" + targetId + " updated successfully!" : "Medical Record #" + targetId + " successfully registered!";
-                    JOptionPane.showMessageDialog(this, msg, isUpdate ? "Update Successful" : "Record Saved", JOptionPane.INFORMATION_MESSAGE);
-                    currentMedicalId = targetId;
-                    refreshViews(targetId, !isUpdate);
+                int affected = ps.executeUpdate();
+                if (affected > 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "Medical Record #" + currentMedicalId + " status updated to '" + status + "' successfully!",
+                            "Status Updated", JOptionPane.INFORMATION_MESSAGE);
+                    refreshViews(currentMedicalId, false);
                 } else {
-                    JOptionPane.showMessageDialog(this, isUpdate ? "Failed to update record. No matching record found." : "Could not save medical record.", isUpdate ? "Update Failed" : "Save Failed", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this,
+                            "Failed to update record. No record found for ID #" + currentMedicalId,
+                            "Update Failed", JOptionPane.ERROR_MESSAGE);
                 }
             }
         } catch (SQLException e) {
@@ -903,13 +927,18 @@ public class MedicalManagementForm extends JFrame {
         loadMedicalDetails(medId);
     }
 
+    /**
+     * Views the submitted Medical Certificate.
+     * If the physical file exists, attempts to open it via the system PDF/image viewer.
+     * If not found on disk or if opening fails, launches the in-app Medical Certificate Preview Dialog.
+     */
     private void viewDocument() {
-        String docPath = txtDocumentPath.getText().trim();
-        if (docPath.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No certificate document path specified for this record.", "Document Notice", JOptionPane.INFORMATION_MESSAGE);
+        if (currentMedicalId <= 0) {
+            JOptionPane.showMessageDialog(this, "Please select a medical record from the table first.", "Notice", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
+        String docPath = txtDocumentPath.getText().trim();
         File targetFile = resolveDocumentFile(docPath);
         if (targetFile != null && targetFile.exists()) {
             try {
@@ -920,15 +949,9 @@ public class MedicalManagementForm extends JFrame {
             } catch (Exception ex) {
                 System.err.println("MedicalManagementForm: Desktop open failed: " + ex.getMessage());
             }
-            showDocumentInfoDialog(targetFile);
-        } else {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Certificate document was not found on local disk at:\n" + docPath +
-                    "\n\nYou may use the '📁 Browse...' button to attach a valid local PDF or image.",
-                    "Document File Not Found",
-                    JOptionPane.WARNING_MESSAGE);
         }
+
+        showMedicalCertificatePreviewDialog(docPath, targetFile);
     }
 
     private File resolveDocumentFile(String path) {
@@ -942,55 +965,202 @@ public class MedicalManagementForm extends JFrame {
         return medDir.exists() ? medDir : null;
     }
 
-    private void showDocumentInfoDialog(File file) {
-        JDialog dlg = new JDialog(this, "Document Attached - " + file.getName(), true);
-        dlg.setSize(440, 240);
+    /**
+     * Displays a formatted Medical Certificate Review & Verification dialog with official faculty layout.
+     */
+    private void showMedicalCertificatePreviewDialog(String docPath, File targetFile) {
+        JDialog dlg = new JDialog(this, "Medical Certificate Document Preview - Record #" + currentMedicalId, true);
+        dlg.setSize(680, 620);
         dlg.setLocationRelativeTo(this);
-        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(BG_COLOR);
 
-        JPanel p = new JPanel(new GridLayout(4, 1, 6, 6));
-        p.setBorder(new EmptyBorder(20, 24, 20, 24));
-        p.setBackground(WHITE);
-        p.add(new JLabel("Document File: " + file.getName()));
-        p.add(new JLabel("Disk Location: " + file.getAbsolutePath()));
-        p.add(new JLabel("File Size: " + (file.length() / 1024) + " KB"));
-        p.add(new JLabel("File Status: Document available locally."));
+        // Header Panel
+        JPanel dlgHeader = new JPanel(new BorderLayout());
+        dlgHeader.setBackground(PRIMARY_NAVY);
+        dlgHeader.setBorder(new EmptyBorder(16, 20, 16, 20));
 
-        JButton btnClose = createPrimaryButton("Close");
-        btnClose.addActionListener(e -> dlg.dispose());
-        JPanel b = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        b.add(btnClose);
+        JLabel hTitle = new JLabel("Faculty of Technology • University of Ruhuna");
+        hTitle.setFont(FONT_HEADER_MEDIUM);
+        hTitle.setForeground(WHITE);
 
-        dlg.add(p, BorderLayout.CENTER);
-        dlg.add(b, BorderLayout.SOUTH);
+        JLabel hSub = new JLabel("Official Student Medical Certificate & Absence Verification Record");
+        hSub.setFont(FONT_SMALL);
+        hSub.setForeground(Color.decode("#BFDBFE"));
+
+        JPanel hText = new JPanel(new GridLayout(2, 1, 0, 4));
+        hText.setOpaque(false);
+        hText.add(hTitle);
+        hText.add(hSub);
+        dlgHeader.add(hText, BorderLayout.WEST);
+
+        JLabel badgeRec = new JLabel("Record #" + currentMedicalId, SwingConstants.CENTER);
+        badgeRec.setFont(FONT_MEDIUM);
+        badgeRec.setForeground(PRIMARY_NAVY);
+        badgeRec.setBackground(WHITE);
+        badgeRec.setOpaque(true);
+        badgeRec.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(Color.decode("#E2E8F0"), 1, true),
+                new EmptyBorder(6, 14, 6, 14)
+        ));
+        dlgHeader.add(badgeRec, BorderLayout.EAST);
+        dlg.getContentPane().add(dlgHeader, BorderLayout.NORTH);
+
+        // Body Panel
+        JPanel body = new JPanel();
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.setBackground(BG_COLOR);
+        body.setBorder(new EmptyBorder(16, 20, 16, 20));
+
+        // Certificate Card
+        JPanel paper = new JPanel();
+        paper.setLayout(new BoxLayout(paper, BoxLayout.Y_AXIS));
+        paper.setBackground(WHITE);
+        paper.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(18, 20, 18, 20)
+        ));
+
+        JLabel certHeading = new JLabel("✚  MEDICAL ABSENCE CERTIFICATION DOCUMENT");
+        certHeading.setFont(FONT_HEADER_SMALL);
+        certHeading.setForeground(PRIMARY_NAVY);
+        paper.add(certHeading);
+        paper.add(Box.createVerticalStrut(12));
+
+        // Details Grid
+        JPanel infoGrid = new JPanel(new GridLayout(4, 2, 12, 10));
+        infoGrid.setOpaque(false);
+
+        infoGrid.add(createPreviewField("Student Reg. Number:", txtStudentRegNo.getText()));
+        infoGrid.add(createPreviewField("Student Full Name:", txtStudentName.getText()));
+        infoGrid.add(createPreviewField("Academic Level:", txtStudentLevel.getText()));
+        infoGrid.add(createPreviewField("Submitted Date:", txtSubmittedDate.getText()));
+        infoGrid.add(createPreviewField("Absence Start Date:", txtStartDate.getText()));
+        infoGrid.add(createPreviewField("Absence End Date:", txtEndDate.getText()));
+        infoGrid.add(createPreviewField("Document Reference:", (docPath != null && !docPath.isEmpty()) ? docPath : "None attached"));
+        infoGrid.add(createPreviewField("Current Status:", (String) cmbApprovalStatus.getSelectedItem()));
+
+        paper.add(infoGrid);
+        paper.add(Box.createVerticalStrut(14));
+
+        // Session
+        JPanel sessPanel = new JPanel(new BorderLayout(0, 4));
+        sessPanel.setOpaque(false);
+        JLabel sessLbl = new JLabel("Linked Academic Session:");
+        sessLbl.setFont(FONT_SMALL);
+        sessLbl.setForeground(TEXT_SECONDARY);
+        JLabel sessVal = new JLabel(lblSessionDisplay.getText());
+        sessVal.setFont(FONT_REGULAR);
+        sessVal.setForeground(TEXT_MAIN);
+        sessPanel.add(sessLbl, BorderLayout.NORTH);
+        sessPanel.add(sessVal, BorderLayout.CENTER);
+        paper.add(sessPanel);
+        paper.add(Box.createVerticalStrut(12));
+
+        // Reason / Medical Diagnosis
+        JPanel reasonPanel = new JPanel(new BorderLayout(0, 4));
+        reasonPanel.setOpaque(false);
+        JLabel rLbl = new JLabel("Diagnosis / Medical Reason provided by Student / Registered Physician:");
+        rLbl.setFont(FONT_SMALL);
+        rLbl.setForeground(TEXT_SECONDARY);
+        JTextArea rArea = new JTextArea(txtReason.getText());
+        rArea.setFont(FONT_REGULAR);
+        rArea.setEditable(false);
+        rArea.setLineWrap(true);
+        rArea.setWrapStyleWord(true);
+        rArea.setBackground(Color.decode("#F8FAFC"));
+        rArea.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(8, 10, 8, 10)
+        ));
+        reasonPanel.add(rLbl, BorderLayout.NORTH);
+        reasonPanel.add(rArea, BorderLayout.CENTER);
+        paper.add(reasonPanel);
+        paper.add(Box.createVerticalStrut(14));
+
+        // Verification banner
+        JPanel vBanner = new JPanel(new BorderLayout());
+        vBanner.setBackground(Color.decode("#F1F5F9"));
+        vBanner.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(10, 14, 10, 14)
+        ));
+        JLabel vText = new JLabel(lblVerifiedBy.getText());
+        vText.setFont(FONT_SMALL);
+        vText.setForeground(TEXT_MAIN);
+        vBanner.add(vText, BorderLayout.WEST);
+        paper.add(vBanner);
+
+        body.add(paper);
+
+        JScrollPane scroll = new JScrollPane(body);
+        scroll.setBorder(null);
+        scroll.getViewport().setBackground(BG_COLOR);
+        dlg.getContentPane().add(scroll, BorderLayout.CENTER);
+
+        // Footer Actions Panel
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setBackground(WHITE);
+        footer.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_COLOR),
+                new EmptyBorder(12, 20, 12, 20)
+        ));
+
+        JPanel leftActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        leftActions.setOpaque(false);
+        if (targetFile != null && targetFile.exists()) {
+            JButton btnOpenExt = createSecondaryButton("📂 Open Original File");
+            btnOpenExt.addActionListener(e -> {
+                try {
+                    Desktop.getDesktop().open(targetFile);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(dlg, "Error opening external file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+            leftActions.add(btnOpenExt);
+        }
+
+        JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        rightActions.setOpaque(false);
+
+        JButton dlgApprove = createColorButton("✅ Approve", Color.decode("#10B981"), Color.decode("#059669"));
+        dlgApprove.addActionListener(e -> {
+            dlg.dispose();
+            updateApprovalDecision("Approved");
+        });
+
+        JButton dlgReject = createColorButton("❌ Reject", Color.decode("#EF4444"), Color.decode("#DC2626"));
+        dlgReject.addActionListener(e -> {
+            dlg.dispose();
+            updateApprovalDecision("Rejected");
+        });
+
+        JButton dlgClose = createSecondaryButton("Close");
+        dlgClose.addActionListener(e -> dlg.dispose());
+
+        rightActions.add(dlgApprove);
+        rightActions.add(dlgReject);
+        rightActions.add(dlgClose);
+
+        footer.add(leftActions, BorderLayout.WEST);
+        footer.add(rightActions, BorderLayout.EAST);
+        dlg.getContentPane().add(footer, BorderLayout.SOUTH);
+
         dlg.setVisible(true);
     }
 
-    private void browseDocument() {
-        JFileChooser chooser = new JFileChooser(new File(System.getProperty("user.dir"), "medicals"));
-        chooser.setDialogTitle("Select Medical Certificate (PDF, PNG, JPG)");
-        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File selected = chooser.getSelectedFile();
-            String userDir = System.getProperty("user.dir");
-            String abs = selected.getAbsolutePath();
-
-            if (abs.startsWith(userDir)) {
-                String rel = abs.substring(userDir.length());
-                if (rel.startsWith(File.separator)) rel = rel.substring(1);
-                txtDocumentPath.setText(rel.replace('\\', '/'));
-            } else {
-                txtDocumentPath.setText(abs);
-            }
-        }
-    }
-
-    private int getNextMedicalId(Connection conn) {
-        try (Statement s = conn.createStatement();
-             ResultSet rs = s.executeQuery("SELECT COALESCE(MAX(medical_id), 0) + 1 FROM medicals")) {
-            if (rs.next()) return rs.getInt(1);
-        } catch (SQLException ignored) {
-        }
-        return 1;
+    private JPanel createPreviewField(String label, String value) {
+        JPanel p = new JPanel(new GridLayout(2, 1, 0, 2));
+        p.setOpaque(false);
+        JLabel l = new JLabel(label);
+        l.setFont(FONT_SMALL);
+        l.setForeground(TEXT_SECONDARY);
+        JLabel v = new JLabel((value != null && !value.isEmpty()) ? value : "-");
+        v.setFont(FONT_MEDIUM);
+        v.setForeground(TEXT_MAIN);
+        p.add(l);
+        p.add(v);
+        return p;
     }
 
     private int resolveTechnicalOfficerId(Connection conn) {
@@ -1038,14 +1208,17 @@ public class MedicalManagementForm extends JFrame {
 
     private void clearDetailsPanel() {
         currentMedicalId = -1;
-        lblDetailsBadge.setText("Mode: New Record");
+        lblDetailsBadge.setText("Mode: Review & Verification");
         if (cmbStudentSelect.getItemCount() > 0) cmbStudentSelect.setSelectedIndex(0);
-        String today = LocalDate.now().toString();
-        txtStartDate.setText(today);
-        txtEndDate.setText(today);
-        txtSubmittedDate.setText(today);
+        txtStudentRegNo.setText("");
+        txtStudentName.setText("");
+        txtStudentLevel.setText("");
+        txtStudentContact.setText("");
+        txtStartDate.setText("");
+        txtEndDate.setText("");
+        txtSubmittedDate.setText("");
         txtReason.setText("");
-        txtDocumentPath.setText("medicals/sample_certificate.pdf");
+        txtDocumentPath.setText("");
         if (cmbSessionSelect.getItemCount() > 0) cmbSessionSelect.setSelectedIndex(0);
         lblSessionDisplay.setText("No specific session associated (General Medical Absence)");
         cmbApprovalStatus.setSelectedItem("Pending");

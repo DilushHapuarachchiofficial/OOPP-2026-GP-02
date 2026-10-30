@@ -12,7 +12,7 @@ public class DatabaseConnection {
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String USER = "root";
-    private static final String DEFAULT_PASSWORD = "1234";
+    private static final String DEFAULT_PASSWORD = "#Hirunika1";
 
     private static Connection connection = null;
 

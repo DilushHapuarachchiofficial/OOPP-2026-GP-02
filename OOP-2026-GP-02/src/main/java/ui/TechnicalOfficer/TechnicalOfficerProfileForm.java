@@ -121,30 +121,23 @@ public class TechnicalOfficerProfileForm extends JFrame {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().setBackground(BG_COLOR);
 
-        // 1. Top Header Bar (matches Attendance, Timetable, Notices UIs)
+        // 1. Top Header Bar
         getContentPane().add(createHeaderPanel(), BorderLayout.NORTH);
 
-        // 2. Center Content Area (Scrollable container)
-        JPanel contentContainer = new JPanel();
-        contentContainer.setLayout(new BoxLayout(contentContainer, BoxLayout.Y_AXIS));
+        // 2. Center Content Area (Scrollable balanced 2-column container)
+        JPanel contentContainer = new JPanel(new BorderLayout());
         contentContainer.setBackground(BG_COLOR);
-        contentContainer.setBorder(new EmptyBorder(16, 24, 16, 24));
-
-        // Top: Profile Photo & Quick Identity Card
-        contentContainer.add(createPhotoCard());
-        contentContainer.add(Box.createVerticalStrut(16));
-
-        // Middle: Two-column grid for Details and Security
-        contentContainer.add(createTwoColumnSection());
-        contentContainer.add(Box.createVerticalStrut(14));
+        contentContainer.setBorder(new EmptyBorder(18, 24, 18, 24));
+        contentContainer.add(createTwoColumnSection(), BorderLayout.NORTH);
 
         JScrollPane scrollPane = new JScrollPane(contentContainer);
         scrollPane.setBorder(null);
         scrollPane.setBackground(BG_COLOR);
+        scrollPane.getViewport().setBackground(BG_COLOR);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         getContentPane().add(scrollPane, BorderLayout.CENTER);
 
-        // 3. Bottom Action Bar (Save & Cancel & Back)
+        // 3. Bottom Action Bar
         getContentPane().add(createBottomBar(), BorderLayout.SOUTH);
     }
 
@@ -166,7 +159,7 @@ public class TechnicalOfficerProfileForm extends JFrame {
         titleLabel.setFont(FONT_HEADER_LARGE);
         titleLabel.setForeground(PRIMARY_NAVY);
 
-        JLabel subLabel = new JLabel("University of Ruhuna • Faculty of Technology | Personal Information & Security Settings");
+        JLabel subLabel = new JLabel("Faculty of Technology • University of Ruhuna | Personal Details & Account Security");
         subLabel.setFont(FONT_SMALL);
         subLabel.setForeground(TEXT_SECONDARY);
         left.add(titleLabel);
@@ -176,14 +169,14 @@ public class TechnicalOfficerProfileForm extends JFrame {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         right.setOpaque(false);
 
-        JLabel officerBadge = new JLabel("Officer: " + (currentOfficer != null ? currentOfficer.getName() : ""));
+        JLabel officerBadge = new JLabel("👤 Officer: " + (currentOfficer != null ? currentOfficer.getName() : ""));
         officerBadge.setFont(FONT_SMALL);
         officerBadge.setForeground(PRIMARY_NAVY);
         officerBadge.setBackground(LIGHT_BLUE);
         officerBadge.setOpaque(true);
         officerBadge.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(Color.decode("#BFDBFE"), 1, true),
-                new EmptyBorder(6, 12, 6, 12)
+                new EmptyBorder(6, 14, 6, 14)
         ));
 
         JButton btnBack = createSecondaryButton("← Back to Dashboard");
@@ -202,11 +195,11 @@ public class TechnicalOfficerProfileForm extends JFrame {
      */
     private JPanel createPhotoCard() {
         JPanel card = createStyledCard();
-        card.setLayout(new BorderLayout(24, 0));
+        card.setLayout(new BorderLayout(20, 0));
 
         // Left: Avatar Component
         avatarPanel = new AvatarPreviewPanel();
-        JPanel avatarWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        JPanel avatarWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
         avatarWrapper.setOpaque(false);
         avatarWrapper.add(avatarPanel);
 
@@ -218,76 +211,83 @@ public class TechnicalOfficerProfileForm extends JFrame {
         lblNameCard = new JLabel(currentOfficer != null ? currentOfficer.getName() : "Technical Officer");
         lblNameCard.setFont(FONT_HEADER_LARGE);
         lblNameCard.setForeground(PRIMARY_NAVY);
+        lblNameCard.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         lblEmailCard = new JLabel(currentOfficer != null ? currentOfficer.getEmail() : "");
         lblEmailCard.setFont(FONT_REGULAR);
         lblEmailCard.setForeground(TEXT_SECONDARY);
+        lblEmailCard.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel roleBadge = new JLabel("  Technical Officer • Faculty Staff  ");
-        roleBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        roleBadge.setForeground(MAIN_BLUE);
+        JLabel roleBadge = new JLabel("Technical Officer • Faculty Staff");
+        roleBadge.setFont(FONT_SMALL);
+        roleBadge.setForeground(PRIMARY_BLUE);
         roleBadge.setBackground(LIGHT_BLUE);
         roleBadge.setOpaque(true);
         roleBadge.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(Color.decode("#BFDBFE"), 1, true),
                 new EmptyBorder(4, 10, 4, 10)
         ));
+        roleBadge.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JButton btnChangePhoto = createPrimaryButton("📷  Change Photo");
-        btnChangePhoto.setPreferredSize(new Dimension(150, 36));
+        btnChangePhoto.setPreferredSize(new Dimension(160, 36));
+        btnChangePhoto.setMaximumSize(new Dimension(160, 36));
         btnChangePhoto.addActionListener(e -> handleChangePhoto());
+        btnChangePhoto.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel photoHelp = new JLabel("Supported image formats: JPG, JPEG, PNG (Maximum file size: 5 MB)");
+        JLabel photoHelp = new JLabel("JPG, JPEG, PNG • Maximum size: 5 MB");
         photoHelp.setFont(FONT_SMALL);
         photoHelp.setForeground(TEXT_SECONDARY);
+        photoHelp.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         lblPhotoStatus = new JLabel("");
         lblPhotoStatus.setFont(FONT_SMALL);
-        lblPhotoStatus.setForeground(MAIN_BLUE);
+        lblPhotoStatus.setForeground(SUCCESS_GREEN);
+        lblPhotoStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         photoControls.add(lblNameCard);
-        photoControls.add(Box.createVerticalStrut(2));
+        photoControls.add(Box.createVerticalStrut(4));
         photoControls.add(lblEmailCard);
-        photoControls.add(Box.createVerticalStrut(6));
+        photoControls.add(Box.createVerticalStrut(8));
         photoControls.add(roleBadge);
-        photoControls.add(Box.createVerticalStrut(12));
-
-        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        btnRow.setOpaque(false);
-        btnRow.add(btnChangePhoto);
-
-        photoControls.add(btnRow);
-        photoControls.add(Box.createVerticalStrut(6));
+        photoControls.add(Box.createVerticalStrut(14));
+        photoControls.add(btnChangePhoto);
+        photoControls.add(Box.createVerticalStrut(8));
         photoControls.add(photoHelp);
         photoControls.add(Box.createVerticalStrut(4));
         photoControls.add(lblPhotoStatus);
 
         card.add(avatarWrapper, BorderLayout.WEST);
         card.add(photoControls, BorderLayout.CENTER);
-
         return card;
     }
 
     /**
-     * Two-column section organizing Details (Left) and Security (Right).
+     * Balanced Two-Column Section:
+     * - Left Column: Profile Photo Card + System Identifiers Card (Read-Only)
+     * - Right Column: Personal & Contact Details Card (Editable) + Password & Security Card
      */
     private JPanel createTwoColumnSection() {
-        JPanel section = new JPanel(new GridLayout(1, 2, 16, 0));
+        JPanel section = new JPanel(new GridLayout(1, 2, 20, 0));
         section.setOpaque(false);
 
-        // Left Column: Personal details + System Identifiers
+        // Left Column: Photo Card + System Identifiers Card
         JPanel leftCol = new JPanel();
         leftCol.setLayout(new BoxLayout(leftCol, BoxLayout.Y_AXIS));
         leftCol.setOpaque(false);
-        leftCol.add(createPersonalInfoCard());
-        leftCol.add(Box.createVerticalStrut(16));
+        leftCol.add(createPhotoCard());
+        leftCol.add(Box.createVerticalStrut(18));
         leftCol.add(createReadOnlySystemCard());
+        leftCol.add(Box.createVerticalGlue());
 
-        // Right Column: Change Password / Security
+        // Right Column: Personal Details Card + Password Management Card
         JPanel rightCol = new JPanel();
         rightCol.setLayout(new BoxLayout(rightCol, BoxLayout.Y_AXIS));
         rightCol.setOpaque(false);
+        rightCol.add(createPersonalInfoCard());
+        rightCol.add(Box.createVerticalStrut(18));
         rightCol.add(createChangePasswordCard());
+        rightCol.add(Box.createVerticalGlue());
 
         section.add(leftCol);
         section.add(rightCol);
@@ -299,23 +299,26 @@ public class TechnicalOfficerProfileForm extends JFrame {
      */
     private JPanel createPersonalInfoCard() {
         JPanel card = createStyledCard();
-        card.setLayout(new BorderLayout(0, 12));
+        card.setLayout(new BorderLayout(0, 14));
 
-        JLabel title = createSectionTitle("1. Personal & Contact Details (Editable)");
+        JLabel title = createSectionTitle("1. Personal & Contact Details (Editable ✏️)");
         card.add(title, BorderLayout.NORTH);
 
-        JPanel grid = new JPanel(new GridLayout(0, 1, 0, 10));
-        grid.setOpaque(false);
+        JPanel form = new JPanel();
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+        form.setOpaque(false);
 
         txtName = createStyledTextField();
         txtEmail = createStyledTextField();
         txtPhone = createStyledTextField();
 
-        grid.add(createFieldBlock("Full Name:", txtName));
-        grid.add(createFieldBlock("Official Email Address:", txtEmail));
-        grid.add(createFieldBlock("Contact Phone Number:", txtPhone));
+        form.add(createFieldBlock("Full Name:", txtName));
+        form.add(Box.createVerticalStrut(12));
+        form.add(createFieldBlock("Official Email Address:", txtEmail));
+        form.add(Box.createVerticalStrut(12));
+        form.add(createFieldBlock("Contact Phone Number:", txtPhone));
 
-        card.add(grid, BorderLayout.CENTER);
+        card.add(form, BorderLayout.CENTER);
         return card;
     }
 
@@ -324,12 +327,12 @@ public class TechnicalOfficerProfileForm extends JFrame {
      */
     private JPanel createReadOnlySystemCard() {
         JPanel card = createStyledCard();
-        card.setLayout(new BorderLayout(0, 12));
+        card.setLayout(new BorderLayout(0, 14));
 
         JLabel title = createSectionTitle("2. University & System Identifiers (Read-Only 🔒)");
         card.add(title, BorderLayout.NORTH);
 
-        JPanel grid = new JPanel(new GridLayout(0, 2, 12, 10));
+        JPanel grid = new JPanel(new GridLayout(2, 2, 14, 12));
         grid.setOpaque(false);
 
         txtOfficerId = createReadOnlyField();
@@ -347,17 +350,17 @@ public class TechnicalOfficerProfileForm extends JFrame {
     }
 
     /**
-     * Card: Password Management.
+     * Card: Password & Security Management.
      */
     private JPanel createChangePasswordCard() {
         JPanel card = createStyledCard();
-        card.setLayout(new BorderLayout(0, 12));
+        card.setLayout(new BorderLayout(0, 14));
 
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
 
         JLabel title = createSectionTitle("3. Security & Password Management");
-        JLabel note = new JLabel("Leave blank to keep existing password");
+        JLabel note = new JLabel("Leave blank to keep current password");
         note.setFont(FONT_SMALL);
         note.setForeground(TEXT_SECONDARY);
 
@@ -384,6 +387,7 @@ public class TechnicalOfficerProfileForm extends JFrame {
         chkShowPasswords.setFont(FONT_SMALL);
         chkShowPasswords.setForeground(TEXT_SECONDARY);
         chkShowPasswords.setOpaque(false);
+        chkShowPasswords.setAlignmentX(Component.LEFT_ALIGNMENT);
         chkShowPasswords.addActionListener(e -> {
             char echo = chkShowPasswords.isSelected() ? (char) 0 : '•';
             txtCurrentPassword.setEchoChar(echo);
@@ -391,15 +395,18 @@ public class TechnicalOfficerProfileForm extends JFrame {
             txtConfirmPassword.setEchoChar(echo);
         });
         form.add(chkShowPasswords);
-        form.add(Box.createVerticalStrut(12));
+        form.add(Box.createVerticalStrut(10));
 
         // Password policy hint box
-        JPanel policyBox = new JPanel(new GridLayout(2, 1, 0, 2));
+        JPanel policyBox = new JPanel(new GridLayout(2, 1, 0, 3));
         policyBox.setBackground(Color.decode("#F8FAFC"));
         policyBox.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(BORDER_COLOR, 1, true),
                 new EmptyBorder(8, 12, 8, 12)
         ));
+        policyBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        policyBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
         JLabel p1 = new JLabel("📌 Password Policy: Minimum 6 characters long.");
         p1.setFont(FONT_SMALL);
         p1.setForeground(TEXT_SECONDARY);
@@ -425,28 +432,23 @@ public class TechnicalOfficerProfileForm extends JFrame {
                 new EmptyBorder(12, 24, 12, 24)
         ));
 
-        JLabel tipLabel = new JLabel("💡 All edits are securely saved using JDBC PreparedStatement transactions");
+        JLabel tipLabel = new JLabel("💡 Profile changes are securely saved in the TecFAMS database");
         tipLabel.setFont(FONT_SMALL);
         tipLabel.setForeground(TEXT_SECONDARY);
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         btnPanel.setOpaque(false);
 
-        JButton btnCancel = createSecondaryButton("Cancel / Discard");
-        btnCancel.setPreferredSize(new Dimension(140, 36));
+        JButton btnCancel = createSecondaryButton("🧹 Discard Changes");
+        btnCancel.setPreferredSize(new Dimension(160, 38));
         btnCancel.addActionListener(e -> handleCancel());
 
-        JButton btnSave = createPrimaryButton("Save Profile Changes");
-        btnSave.setPreferredSize(new Dimension(175, 36));
+        JButton btnSave = createPrimaryButton("💾 Save Profile Changes");
+        btnSave.setPreferredSize(new Dimension(190, 38));
         btnSave.addActionListener(e -> handleSaveChanges());
-
-        JButton btnBack = createSecondaryButton("← Back to Dashboard");
-        btnBack.setPreferredSize(new Dimension(160, 36));
-        btnBack.addActionListener(e -> backToDashboard());
 
         btnPanel.add(btnCancel);
         btnPanel.add(btnSave);
-        btnPanel.add(btnBack);
 
         bar.add(tipLabel, BorderLayout.WEST);
         bar.add(btnPanel, BorderLayout.EAST);
@@ -787,6 +789,15 @@ public class TechnicalOfficerProfileForm extends JFrame {
     }
 
     private void handleCancel() {
+        int conf = JOptionPane.showConfirmDialog(
+                this,
+                "Discard all unsaved changes and reset the profile form?",
+                "Discard Changes",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+        if (conf != JOptionPane.YES_OPTION) return;
+
         pendingPhotoFile = null;
         previewPhoto = null;
         lblPhotoStatus.setText("");
@@ -797,8 +808,6 @@ public class TechnicalOfficerProfileForm extends JFrame {
         txtCurrentPassword.setText("");
         txtNewPassword.setText("");
         txtConfirmPassword.setText("");
-
-        backToDashboard();
     }
 
     private void backToDashboard() {
@@ -830,7 +839,6 @@ public class TechnicalOfficerProfileForm extends JFrame {
                 new EmptyBorder(18, 20, 18, 20)
         ));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         return card;
     }
 
@@ -852,7 +860,8 @@ public class TechnicalOfficerProfileForm extends JFrame {
         lbl.setForeground(TEXT_MAIN);
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        field.setPreferredSize(new Dimension(field.getPreferredSize().width, 38));
         field.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         p.add(lbl);
@@ -864,7 +873,7 @@ public class TechnicalOfficerProfileForm extends JFrame {
 
     private static final CompoundBorder FIELD_BORDER = new CompoundBorder(
             new LineBorder(Color.decode("#CBD5E1"), 1, true),
-            new EmptyBorder(6, 10, 6, 10));
+            new EmptyBorder(8, 12, 8, 12));
 
     private JTextField createStyledTextField() {
         JTextField tf = new JTextField();
@@ -878,11 +887,12 @@ public class TechnicalOfficerProfileForm extends JFrame {
     private JTextField createReadOnlyField() {
         JTextField tf = new JTextField();
         tf.setFont(FONT_REGULAR);
-        tf.setForeground(Color.decode("#64748B"));
+        tf.setForeground(Color.decode("#475569"));
         tf.setBackground(Color.decode("#F1F5F9"));
         tf.setEditable(false);
         tf.setFocusable(false);
-        tf.setBorder(new CompoundBorder(new LineBorder(BORDER_COLOR, 1, true), new EmptyBorder(6, 10, 6, 10)));
+        tf.setCursor(Cursor.getDefaultCursor());
+        tf.setBorder(new CompoundBorder(new LineBorder(BORDER_COLOR, 1, true), new EmptyBorder(8, 12, 8, 12)));
         return tf;
     }
 
