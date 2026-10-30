@@ -9,6 +9,8 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -56,6 +58,9 @@ public class TechnicalOfficerDashboard extends JFrame {
     private final TechnicalOfficer currentOfficer;
 
     private JLabel headerWelcomeLabel;
+    private JLabel deptLabel;
+    private JLabel avatarBadge;
+    private BufferedImage cachedAvatarPhoto = null;
     private TechnicalOfficerNavigationBar navigationBar;
 
     // Single-Window Multi-View Navigation (CardLayout)
@@ -191,44 +196,72 @@ public class TechnicalOfficerDashboard extends JFrame {
 
         String deptName = (currentOfficer != null && currentOfficer.getDepartment() != null && !currentOfficer.getDepartment().trim().isEmpty())
                 ? currentOfficer.getDepartment().trim() : "Faculty of Technology";
-        JLabel deptLabel = new JLabel(deptName + " • Staff");
+        deptLabel = new JLabel(deptName + " • Staff");
         deptLabel.setFont(FONT_SMALL);
         deptLabel.setForeground(TEXT_SECONDARY);
 
         textBlock.add(headerWelcomeLabel);
         textBlock.add(deptLabel);
 
+        cachedAvatarPhoto = (currentOfficer != null) ? currentOfficer.getProfileImage() : null;
+
         // Avatar circle badge - renders database profile picture if available, else "TO"
-        JLabel avatarBadge = new JLabel("TO", SwingConstants.CENTER) {
+        avatarBadge = new JLabel("", SwingConstants.CENTER) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-                java.awt.image.BufferedImage photo = (currentOfficer != null) ? currentOfficer.getProfileImage() : null;
+                BufferedImage photo = cachedAvatarPhoto;
+                if (photo == null && currentOfficer != null) {
+                    cachedAvatarPhoto = currentOfficer.getProfileImage();
+                    photo = cachedAvatarPhoto;
+                }
+
+                int w = getWidth();
+                int h = getHeight();
+
                 if (photo != null) {
-                    java.awt.Shape circle = new java.awt.geom.Ellipse2D.Float(0, 0, getWidth(), getHeight());
+                    Shape oldClip = g2.getClip();
+                    Ellipse2D.Float circle = new Ellipse2D.Float(0, 0, w, h);
                     g2.clip(circle);
-                    g2.drawImage(photo, 0, 0, getWidth(), getHeight(), null);
-                    g2.setClip(null);
+
+                    int imgW = photo.getWidth();
+                    int imgH = photo.getHeight();
+                    double scale = Math.max((double) w / imgW, (double) h / imgH);
+                    int drawW = (int) Math.round(imgW * scale);
+                    int drawH = (int) Math.round(imgH * scale);
+                    int drawX = (w - drawW) / 2;
+                    int drawY = (h - drawH) / 2;
+
+                    g2.drawImage(photo, drawX, drawY, drawW, drawH, null);
+                    g2.setClip(oldClip);
+
                     g2.setColor(Color.decode("#BFDBFE"));
                     g2.setStroke(new BasicStroke(1.5f));
-                    g2.drawOval(0, 0, getWidth() - 1, getHeight() - 1);
+                    g2.drawOval(0, 0, w - 1, h - 1);
                 } else {
                     g2.setColor(LIGHT_BLUE);
-                    g2.fillOval(0, 0, getWidth(), getHeight());
+                    g2.fillOval(0, 0, w, h);
                     g2.setColor(MAIN_BLUE);
                     g2.setFont(FONT_MEDIUM);
                     FontMetrics fm = g2.getFontMetrics();
-                    int x = (getWidth() - fm.stringWidth(getText())) / 2;
-                    int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
-                    g2.drawString(getText(), x, y);
+                    int x = (w - fm.stringWidth("TO")) / 2;
+                    int y = ((h - fm.getHeight()) / 2) + fm.getAscent();
+                    g2.drawString("TO", x, y);
+
+                    g2.setColor(Color.decode("#BFDBFE"));
+                    g2.setStroke(new BasicStroke(1.5f));
+                    g2.drawOval(0, 0, w - 1, h - 1);
                 }
                 g2.dispose();
             }
         };
         avatarBadge.setPreferredSize(new Dimension(40, 40));
+        avatarBadge.setMinimumSize(new Dimension(40, 40));
+        avatarBadge.setMaximumSize(new Dimension(40, 40));
         avatarBadge.setCursor(new Cursor(Cursor.HAND_CURSOR));
         avatarBadge.setToolTipText("View / Edit Profile");
         avatarBadge.addMouseListener(new MouseAdapter() {
@@ -513,6 +546,7 @@ public class TechnicalOfficerDashboard extends JFrame {
         if (navigationBar != null) {
             navigationBar.selectNav("DASHBOARD");
         }
+        refreshHeaderProfile();
     }
 
     /**
@@ -620,9 +654,7 @@ public class TechnicalOfficerDashboard extends JFrame {
             if (profileForm == null) {
                 profileForm = new TechnicalOfficerProfileForm(this, currentOfficer, dao);
                 profileForm.setOnProfileSavedCallback(() -> {
-                    if (currentOfficer != null && headerWelcomeLabel != null) {
-                        headerWelcomeLabel.setText("Welcome back, " + currentOfficer.getName() + "!");
-                    }
+                    refreshHeaderProfile();
                 });
                 centerCardPanel.add(profileForm.getContentPane(), "PROFILE");
             }
@@ -636,6 +668,31 @@ public class TechnicalOfficerDashboard extends JFrame {
                     "Navigation Error",
                     JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Refreshes the header officer profile data and circular avatar image from database.
+     */
+    public void refreshHeaderProfile() {
+        if (currentOfficer != null) {
+            int id = TechnicalOfficerDAO.parseOfficerId(currentOfficer);
+            dao.loadOfficerFromDatabase(id);
+            cachedAvatarPhoto = currentOfficer.getProfileImage();
+
+            if (headerWelcomeLabel != null) {
+                String officerName = (currentOfficer.getName() != null && !currentOfficer.getName().trim().isEmpty())
+                        ? currentOfficer.getName().trim() : "Technical Officer";
+                headerWelcomeLabel.setText("Welcome back, " + officerName + "!");
+            }
+            if (deptLabel != null) {
+                String deptName = (currentOfficer.getDepartment() != null && !currentOfficer.getDepartment().trim().isEmpty())
+                        ? currentOfficer.getDepartment().trim() : "Faculty of Technology";
+                deptLabel.setText(deptName + " • Staff");
+            }
+            if (avatarBadge != null) {
+                avatarBadge.repaint();
+            }
         }
     }
 
