@@ -16,6 +16,7 @@ public class TechnicalOfficer extends User {
     private String phone;
     private String department;
     private String profilePicture;
+    private byte[] profilePictureBytes;
 
     /**
      * Default constructor initializing empty technical officer fields.
@@ -138,6 +139,27 @@ public class TechnicalOfficer extends User {
 
     public void setProfilePicture(String profilePicture) {
         this.profilePicture = profilePicture;
+    }
+
+    public byte[] getProfilePictureBytes() {
+        return profilePictureBytes;
+    }
+
+    public void setProfilePictureBytes(byte[] profilePictureBytes) {
+        this.profilePictureBytes = profilePictureBytes;
+    }
+
+    /**
+     * Converts the profile picture bytes stored in database to a BufferedImage.
+     * Returns null if no picture is stored or if bytes are invalid.
+     */
+    public java.awt.image.BufferedImage getProfileImage() {
+        if (profilePictureBytes != null && profilePictureBytes.length > 0) {
+            try {
+                return javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(profilePictureBytes));
+            } catch (Exception ignored) {}
+        }
+        return null;
     }
 
     @Override

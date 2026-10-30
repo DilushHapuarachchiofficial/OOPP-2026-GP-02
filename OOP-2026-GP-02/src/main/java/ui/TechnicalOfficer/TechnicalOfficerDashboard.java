@@ -198,20 +198,33 @@ public class TechnicalOfficerDashboard extends JFrame {
         textBlock.add(headerWelcomeLabel);
         textBlock.add(deptLabel);
 
-        // Avatar circle badge
+        // Avatar circle badge - renders database profile picture if available, else "TO"
         JLabel avatarBadge = new JLabel("TO", SwingConstants.CENTER) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(LIGHT_BLUE);
-                g2.fillOval(0, 0, getWidth(), getHeight());
-                g2.setColor(MAIN_BLUE);
-                g2.setFont(FONT_MEDIUM);
-                FontMetrics fm = g2.getFontMetrics();
-                int x = (getWidth() - fm.stringWidth(getText())) / 2;
-                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
-                g2.drawString(getText(), x, y);
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+                java.awt.image.BufferedImage photo = (currentOfficer != null) ? currentOfficer.getProfileImage() : null;
+                if (photo != null) {
+                    java.awt.Shape circle = new java.awt.geom.Ellipse2D.Float(0, 0, getWidth(), getHeight());
+                    g2.clip(circle);
+                    g2.drawImage(photo, 0, 0, getWidth(), getHeight(), null);
+                    g2.setClip(null);
+                    g2.setColor(Color.decode("#BFDBFE"));
+                    g2.setStroke(new BasicStroke(1.5f));
+                    g2.drawOval(0, 0, getWidth() - 1, getHeight() - 1);
+                } else {
+                    g2.setColor(LIGHT_BLUE);
+                    g2.fillOval(0, 0, getWidth(), getHeight());
+                    g2.setColor(MAIN_BLUE);
+                    g2.setFont(FONT_MEDIUM);
+                    FontMetrics fm = g2.getFontMetrics();
+                    int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                    int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                    g2.drawString(getText(), x, y);
+                }
                 g2.dispose();
             }
         };

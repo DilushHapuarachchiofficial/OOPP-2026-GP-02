@@ -6,26 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/dao/TechnicalOfficer/TechnicalOfficerDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/TechnicalOfficer/TechnicalOfficerDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/UserDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/UserDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Admin.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Admin.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Attendance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Attendance.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Course.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Course.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Medical.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Medical.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Notice.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Notice.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Student.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Student.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/model/TechnicalOfficer/TechnicalOfficer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/TechnicalOfficer/TechnicalOfficer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Timetable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Timetable.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/AttendanceManagementForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/AttendanceManagementForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/DepartmentTimetableForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/DepartmentTimetableForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/FacultyNoticesForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/FacultyNoticesForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/MedicalManagementForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/MedicalManagementForm.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerDashboard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerNavigationBar.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerNavigationBar.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerProfileForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/TechnicalOfficerProfileForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/WelcomePage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/WelcomePage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/uploads/profiles/officer_12_test_1792746309070.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/uploads/profiles/officer_12_test_1792752333633.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/uploads/profiles/officer_12_test_1792752727606.png" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

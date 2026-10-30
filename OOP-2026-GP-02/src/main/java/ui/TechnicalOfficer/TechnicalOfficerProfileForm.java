@@ -14,6 +14,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -65,7 +66,7 @@ public class TechnicalOfficerProfileForm extends JFrame {
 
     private BufferedImage currentLoadedPhoto = null;
     private BufferedImage previewPhoto = null;
-    private File pendingPhotoFile = null;
+    private byte[] pendingPhotoBytes = null;
 
     // Regex Patterns for validation
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
@@ -474,16 +475,18 @@ public class TechnicalOfficerProfileForm extends JFrame {
     }
 
     /**
-     * Loads existing profile photo if available.
+     * Loads existing profile photo directly from database model or legacy file path.
      */
     private void loadExistingPhoto() {
         if (currentOfficer == null) return;
-        String path = currentOfficer.getProfilePicture();
-        currentLoadedPhoto = resolveImageFile(path);
+        currentLoadedPhoto = currentOfficer.getProfileImage();
+        if (currentLoadedPhoto == null && currentOfficer.getProfilePicture() != null) {
+            currentLoadedPhoto = resolveImageFile(currentOfficer.getProfilePicture());
+        }
     }
 
     private BufferedImage resolveImageFile(String path) {
-        if (path == null || path.trim().isEmpty() || "default_avatar.png".equalsIgnoreCase(path.trim())) {
+        if (path == null || path.trim().isEmpty() || "default_avatar.png".equalsIgnoreCase(path.trim()) || "database_blob".equalsIgnoreCase(path.trim())) {
             return null;
         }
 
@@ -520,6 +523,7 @@ public class TechnicalOfficerProfileForm extends JFrame {
 
     /**
      * Handles image file selection via JFileChooser.
+     * Reads image bytes directly into memory for database persistence (no file creation on disk).
      */
     private void handleChangePhoto() {
         JFileChooser chooser = new JFileChooser();
@@ -547,7 +551,8 @@ public class TechnicalOfficerProfileForm extends JFrame {
             }
 
             try {
-                BufferedImage img = ImageIO.read(selected);
+                byte[] bytes = java.nio.file.Files.readAllBytes(selected.toPath());
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
                 if (img == null) {
                     JOptionPane.showMessageDialog(this,
                             "The selected file is not a supported image format.",
@@ -555,9 +560,9 @@ public class TechnicalOfficerProfileForm extends JFrame {
                     return;
                 }
 
-                pendingPhotoFile = selected;
+                pendingPhotoBytes = bytes;
                 previewPhoto = img;
-                lblPhotoStatus.setText("●  New photo ready to save (" + selected.getName() + ")");
+                lblPhotoStatus.setText("●  New photo ready to save to database (" + selected.getName() + ")");
                 avatarPanel.repaint();
 
             } catch (Exception ex) {
@@ -566,28 +571,6 @@ public class TechnicalOfficerProfileForm extends JFrame {
                         "Read Error", JOptionPane.ERROR_MESSAGE);
             }
         }
-    }
-
-    private String savePendingPhoto(int officerId) throws IOException {
-        if (pendingPhotoFile == null) return null;
-
-        File uploadDir = new File("uploads/profiles");
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
-        }
-
-        String origName = pendingPhotoFile.getName();
-        String ext = "png";
-        int dot = origName.lastIndexOf('.');
-        if (dot >= 0) {
-            ext = origName.substring(dot + 1).toLowerCase();
-        }
-
-        String newFileName = "officer_" + officerId + "_" + System.currentTimeMillis() + "." + ext;
-        File destFile = new File(uploadDir, newFileName);
-
-        java.nio.file.Files.copy(pendingPhotoFile.toPath(), destFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        return destFile.getPath();
     }
 
     private void handleSaveChanges() {
@@ -644,37 +627,13 @@ public class TechnicalOfficerProfileForm extends JFrame {
             return;
         }
 
-        // 6. Handle profile photo save if pending
-        String oldPhoto = currentOfficer.getProfilePicture();
-        String savedPhotoPath = null;
-        if (pendingPhotoFile != null) {
-            try {
-                savedPhotoPath = savePendingPhoto(officerId);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Failed to save profile photo to storage: " + ex.getMessage(),
-                        "Storage Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-        }
-
-        // 7. Update profile record in database via DAO PreparedStatement
-        boolean updated = dao.updateProfile(officerId, name, email, phone, savedPhotoPath);
+        // 6. Update profile record and save photo directly into users table in database via DAO PreparedStatement
+        boolean updated = dao.updateProfile(officerId, name, email, phone, pendingPhotoBytes);
         if (updated) {
-            if (savedPhotoPath != null) {
+            if (pendingPhotoBytes != null) {
                 currentLoadedPhoto = previewPhoto;
                 previewPhoto = null;
-                pendingPhotoFile = null;
-
-                if (oldPhoto != null && !oldPhoto.equalsIgnoreCase("default_avatar.png")
-                        && !oldPhoto.equals(savedPhotoPath)) {
-                    try {
-                        File oldFile = new File(oldPhoto);
-                        if (oldFile.exists() && oldFile.isFile()) {
-                            oldFile.delete();
-                        }
-                    } catch (Exception ignored) {}
-                }
+                pendingPhotoBytes = null;
             }
 
             lblPhotoStatus.setText("");
@@ -683,7 +642,7 @@ public class TechnicalOfficerProfileForm extends JFrame {
             lblEmailCard.setText(email);
 
             JOptionPane.showMessageDialog(this,
-                    "Technical Officer profile changes have been saved successfully!",
+                    "Technical Officer profile and photo changes have been saved successfully to database!",
                     "Profile Updated - TecFAMS", JOptionPane.INFORMATION_MESSAGE);
 
             if (onProfileSavedCallback != null) {
@@ -800,7 +759,7 @@ public class TechnicalOfficerProfileForm extends JFrame {
         );
         if (conf != JOptionPane.YES_OPTION) return;
 
-        pendingPhotoFile = null;
+        pendingPhotoBytes = null;
         previewPhoto = null;
         lblPhotoStatus.setText("");
         avatarPanel.repaint();
