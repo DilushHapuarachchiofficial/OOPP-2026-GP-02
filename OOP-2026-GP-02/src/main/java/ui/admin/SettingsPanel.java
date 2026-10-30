@@ -365,6 +365,10 @@ public class SettingsPanel extends JPanel {
         maintenanceModeCheck.setFont(new Font("Segoe UI", Font.BOLD, 13));
         maintenanceModeCheck.setOpaque(false);
         maintenanceModeCheck.setForeground(new Color(220, 38, 38));
+        maintenanceModeCheck.addActionListener(e -> {
+            boolean enabled = maintenanceModeCheck.isSelected();
+            SettingsDAO.updateSetting("system.maintenance_mode", String.valueOf(enabled));
+        });
 
         noticeExpirySpinner = new JSpinner(new SpinnerNumberModel(30, 7, 180, 1));
         noticeExpirySpinner.setPreferredSize(new Dimension(140, 36));

@@ -87,6 +87,7 @@ public class ResultsDAO {
         public boolean isCaEligible() { return "ELIGIBLE".equalsIgnoreCase(caEligibility); }
         public boolean isPassed() { return "Pass".equalsIgnoreCase(resultStatus); }
         public boolean isIncomplete() { return "Incomplete".equalsIgnoreCase(resultStatus) || "I".equalsIgnoreCase(letterGrade); }
+        public boolean isMarksComplete() { return !isIncomplete(); }
     }
 
     /**

@@ -13,6 +13,9 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.geom.Arc2D;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
 import java.io.File;
 import java.sql.*;
 import java.sql.Date;
@@ -54,6 +57,8 @@ public class MedicalManagementForm extends JFrame {
     private DefaultTableModel tableModel;
     private JLabel lblTableInfo;
     private JButton btnReviewSelected, btnRefreshTable;
+    private JScrollPane pageScrollPane;
+    private JPanel tableCard;
 
     public MedicalManagementForm() {
         this(null, new TechnicalOfficer());
@@ -84,9 +89,43 @@ public class MedicalManagementForm extends JFrame {
         getContentPane().setBackground(BG_COLOR);
         add(createHeaderPanel(), BorderLayout.NORTH);
 
-        JPanel centerContainer = new JPanel(new BorderLayout(0, 14));
+        class ResponsiveScrollContainer extends JPanel implements Scrollable {
+            public ResponsiveScrollContainer(LayoutManager layout) {
+                super(layout);
+            }
+
+            @Override
+            public Dimension getPreferredScrollableViewportSize() {
+                return getPreferredSize();
+            }
+
+            @Override
+            public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+                return 18;
+            }
+
+            @Override
+            public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+                return 72;
+            }
+
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                if (getParent() instanceof JViewport) {
+                    return getParent().getWidth() >= 960;
+                }
+                return true;
+            }
+
+            @Override
+            public boolean getScrollableTracksViewportHeight() {
+                return false;
+            }
+        }
+
+        JPanel centerContainer = new ResponsiveScrollContainer(new BorderLayout(0, 14));
         centerContainer.setBackground(BG_COLOR);
-        centerContainer.setBorder(new EmptyBorder(16, 22, 18, 22));
+        centerContainer.setBorder(new EmptyBorder(14, 20, 16, 20));
 
         JPanel topStrip = new JPanel();
         topStrip.setLayout(new BoxLayout(topStrip, BoxLayout.Y_AXIS));
@@ -97,7 +136,17 @@ public class MedicalManagementForm extends JFrame {
 
         centerContainer.add(topStrip, BorderLayout.NORTH);
         centerContainer.add(createTableCard(), BorderLayout.CENTER);
-        add(centerContainer, BorderLayout.CENTER);
+
+        pageScrollPane = new JScrollPane(centerContainer);
+        pageScrollPane.setBorder(null);
+        pageScrollPane.setBackground(BG_COLOR);
+        pageScrollPane.getViewport().setBackground(BG_COLOR);
+        pageScrollPane.getVerticalScrollBar().setUnitIncrement(18);
+        pageScrollPane.getHorizontalScrollBar().setUnitIncrement(18);
+        pageScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        pageScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        add(pageScrollPane, BorderLayout.CENTER);
     }
 
     private JPanel createHeaderPanel() {
@@ -133,9 +182,14 @@ public class MedicalManagementForm extends JFrame {
                 new LineBorder(Color.decode("#BFDBFE"), 1, true),
                 new EmptyBorder(6, 14, 6, 14)));
 
+        JButton btnScrollToTable = createPrimaryButton("↓ Scroll to Table", new MedicalVectorIcon(MedicalVectorIcon.Type.ARROW_DOWN, 13, 13, WHITE));
+        btnScrollToTable.setToolTipText("Scroll down directly to the Submitted Student Medical Records Table");
+        btnScrollToTable.addActionListener(e -> scrollToTable());
+
         JButton btnBack = createSecondaryButton("← Back to Dashboard");
         btnBack.addActionListener(e -> backToDashboard());
         rightActions.add(officerBadge);
+        rightActions.add(btnScrollToTable);
         rightActions.add(btnBack);
 
         header.add(leftBrand, BorderLayout.WEST);
@@ -151,14 +205,14 @@ public class MedicalManagementForm extends JFrame {
         lblApprovedCount = new JLabel("0");
         lblRejectedCount = new JLabel("0");
 
-        row.add(createMetricCard("Total Medical Records", lblTotalCount, "All registered submissions", PRIMARY_BLUE, "🗎"));
-        row.add(createMetricCard("Pending Approval", lblPendingCount, "Awaiting officer review", WARNING_AMBER, "⌛"));
-        row.add(createMetricCard("Approved Records", lblApprovedCount, "Absence verified & granted", SUCCESS_GREEN, "☑"));
-        row.add(createMetricCard("Rejected Records", lblRejectedCount, "Declined / invalid submissions", Color.decode("#EF4444"), "✖"));
+        row.add(createMetricCard("Total Medical Records", lblTotalCount, "All registered submissions", PRIMARY_BLUE, new MedicalVectorIcon(MedicalVectorIcon.Type.DOCUMENT, 22, 22, PRIMARY_BLUE)));
+        row.add(createMetricCard("Pending Approval", lblPendingCount, "Awaiting officer review", WARNING_AMBER, new MedicalVectorIcon(MedicalVectorIcon.Type.PENDING, 22, 22, WARNING_AMBER)));
+        row.add(createMetricCard("Approved Records", lblApprovedCount, "Absence verified & granted", SUCCESS_GREEN, new MedicalVectorIcon(MedicalVectorIcon.Type.APPROVED, 22, 22, SUCCESS_GREEN)));
+        row.add(createMetricCard("Rejected Records", lblRejectedCount, "Declined / invalid submissions", Color.decode("#EF4444"), new MedicalVectorIcon(MedicalVectorIcon.Type.REJECTED, 22, 22, Color.decode("#EF4444"))));
         return row;
     }
 
-    private JPanel createMetricCard(String title, JLabel countLabel, String subtext, Color accent, String symbol) {
+    private JPanel createMetricCard(String title, JLabel countLabel, String subtext, Color accent, Icon icon) {
         JPanel card = createCardPanel();
         card.setLayout(new BorderLayout(0, 4));
 
@@ -168,9 +222,7 @@ public class MedicalManagementForm extends JFrame {
         titleLabel.setFont(FONT_SMALL);
         titleLabel.setForeground(TEXT_SECONDARY);
 
-        JLabel symLabel = new JLabel(symbol);
-        symLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        symLabel.setForeground(accent);
+        JLabel symLabel = new JLabel(icon);
         top.add(titleLabel, BorderLayout.WEST);
         top.add(symLabel, BorderLayout.EAST);
 
@@ -196,30 +248,34 @@ public class MedicalManagementForm extends JFrame {
         cardTitle.setForeground(PRIMARY_NAVY);
         card.add(cardTitle, BorderLayout.NORTH);
 
-        JPanel filtersRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 4));
+        JPanel filtersRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
         filtersRow.setOpaque(false);
 
-        txtSearch = new JTextField(16);
+        txtSearch = new JTextField(12);
         txtSearch.setFont(FONT_REGULAR);
 
         cmbStatusFilter = new JComboBox<>(new String[]{"All Statuses", "Pending", "Approved", "Rejected"});
         cmbStatusFilter.setFont(FONT_REGULAR);
-        cmbStatusFilter.setPreferredSize(new Dimension(135, 32));
+        cmbStatusFilter.setPreferredSize(new Dimension(125, 30));
 
-        txtDateFrom = new JTextField(9);
+        txtDateFrom = new JTextField(8);
         txtDateFrom.setFont(FONT_REGULAR);
-        txtDateTo = new JTextField(9);
+        txtDateTo = new JTextField(8);
         txtDateTo.setFont(FONT_REGULAR);
 
-        btnSearch = createPrimaryButton("🔍 Search");
+        btnSearch = createPrimaryButton("Search", new MedicalVectorIcon(MedicalVectorIcon.Type.SEARCH, 13, 13, WHITE));
         btnSearch.addActionListener(e -> applyFilters());
-        btnResetFilter = createSecondaryButton("↺ Reset");
+        btnResetFilter = createSecondaryButton("Reset", new MedicalVectorIcon(MedicalVectorIcon.Type.REFRESH, 13, 13, TEXT_MAIN));
         btnResetFilter.addActionListener(e -> resetFilters());
 
-        filtersRow.add(createInlineField("Search Reg No / Name:", txtSearch));
+        txtSearch.setToolTipText("Search student registration number or name");
+        txtDateFrom.setToolTipText("From Date (YYYY-MM-DD)");
+        txtDateTo.setToolTipText("To Date (YYYY-MM-DD)");
+
+        filtersRow.add(createInlineField("Search:", txtSearch));
         filtersRow.add(createInlineField("Status:", cmbStatusFilter));
-        filtersRow.add(createInlineField("From Date:", txtDateFrom));
-        filtersRow.add(createInlineField("To Date:", txtDateTo));
+        filtersRow.add(createInlineField("From:", txtDateFrom));
+        filtersRow.add(createInlineField("To:", txtDateTo));
         filtersRow.add(btnSearch);
         filtersRow.add(btnResetFilter);
 
@@ -242,8 +298,10 @@ public class MedicalManagementForm extends JFrame {
      * Creates the full-width medical records table card placed in the center of the UI.
      */
     private JPanel createTableCard() {
-        JPanel card = createCardPanel();
-        card.setLayout(new BorderLayout(0, 10));
+        tableCard = createCardPanel();
+        tableCard.setLayout(new BorderLayout(0, 10));
+        tableCard.setPreferredSize(new Dimension(0, 500));
+        tableCard.setMinimumSize(new Dimension(0, 380));
 
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
@@ -256,7 +314,7 @@ public class MedicalManagementForm extends JFrame {
         lblTableInfo.setForeground(TEXT_SECONDARY);
         headerPanel.add(title, BorderLayout.WEST);
         headerPanel.add(lblTableInfo, BorderLayout.EAST);
-        card.add(headerPanel, BorderLayout.NORTH);
+        tableCard.add(headerPanel, BorderLayout.NORTH);
 
         String[] columns = {
                 "#", "Medical ID", "Registration No", "Student Name", "Linked Session",
@@ -275,16 +333,26 @@ public class MedicalManagementForm extends JFrame {
         tblMedicals.setGridColor(BORDER_COLOR);
         tblMedicals.setShowHorizontalLines(true);
         tblMedicals.setShowVerticalLines(true);
+        tblMedicals.setFillsViewportHeight(true);
+        tblMedicals.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         // Hide Medical ID column (column 1)
         tblMedicals.getColumnModel().getColumn(1).setMinWidth(0);
         tblMedicals.getColumnModel().getColumn(1).setMaxWidth(0);
         tblMedicals.getColumnModel().getColumn(1).setPreferredWidth(0);
 
-        int[] widths = {45, 0, 120, 160, 190, 95, 95, 230, 100, 125, 135};
-        for (int i = 0; i < widths.length; i++) {
-            if (i != 1) tblMedicals.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+        // # column
+        tblMedicals.getColumnModel().getColumn(0).setMinWidth(35);
+        tblMedicals.getColumnModel().getColumn(0).setMaxWidth(45);
+        tblMedicals.getColumnModel().getColumn(0).setPreferredWidth(40);
+
+        int[] colIndices = {2, 3, 4, 5, 6, 7, 8, 9, 10};
+        int[] widths     = {110, 150, 175, 90, 90, 200, 105, 115, 125};
+        for (int i = 0; i < colIndices.length; i++) {
+            tblMedicals.getColumnModel().getColumn(colIndices[i]).setPreferredWidth(widths[i]);
+            tblMedicals.getColumnModel().getColumn(colIndices[i]).setMinWidth(Math.min(widths[i], 80));
         }
+        tblMedicals.getColumnModel().getColumn(10).setMinWidth(115);
 
         JTableHeader th = tblMedicals.getTableHeader();
         th.setFont(FONT_MEDIUM);
@@ -306,12 +374,19 @@ public class MedicalManagementForm extends JFrame {
                 l.setFont(FONT_MEDIUM);
                 String status = val != null ? val.toString() : "Pending";
                 if ("Approved".equalsIgnoreCase(status)) {
-                    l.setForeground(Color.decode("#065F46")); l.setText("●  Approved");
+                    l.setForeground(Color.decode("#065F46"));
+                    l.setText("Approved");
+                    l.setIcon(new MedicalVectorIcon(MedicalVectorIcon.Type.APPROVED, 14, 14, Color.decode("#059669")));
                 } else if ("Rejected".equalsIgnoreCase(status)) {
-                    l.setForeground(Color.decode("#991B1B")); l.setText("✖  Rejected");
+                    l.setForeground(Color.decode("#991B1B"));
+                    l.setText("Rejected");
+                    l.setIcon(new MedicalVectorIcon(MedicalVectorIcon.Type.REJECTED, 14, 14, Color.decode("#DC2626")));
                 } else {
-                    l.setForeground(Color.decode("#92400E")); l.setText("⏳  Pending");
+                    l.setForeground(Color.decode("#92400E"));
+                    l.setText("Pending");
+                    l.setIcon(new MedicalVectorIcon(MedicalVectorIcon.Type.PENDING, 14, 14, Color.decode("#D97706")));
                 }
+                l.setIconTextGap(6);
                 return l;
             }
         });
@@ -323,7 +398,9 @@ public class MedicalManagementForm extends JFrame {
                 l.setHorizontalAlignment(SwingConstants.CENTER);
                 l.setFont(FONT_MEDIUM);
                 l.setForeground(PRIMARY_BLUE);
-                l.setText("👁 View Details ➔");
+                l.setText("View Details");
+                l.setIcon(new MedicalVectorIcon(MedicalVectorIcon.Type.EYE, 14, 14, PRIMARY_BLUE));
+                l.setIconTextGap(6);
                 return l;
             }
         });
@@ -358,21 +435,24 @@ public class MedicalManagementForm extends JFrame {
         JScrollPane scroll = new JScrollPane(tblMedicals);
         scroll.setBorder(new LineBorder(BORDER_COLOR, 1));
         scroll.getViewport().setBackground(WHITE);
-        card.add(scroll, BorderLayout.CENTER);
+        scroll.setPreferredSize(new Dimension(0, 390));
+        tableCard.add(scroll, BorderLayout.CENTER);
 
         // Bottom Table Action Row
-        JPanel tableFooter = new JPanel(new BorderLayout(10, 0));
+        JPanel tableFooter = new JPanel(new BorderLayout(10, 4));
         tableFooter.setOpaque(false);
         tableFooter.setBorder(new EmptyBorder(8, 4, 4, 4));
 
-        JLabel hint = new JLabel("💡 Click 'View Details ➔' on any row or double-click to view medical certificate and approve/reject.");
+        JLabel hint = new JLabel("Click 'View Details' on any row or double-click to view certificate & verify.");
+        hint.setIcon(new MedicalVectorIcon(MedicalVectorIcon.Type.INFO, 14, 14, TEXT_SECONDARY));
+        hint.setIconTextGap(6);
         hint.setFont(FONT_SMALL);
         hint.setForeground(TEXT_SECONDARY);
 
-        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         btnRow.setOpaque(false);
 
-        btnReviewSelected = createPrimaryButton("👁 View & Review Selected");
+        btnReviewSelected = createPrimaryButton("View & Review Selected", new MedicalVectorIcon(MedicalVectorIcon.Type.EYE, 13, 13, WHITE));
         btnReviewSelected.addActionListener(e -> {
             int row = tblMedicals.getSelectedRow();
             if (row >= 0) {
@@ -383,20 +463,60 @@ public class MedicalManagementForm extends JFrame {
             }
         });
 
-        btnRefreshTable = createSecondaryButton("↺ Refresh List");
+        btnRefreshTable = createSecondaryButton("Refresh List", new MedicalVectorIcon(MedicalVectorIcon.Type.REFRESH, 13, 13, TEXT_MAIN));
         btnRefreshTable.addActionListener(e -> {
             loadSummaryCounts();
             applyFilters();
         });
 
+        JButton btnScrollToTop = createSecondaryButton("↑ Scroll to Top", new MedicalVectorIcon(MedicalVectorIcon.Type.ARROW_UP, 13, 13, TEXT_MAIN));
+        btnScrollToTop.setToolTipText("Scroll back to the top of the page");
+        btnScrollToTop.addActionListener(e -> scrollToTop());
+
         btnRow.add(btnReviewSelected);
         btnRow.add(btnRefreshTable);
+        btnRow.add(btnScrollToTop);
 
         tableFooter.add(hint, BorderLayout.WEST);
         tableFooter.add(btnRow, BorderLayout.EAST);
-        card.add(tableFooter, BorderLayout.SOUTH);
+        tableCard.add(tableFooter, BorderLayout.SOUTH);
 
-        return card;
+        return tableCard;
+    }
+
+    public static JButton createPrimaryButton(String text) {
+        return TechnicalOfficerDashboard.createPrimaryButton(text);
+    }
+
+    public static JButton createPrimaryButton(String text, Icon icon) {
+        JButton button = createPrimaryButton(text);
+        if (icon != null) {
+            button.setIcon(icon);
+            button.setIconTextGap(8);
+        }
+        return button;
+    }
+
+    public static JButton createSecondaryButton(String text) {
+        return TechnicalOfficerDashboard.createSecondaryButton(text);
+    }
+
+    public static JButton createSecondaryButton(String text, Icon icon) {
+        JButton button = createSecondaryButton(text);
+        if (icon != null) {
+            button.setIcon(icon);
+            button.setIconTextGap(8);
+        }
+        return button;
+    }
+
+    private static JButton createColorButton(String text, Icon icon, Color bg, Color hoverBg) {
+        JButton button = createColorButton(text, bg, hoverBg);
+        if (icon != null) {
+            button.setIcon(icon);
+            button.setIconTextGap(8);
+        }
+        return button;
     }
 
     private static JButton createColorButton(String text, Color bg, Color hoverBg) {
@@ -421,6 +541,161 @@ public class MedicalManagementForm extends JFrame {
             }
         });
         return button;
+    }
+
+    public static class MedicalVectorIcon implements Icon {
+        public enum Type {
+            DOCUMENT, PENDING, APPROVED, REJECTED, SEARCH, REFRESH, EYE, CHECK, CROSS, SAVE, INFO, ARROW_DOWN, ARROW_UP
+        }
+
+        private final Type type;
+        private final int width;
+        private final int height;
+        private final Color color;
+
+        public MedicalVectorIcon(Type type, int width, int height, Color color) {
+            this.type = type;
+            this.width = width;
+            this.height = height;
+            this.color = color;
+        }
+
+        @Override
+        public int getIconWidth() { return width; }
+
+        @Override
+        public int getIconHeight() { return height; }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            g2.setColor(color != null ? color : (c != null ? c.getForeground() : Color.BLACK));
+            g2.translate(x, y);
+
+            float w = width;
+            float h = height;
+
+            switch (type) {
+                case DOCUMENT -> {
+                    g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    float foldW = w * 0.28f;
+                    Path2D doc = new Path2D.Float();
+                    doc.moveTo(w * 0.15f, h * 0.08f);
+                    doc.lineTo(w * 0.85f - foldW, h * 0.08f);
+                    doc.lineTo(w * 0.85f, h * 0.08f + foldW);
+                    doc.lineTo(w * 0.85f, h * 0.92f);
+                    doc.lineTo(w * 0.15f, h * 0.92f);
+                    doc.closePath();
+                    g2.draw(doc);
+
+                    Path2D flap = new Path2D.Float();
+                    flap.moveTo(w * 0.85f - foldW, h * 0.08f);
+                    flap.lineTo(w * 0.85f - foldW, h * 0.08f + foldW);
+                    flap.lineTo(w * 0.85f, h * 0.08f + foldW);
+                    g2.draw(flap);
+
+                    g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawLine((int)(w * 0.28f), (int)(h * 0.48f), (int)(w * 0.72f), (int)(h * 0.48f));
+                    g2.drawLine((int)(w * 0.28f), (int)(h * 0.63f), (int)(w * 0.72f), (int)(h * 0.63f));
+                    g2.drawLine((int)(w * 0.28f), (int)(h * 0.77f), (int)(w * 0.52f), (int)(h * 0.77f));
+                }
+                case PENDING -> {
+                    g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.draw(new Ellipse2D.Float(w * 0.08f, h * 0.08f, w * 0.84f, h * 0.84f));
+                    g2.drawLine((int)(w * 0.50f), (int)(h * 0.50f), (int)(w * 0.50f), (int)(h * 0.24f));
+                    g2.drawLine((int)(w * 0.50f), (int)(h * 0.50f), (int)(w * 0.72f), (int)(h * 0.50f));
+                    g2.fill(new Ellipse2D.Float(w * 0.50f - 1.5f, h * 0.50f - 1.5f, 3f, 3f));
+                }
+                case APPROVED -> {
+                    g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.draw(new Ellipse2D.Float(w * 0.08f, h * 0.08f, w * 0.84f, h * 0.84f));
+                    Path2D check = new Path2D.Float();
+                    check.moveTo(w * 0.28f, h * 0.52f);
+                    check.lineTo(w * 0.44f, h * 0.68f);
+                    check.lineTo(w * 0.72f, h * 0.34f);
+                    g2.draw(check);
+                }
+                case CHECK -> {
+                    g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    Path2D check = new Path2D.Float();
+                    check.moveTo(w * 0.16f, h * 0.52f);
+                    check.lineTo(w * 0.40f, h * 0.76f);
+                    check.lineTo(w * 0.84f, h * 0.22f);
+                    g2.draw(check);
+                }
+                case REJECTED -> {
+                    g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.draw(new Ellipse2D.Float(w * 0.08f, h * 0.08f, w * 0.84f, h * 0.84f));
+                    g2.drawLine((int)(w * 0.32f), (int)(w * 0.32f), (int)(w * 0.68f), (int)(w * 0.68f));
+                    g2.drawLine((int)(w * 0.68f), (int)(w * 0.32f), (int)(w * 0.32f), (int)(w * 0.68f));
+                }
+                case CROSS -> {
+                    g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawLine((int)(w * 0.20f), (int)(h * 0.20f), (int)(w * 0.80f), (int)(h * 0.80f));
+                    g2.drawLine((int)(w * 0.80f), (int)(h * 0.20f), (int)(w * 0.20f), (int)(h * 0.80f));
+                }
+                case SEARCH -> {
+                    g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    float r = w * 0.34f;
+                    g2.draw(new Ellipse2D.Float(w * 0.10f, h * 0.10f, r * 2, r * 2));
+                    g2.drawLine((int)(w * 0.10f + r * 1.68f), (int)(h * 0.10f + r * 1.68f), (int)(w * 0.88f), (int)(h * 0.88f));
+                }
+                case REFRESH -> {
+                    g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    Arc2D.Float arc = new Arc2D.Float(w * 0.12f, h * 0.12f, w * 0.76f, h * 0.76f, 45, 270, Arc2D.OPEN);
+                    g2.draw(arc);
+                    Path2D arrow = new Path2D.Float();
+                    arrow.moveTo(w * 0.58f, h * 0.09f);
+                    arrow.lineTo(w * 0.86f, h * 0.18f);
+                    arrow.lineTo(w * 0.74f, h * 0.44f);
+                    g2.draw(arrow);
+                }
+                case EYE -> {
+                    g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    Path2D eye = new Path2D.Float();
+                    eye.moveTo(w * 0.08f, h * 0.50f);
+                    eye.quadTo(w * 0.50f, h * 0.12f, w * 0.92f, h * 0.50f);
+                    eye.quadTo(w * 0.50f, h * 0.88f, w * 0.08f, h * 0.50f);
+                    g2.draw(eye);
+                    float pd = w * 0.30f;
+                    g2.fill(new Ellipse2D.Float(w * 0.50f - pd/2, h * 0.50f - pd/2, pd, pd));
+                }
+                case SAVE -> {
+                    g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawRoundRect((int)(w * 0.12f), (int)(h * 0.12f), (int)(w * 0.76f), (int)(h * 0.76f), 3, 3);
+                    g2.fillRect((int)(w * 0.30f), (int)(h * 0.12f), (int)(w * 0.40f), (int)(h * 0.28f));
+                    g2.drawRect((int)(w * 0.26f), (int)(h * 0.52f), (int)(w * 0.48f), (int)(h * 0.36f));
+                }
+                case INFO -> {
+                    g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.draw(new Ellipse2D.Float(w * 0.08f, h * 0.08f, w * 0.84f, h * 0.84f));
+                    float dotR = w * 0.07f;
+                    g2.fill(new Ellipse2D.Float(w * 0.50f - dotR, h * 0.28f - dotR, dotR * 2, dotR * 2));
+                    g2.drawLine((int)(w * 0.50f), (int)(h * 0.44f), (int)(w * 0.50f), (int)(h * 0.74f));
+                }
+                case ARROW_DOWN -> {
+                    g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawLine((int)(w * 0.50f), (int)(h * 0.18f), (int)(w * 0.50f), (int)(h * 0.82f));
+                    Path2D head = new Path2D.Float();
+                    head.moveTo(w * 0.22f, h * 0.54f);
+                    head.lineTo(w * 0.50f, h * 0.82f);
+                    head.lineTo(w * 0.78f, h * 0.54f);
+                    g2.draw(head);
+                }
+                case ARROW_UP -> {
+                    g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    g2.drawLine((int)(w * 0.50f), (int)(h * 0.82f), (int)(w * 0.50f), (int)(h * 0.18f));
+                    Path2D head = new Path2D.Float();
+                    head.moveTo(w * 0.22f, h * 0.46f);
+                    head.lineTo(w * 0.50f, h * 0.18f);
+                    head.lineTo(w * 0.78f, h * 0.46f);
+                    g2.draw(head);
+                }
+            }
+            g2.dispose();
+        }
     }
 
     private JTextField createFieldWrapperField(String value) {
@@ -665,7 +940,7 @@ public class MedicalManagementForm extends JFrame {
         JPanel docRow = new JPanel(new BorderLayout(10, 0));
         docRow.setOpaque(false);
         JTextField txtDoc = createFieldWrapperField((docPath != null && !docPath.isEmpty()) ? docPath : "No document attached");
-        JButton btnOpenCert = createPrimaryButton("👁 View / Open Medical Certificate");
+        JButton btnOpenCert = createPrimaryButton("View Medical Certificate", new MedicalVectorIcon(MedicalVectorIcon.Type.EYE, 13, 13, WHITE));
         btnOpenCert.addActionListener(e -> viewDocument(docPath, medicalId, regNo, fullName, academicYear, startD, endD, submittedD, reason, sessionDesc, currentStatus, reviewStatusText));
 
         docRow.add(txtDoc, BorderLayout.CENTER);
@@ -710,14 +985,14 @@ public class MedicalManagementForm extends JFrame {
 
         JPanel leftActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         leftActions.setOpaque(false);
-        JButton btnViewDocFooter = createSecondaryButton("👁 View Document");
+        JButton btnViewDocFooter = createSecondaryButton("View Document", new MedicalVectorIcon(MedicalVectorIcon.Type.EYE, 13, 13, TEXT_MAIN));
         btnViewDocFooter.addActionListener(e -> viewDocument(docPath, medicalId, regNo, fullName, academicYear, startD, endD, submittedD, reason, sessionDesc, (String) cmbDecision.getSelectedItem(), reviewStatusText));
         leftActions.add(btnViewDocFooter);
 
         JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rightActions.setOpaque(false);
 
-        JButton btnApproveDlg = createColorButton("✅ Approve Medical", Color.decode("#10B981"), Color.decode("#059669"));
+        JButton btnApproveDlg = createColorButton("Approve Medical", new MedicalVectorIcon(MedicalVectorIcon.Type.CHECK, 13, 13, WHITE), Color.decode("#10B981"), Color.decode("#059669"));
         btnApproveDlg.addActionListener(e -> {
             boolean ok = updateMedicalStatusInDB(medicalId, "Approved");
             if (ok) {
@@ -726,7 +1001,7 @@ public class MedicalManagementForm extends JFrame {
             }
         });
 
-        JButton btnRejectDlg = createColorButton("❌ Reject Medical", Color.decode("#EF4444"), Color.decode("#DC2626"));
+        JButton btnRejectDlg = createColorButton("Reject Medical", new MedicalVectorIcon(MedicalVectorIcon.Type.CROSS, 13, 13, WHITE), Color.decode("#EF4444"), Color.decode("#DC2626"));
         btnRejectDlg.addActionListener(e -> {
             int conf = JOptionPane.showConfirmDialog(dlg, "Are you sure you want to REJECT Medical Record #" + medicalId + "?", "Confirm Rejection", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (conf == JOptionPane.YES_OPTION) {
@@ -738,7 +1013,7 @@ public class MedicalManagementForm extends JFrame {
             }
         });
 
-        JButton btnSaveDlg = createPrimaryButton("💾 Save Status");
+        JButton btnSaveDlg = createPrimaryButton("Save Status", new MedicalVectorIcon(MedicalVectorIcon.Type.SAVE, 13, 13, WHITE));
         btnSaveDlg.addActionListener(e -> {
             String selectedStatus = (String) cmbDecision.getSelectedItem();
             if ("Rejected".equalsIgnoreCase(selectedStatus)) {
@@ -999,7 +1274,7 @@ public class MedicalManagementForm extends JFrame {
         JPanel leftActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         leftActions.setOpaque(false);
         if (targetFile != null && targetFile.exists()) {
-            JButton btnOpenExt = createSecondaryButton("📂 Open Original File");
+            JButton btnOpenExt = createSecondaryButton("Open Original File", new MedicalVectorIcon(MedicalVectorIcon.Type.DOCUMENT, 13, 13, TEXT_MAIN));
             btnOpenExt.addActionListener(e -> {
                 try {
                     Desktop.getDesktop().open(targetFile);
@@ -1013,7 +1288,7 @@ public class MedicalManagementForm extends JFrame {
         JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rightActions.setOpaque(false);
 
-        JButton dlgApprove = createColorButton("✅ Approve", Color.decode("#10B981"), Color.decode("#059669"));
+        JButton dlgApprove = createColorButton("Approve", new MedicalVectorIcon(MedicalVectorIcon.Type.CHECK, 13, 13, WHITE), Color.decode("#10B981"), Color.decode("#059669"));
         dlgApprove.addActionListener(e -> {
             boolean ok = updateMedicalStatusInDB(medicalId, "Approved");
             if (ok) {
@@ -1022,7 +1297,7 @@ public class MedicalManagementForm extends JFrame {
             }
         });
 
-        JButton dlgReject = createColorButton("❌ Reject", Color.decode("#EF4444"), Color.decode("#DC2626"));
+        JButton dlgReject = createColorButton("Reject", new MedicalVectorIcon(MedicalVectorIcon.Type.CROSS, 13, 13, WHITE), Color.decode("#EF4444"), Color.decode("#DC2626"));
         dlgReject.addActionListener(e -> {
             int conf = JOptionPane.showConfirmDialog(dlg, "Are you sure you want to REJECT Medical Record #" + medicalId + "?", "Confirm Rejection", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (conf == JOptionPane.YES_OPTION) {
@@ -1167,7 +1442,7 @@ public class MedicalManagementForm extends JFrame {
                             reason != null ? reason : "",
                             formatDate(rs.getDate("submitted_date")),
                             appStatus != null ? appStatus : "Pending",
-                            "👁 View Details ➔"
+                            "View Details"
                     });
                 }
                 lblTableInfo.setText("Displaying " + tableModel.getRowCount() + " records");
@@ -1219,6 +1494,29 @@ public class MedicalManagementForm extends JFrame {
         txtDateFrom.setText("");
         txtDateTo.setText("");
         loadMedicalRecords(null, null, null, null);
+    }
+
+    public void scrollToTable() {
+        SwingUtilities.invokeLater(() -> {
+            if (pageScrollPane != null && pageScrollPane.getViewport() != null) {
+                Component view = pageScrollPane.getViewport().getView();
+                if (view != null) {
+                    int maxScroll = view.getHeight() - pageScrollPane.getViewport().getHeight();
+                    pageScrollPane.getViewport().setViewPosition(new Point(0, Math.max(0, maxScroll)));
+                }
+            }
+            if (tableCard != null) {
+                tableCard.scrollRectToVisible(new Rectangle(0, 0, tableCard.getWidth(), tableCard.getHeight()));
+            }
+        });
+    }
+
+    public void scrollToTop() {
+        SwingUtilities.invokeLater(() -> {
+            if (pageScrollPane != null && pageScrollPane.getViewport() != null) {
+                pageScrollPane.getViewport().setViewPosition(new Point(0, 0));
+            }
+        });
     }
 
     private void backToDashboard() {

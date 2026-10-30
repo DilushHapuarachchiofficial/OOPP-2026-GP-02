@@ -130,6 +130,17 @@ public class SettingsDAO {
         }
     }
 
+    public static boolean updateSetting(String key, String value) {
+        Map<String, String> map = new HashMap<>();
+        map.put(key, value);
+        return updateSettings(map);
+    }
+
+    public static boolean isMaintenanceMode() {
+        String val = getSetting("system.maintenance_mode", "false");
+        return "true".equalsIgnoreCase(val) || "1".equals(val);
+    }
+
     public static boolean resetCategoryToDefaults(String category) {
         ensureSettingsTableExists();
         Map<String, String> categoryDefaults = new HashMap<>();
