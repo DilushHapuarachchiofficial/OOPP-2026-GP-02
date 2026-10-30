@@ -40,6 +40,25 @@ public class Undergraduate extends User {
     }
 
     // Parameterized constructor with User base properties and Undergraduate-specific fields
+    // Parameterized constructor accepting int userId
+    public Undergraduate(int userId, String username, String password, String name,
+                         String email, String phone, String profilePicture,
+                         String studentId, String registrationNo, String batch,
+                         String department, int enrollmentYear) {
+        super(userId, username, password, name, email, phone, profilePicture);
+        this.studentId = studentId;
+        this.registrationNo = registrationNo;
+        this.batch = batch;
+        this.department = department;
+        this.enrollmentYear = enrollmentYear;
+        this.attendanceList = new ArrayList<>();
+        this.medicalRecords = new ArrayList<>();
+        this.courses = new ArrayList<>();
+        this.grades = new ArrayList<>();
+        this.notices = new ArrayList<>();
+    }
+
+    // Parameterized constructor with User base properties and Undergraduate-specific fields
     public Undergraduate(String userId, String username, String password, String name,
                          String email, String phone, String profilePicture,
                          String studentId, String registrationNo, String batch,

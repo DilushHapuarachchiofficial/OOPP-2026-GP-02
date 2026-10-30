@@ -815,7 +815,7 @@ public class UndergraduateProfileUI extends JPanel {
         valEmail.setText(loggedInStudent.getEmail() != null ? loggedInStudent.getEmail() : "-");
         valPhone.setText(loggedInStudent.getPhone() != null ? loggedInStudent.getPhone() : "-");
         valUsername.setText(loggedInStudent.getUsername() != null ? loggedInStudent.getUsername() : "tg2085");
-        valUserId.setText(loggedInStudent.getUserId() != null ? loggedInStudent.getUserId() : "USR-1085");
+        valUserId.setText(loggedInStudent.getUserId() > 0 ? String.valueOf(loggedInStudent.getUserId()) : "USR-1085");
 
         revalidate();
         repaint();

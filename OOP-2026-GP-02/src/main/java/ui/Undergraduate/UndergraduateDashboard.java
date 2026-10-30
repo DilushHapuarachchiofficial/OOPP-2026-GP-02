@@ -152,7 +152,7 @@ public class UndergraduateDashboard extends JFrame {
                 if (dbProfile.getAddress() != null) currentStudent.setAddress(dbProfile.getAddress());
                 if (dbProfile.getNic() != null) currentStudent.setNic(dbProfile.getNic());
                 if (dbProfile.getDob() != null) currentStudent.setDob(dbProfile.getDob());
-                if (dbProfile.getUserId() != null) currentStudent.setUserId(dbProfile.getUserId());
+                if (dbProfile.getUserId() > 0) currentStudent.setUserId(dbProfile.getUserId());
                 if (dbProfile.getUsername() != null) currentStudent.setUsername(dbProfile.getUsername());
             }
 
@@ -1093,7 +1093,7 @@ public class UndergraduateDashboard extends JFrame {
             } catch (Exception ignored) {}
 
             UndergraduateDAO dao = new UndergraduateDAO();
-            Undergraduate student = dao.getUndergraduateByStudentId("TG/2024/2085");
+            Undergraduate student = dao.getUndergraduateByStudentId("TG/2024/2086");
             if (student == null) {
                 JOptionPane.showMessageDialog(null,
                         "Database connection failed! Unable to connect to MySQL database.\nPlease verify MySQL Server is running.",

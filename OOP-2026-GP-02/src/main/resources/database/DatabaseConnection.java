@@ -13,7 +13,7 @@ public class DatabaseConnection {
     // MySQL Server 8.0 credentials & connection URL
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String USER = "root";
-    private static final String PASSWORD = "1234";
+    private static final String PASSWORD = "DVBH123@mysql";
 
     public DatabaseConnection() {
     }

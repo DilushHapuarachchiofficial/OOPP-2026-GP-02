@@ -1,3 +1,4 @@
+
 package main.java.model;
 
 
@@ -57,6 +58,27 @@ public class User {
     }
 
     /**
+     * Parameterized constructor supporting String userId for compatibility with subclasses and UML inputs.
+     */
+    public User(String userId, String username, String password, String name,
+                String email, String phone, String profilePicture) {
+        int parsedId = 0;
+        if (userId != null && !userId.trim().isEmpty()) {
+            try {
+                parsedId = Integer.parseInt(userId.replaceAll("[^0-9]", ""));
+            } catch (Exception ignored) {
+            }
+        }
+        this.userId = parsedId;
+        this.username = username != null ? username.trim() : null;
+        this.password = password != null ? password.trim() : null;
+        this.name = name != null ? name.trim() : null;
+        this.email = email != null ? email.trim() : null;
+        this.phone = phone != null ? phone.trim() : null;
+        this.profilePicture = profilePicture != null ? profilePicture.trim() : null;
+    }
+
+    /**
      * Convenience constructor without password and profile picture (5 parameters).
      */
     public User(int userId, String username, String name, String email, String phone) {
@@ -73,6 +95,18 @@ public class User {
 
     public void setUserId(int userId) {
         this.userId = userId;
+    }
+
+    public void setUserId(String userId) {
+        if (userId != null && !userId.trim().isEmpty()) {
+            try {
+                this.userId = Integer.parseInt(userId.replaceAll("[^0-9]", ""));
+            } catch (Exception ignored) {
+                this.userId = 0;
+            }
+        } else {
+            this.userId = 0;
+        }
     }
 
     // Alias for getId() for backward compatibility
