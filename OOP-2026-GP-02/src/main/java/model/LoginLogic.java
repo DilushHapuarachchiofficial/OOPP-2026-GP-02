@@ -484,27 +484,60 @@ public class LoginLogic {
 
     public static void openUndergraduateDashboard() {
         javax.swing.SwingUtilities.invokeLater(() -> {
+            UserSession session = UserSession.getCurrentSession();
+            main.java.model.Undergraduate.Undergraduate student = null;
+            main.java.dao.Undergraduate.UndergraduateDAO dao = new main.java.dao.Undergraduate.UndergraduateDAO();
+
+            if (session != null) {
+                if (session.getUsername() != null && !session.getUsername().trim().isEmpty()) {
+                    student = dao.getUndergraduateByStudentId(session.getUsername().trim());
+                }
+                if (student == null && session.getUserId() > 0) {
+                    student = dao.getUndergraduateByStudentId(String.valueOf(session.getUserId()));
+                }
+                if (student == null) {
+                    String regNo = session.getUsername() != null ? session.getUsername().trim() : "TG/2024/2083";
+                    String fullName = session.getFullName() != null && !session.getFullName().isEmpty()
+                            ? session.getFullName() : session.getUsername();
+                    String email = session.getEmail() != null ? session.getEmail() : "";
+                    String dept = session.getDepartmentName() != null && !session.getDepartmentName().isEmpty()
+                            ? session.getDepartmentName() : "Department of Information and Communication Technology";
+                    student = new main.java.model.Undergraduate.Undergraduate(
+                            session.getUserId() > 0 ? session.getUserId() : 19,
+                            session.getUsername() != null ? session.getUsername() : "student",
+                            "",
+                            fullName,
+                            email,
+                            "0710001000",
+                            "default_avatar.png",
+                            String.valueOf(session.getUserId() > 0 ? session.getUserId() : 19),
+                            regNo,
+                            "Batch 2023/2024",
+                            dept,
+                            2024
+                    );
+                }
+            }
+
+            if (student != null) {
+                try {
+                    main.java.ui.Undergraduate.UndergraduateDashboard dashboard =
+                            new main.java.ui.Undergraduate.UndergraduateDashboard(student);
+                    dashboard.setVisible(true);
+                    return;
+                } catch (Exception e) {
+                    System.err.println("Error opening UndergraduateDashboard with student instance: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+
             boolean opened = tryOpenDashboard(
                 "main.java.ui.Undergraduate.UndergraduateDashboard",
-                "main.java.ui.undergraduate.UndergraduateDashboard",
-                "ui.Undergraduate.UndergraduateDashboard",
-                "ui.undergraduate.UndergraduateDashboard",
-                "main.java.ui.Student.StudentDashboard",
-                "main.java.ui.student.StudentDashboard",
-                "ui.Student.StudentDashboard",
-                "ui.student.StudentDashboard",
-                "main.java.ui.UndergraduateDashboard",
-                "ui.UndergraduateDashboard",
-                "main.java.ui.StudentDashboard",
-                "ui.StudentDashboard",
-                "main.java.ui.Undergraduate.UndergraduateUI",
-                "main.java.ui.undergraduate.UndergraduateUI",
-                "main.java.ui.Student.StudentUI",
-                "main.java.ui.student.StudentUI"
+                "ui.Undergraduate.UndergraduateDashboard"
             );
             if (!opened) {
                 JOptionPane.showMessageDialog(null,
-                        "✓ Login Successful!\n\nRole: Undergraduate\nWelcome to TecFAMS Student Portal.\n\n[UndergraduateDashboard UI class will open here once created by your team member]",
+                        "✓ Login Successful!\n\nRole: Undergraduate\nWelcome to TecFAMS Student Portal.",
                         "TecFAMS - Student Portal",
                         JOptionPane.INFORMATION_MESSAGE);
             }
@@ -524,16 +557,7 @@ public class LoginLogic {
                 Class<?> clazz = Class.forName(className);
                 Object instance = null;
 
-                // 1. Try static main(String[] args) if available in the group member's class
-                try {
-                    java.lang.reflect.Method mainMethod = clazz.getMethod("main", String[].class);
-                    if (java.lang.reflect.Modifier.isStatic(mainMethod.getModifiers())) {
-                        mainMethod.invoke(null, (Object) new String[0]);
-                        return true;
-                    }
-                } catch (NoSuchMethodException ignored) {}
-
-                // 2. Try default no-arg constructor
+                // 1. Try default no-arg constructor
                 try {
                     java.lang.reflect.Constructor<?> defaultCtor = clazz.getDeclaredConstructor();
                     defaultCtor.setAccessible(true);

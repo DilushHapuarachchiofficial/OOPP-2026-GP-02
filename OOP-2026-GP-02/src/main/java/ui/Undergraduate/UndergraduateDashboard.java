@@ -1118,7 +1118,10 @@ public class UndergraduateDashboard extends JFrame {
             } catch (Exception ignored) {}
 
             UndergraduateDAO dao = new UndergraduateDAO();
-            Undergraduate student = dao.getUndergraduateByStudentId("TG/2024/2083");
+            main.java.model.UserSession session = main.java.model.UserSession.getCurrentSession();
+            String targetId = (session != null && session.getUsername() != null && !session.getUsername().trim().isEmpty())
+                    ? session.getUsername().trim() : "TG/2024/2083";
+            Undergraduate student = dao.getUndergraduateByStudentId(targetId);
             if (student == null) {
                 student = dao.getUndergraduateByStudentId("TG/2024/2085");
             }
