@@ -1,7 +1,4 @@
-
 package main.java.model;
-
-
 
 /**
  * Base User class for the TecFAMS system.
@@ -21,6 +18,7 @@ public class User {
     private String email;
     private String phone;
     private String status;
+    private String department;
     private String profilePicture;
 
     // =========================================================================
@@ -46,17 +44,39 @@ public class User {
     }
 
     /**
+     * Technical Officer 8-parameter constructor.
+     */
+    public User(String userId, String username, String password, String name,
+                String email, String phone, String role, String department) {
+        int parsedId = 0;
+        if (userId != null && !userId.trim().isEmpty()) {
+            try {
+                parsedId = Integer.parseInt(userId.replaceAll("[^0-9]", ""));
+            } catch (Exception ignored) {
+            }
+        }
+        this.userId = parsedId;
+        this.username = username != null ? username.trim() : null;
+        this.password = password != null ? password.trim() : null;
+        this.name = name != null ? name.trim() : null;
+        this.email = email != null ? email.trim() : null;
+        this.phone = phone != null ? phone.trim() : null;
+        this.role = role;
+        this.department = department;
+    }
+
+    /**
      * Full parameterized constructor from class diagram specifications (7 parameters).
      */
     public User(int userId, String username, String password, String name,
                 String email, String phone, String profilePicture) {
         this.userId = userId;
-        this.username = username;
-        this.password = password;
-        this.name = name;
-        this.email = email;
-        this.phone = phone;
-        this.profilePicture = profilePicture;
+        this.username = username != null ? username.trim() : null;
+        this.password = password != null ? password.trim() : null;
+        this.name = name != null ? name.trim() : null;
+        this.email = email != null ? email.trim() : null;
+        this.phone = phone != null ? phone.trim() : null;
+        this.profilePicture = profilePicture != null ? profilePicture.trim() : null;
     }
 
     /**
@@ -176,6 +196,14 @@ public class User {
         this.status = status;
     }
 
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
     public String getProfilePicture() {
         return profilePicture;
     }
@@ -216,15 +244,6 @@ public class User {
         // Base implementation hook
     }
 
-
-    public String getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(String department) {
-        this.department = department;
-    }
-
     @Override
     public String toString() {
         return "User{" +
@@ -235,9 +254,8 @@ public class User {
                 ", email='" + email + '\'' +
                 ", phone='" + phone + '\'' +
                 ", status='" + status + '\'' +
+                ", department='" + department + '\'' +
                 ", profilePicture='" + profilePicture + '\'' +
                 '}';
     }
-
-
-
+}

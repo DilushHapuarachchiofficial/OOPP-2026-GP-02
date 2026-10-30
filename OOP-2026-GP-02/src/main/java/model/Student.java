@@ -11,7 +11,7 @@ public class Student extends User {
 
     public Student() {
         super();
-        this.role = "Student";
+        setRole("Student");
     }
 
     public Student(String studentId, String username, String name, String email,
@@ -28,7 +28,7 @@ public class Student extends User {
 
     public void setStudentId(String studentId) {
         this.studentId = studentId;
-        this.userId = studentId;
+        setUserId(studentId);
     }
 
     public String getBatch() {
@@ -51,8 +51,8 @@ public class Student extends User {
     public String toString() {
         return "Student{" +
                 "studentId='" + studentId + '\'' +
-                ", name='" + name + '\'' +
-                ", department='" + department + '\'' +
+                ", name='" + getName() + '\'' +
+                ", department='" + getDepartment() + '\'' +
                 ", batch='" + batch + '\'' +
                 '}';
     }
