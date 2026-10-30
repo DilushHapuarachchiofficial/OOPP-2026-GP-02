@@ -2,9 +2,11 @@
 package main.java.model;
 
 
+
 /**
  * Base User class for the TecFAMS system.
- * Defines common user attributes and behaviors according to the UML class diagram.
+ * Follows OOP principles (Inheritance, Encapsulation) for all university users:
+ * TechnicalOfficer, Admin, Student, Lecturer.
  */
 public class User {
 
@@ -214,6 +216,15 @@ public class User {
         // Base implementation hook
     }
 
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
     @Override
     public String toString() {
         return "User{" +
@@ -228,4 +239,5 @@ public class User {
                 '}';
     }
 
-}
+
+
