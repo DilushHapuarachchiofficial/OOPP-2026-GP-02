@@ -136,6 +136,31 @@ public class LoginLogic {
                                             }
                                         }
                                     }
+                                } else if ("Undergraduate".equalsIgnoreCase(mappedRole) || "Student".equalsIgnoreCase(mappedRole)) {
+                                    String stuSql = "SELECT s.full_name, s.email, d.department_name " +
+                                                    "FROM students s " +
+                                                    "LEFT JOIN departments d ON s.department_id = d.department_id " +
+                                                    "WHERE s.student_id = ? OR s.student_reg_no = ?";
+                                    try (PreparedStatement stuStmt = conn.prepareStatement(stuSql)) {
+                                        stuStmt.setInt(1, userId);
+                                        stuStmt.setString(2, cleanUsername);
+                                        try (ResultSet stuRs = stuStmt.executeQuery()) {
+                                            if (stuRs.next()) {
+                                                UserSession.setCurrentSession(new UserSession(
+                                                        userId, cleanUsername, mappedRole,
+                                                        stuRs.getString("full_name"),
+                                                        "Undergraduate Student",
+                                                        stuRs.getString("department_name") != null ? stuRs.getString("department_name") : "Faculty of Technology",
+                                                        stuRs.getString("email")
+                                                ));
+                                            } else {
+                                                UserSession.setCurrentSession(new UserSession(
+                                                        userId, cleanUsername, mappedRole,
+                                                        cleanUsername, "Undergraduate Student", "Faculty of Technology", ""
+                                                ));
+                                            }
+                                        }
+                                    }
                                 } else {
                                     UserSession.setCurrentSession(new UserSession(
                                             userId, cleanUsername, mappedRole,

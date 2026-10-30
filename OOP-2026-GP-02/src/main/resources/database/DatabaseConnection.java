@@ -5,34 +5,59 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Dedicated database connection manager for MySQL Server 8.0 (MySQL Workbench).
- * Strictly connects to the local MySQL Server service on port 3306 (tecfams_db).
- * All XAMPP fallback code has been permanently removed.
+ * Dedicated database connection manager for TecFAMS MySQL Database.
+ * Connects to local MySQL Server (tecfams_db) with automatic fallback for credentials and hosts.
  */
 public class DatabaseConnection {
-    // MySQL Server 8.0 credentials & connection URL
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+
+    private static final String[] URLS = {
+        "jdbc:mysql://127.0.0.1:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "jdbc:mysql://localhost:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "jdbc:mysql://127.0.0.1:3306/tecFams?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "jdbc:mysql://localhost:3306/tecFams?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+    };
+
     private static final String USER = "root";
-    private static final String PASSWORD = "DVBH123@mysql";
+
+    private static final String[] PASSWORDS = {
+        "DVBH123@mysql",
+        "1234",
+        "",
+        "root"
+    };
 
     public DatabaseConnection() {
     }
 
     /**
-     * Connects directly and strictly to the MySQL Server 8.0 database (tecfams_db).
+     * Connects to the MySQL database (tecfams_db) trying configured credentials.
      *
      * @return Valid Connection object, or null if MySQL Server cannot be reached.
      */
     public static Connection getConnection() {
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-            return conn;
-        } catch (ClassNotFoundException e) {
-            System.err.println("[MySQL Server Error] Driver not found: " + e.getMessage());
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+            } catch (ClassNotFoundException e) {
+                Class.forName("com.mysql.jdbc.Driver");
+            }
+
+            for (String url : URLS) {
+                for (String pwd : PASSWORDS) {
+                    try {
+                        Connection conn = DriverManager.getConnection(url, USER, pwd);
+                        if (conn != null && !conn.isClosed()) {
+                            return conn;
+                        }
+                    } catch (SQLException ignored) {
+                    }
+                }
+            }
+
+            System.err.println("[MySQL Server Error] Unable to connect to MySQL database with any configured credentials.");
             return null;
-        } catch (SQLException e) {
-            System.err.println("[MySQL Server Error] Connection to MySQL Server (tecfams_db) failed: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("[MySQL Server Error] Driver error: " + e.getMessage());
             return null;
         }
     }

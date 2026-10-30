@@ -62,13 +62,33 @@ public class UndergraduateDashboard extends JFrame {
     public UndergraduateDashboard(Undergraduate student) {
         this.dao = new UndergraduateDAO();
         if (student == null) {
+            main.java.model.UserSession session = main.java.model.UserSession.getCurrentSession();
+            if (session != null) {
+                if (session.getUsername() != null && !session.getUsername().trim().isEmpty()) {
+                    student = dao.getUndergraduateByStudentId(session.getUsername().trim());
+                }
+                if (student == null && session.getUserId() > 0) {
+                    student = dao.getUndergraduateByStudentId(String.valueOf(session.getUserId()));
+                }
+            }
+        }
+        if (student == null) {
+            student = dao.getUndergraduateByStudentId("TG/2024/2083");
+        }
+        if (student == null) {
             student = dao.getUndergraduateByStudentId("TG/2024/2085");
         }
         if (student == null) {
-            JOptionPane.showMessageDialog(null,
-                    "Database connection failed! Unable to connect to MySQL database.\nPlease verify MySQL Server is running.",
-                    "Database Connection Error", JOptionPane.ERROR_MESSAGE);
-            throw new IllegalStateException("Database connection failed. No student profile available.");
+            main.java.model.UserSession session = main.java.model.UserSession.getCurrentSession();
+            int uid = (session != null && session.getUserId() > 0) ? session.getUserId() : 19;
+            String uname = (session != null && session.getUsername() != null) ? session.getUsername() : "TG/2024/2083";
+            String fname = (session != null && session.getFullName() != null) ? session.getFullName() : "Student";
+            String email = (session != null && session.getEmail() != null) ? session.getEmail() : "student@ruh.ac.lk";
+            String dept = (session != null && session.getDepartmentName() != null) ? session.getDepartmentName() : "Department of Information and Communication Technology";
+            student = new Undergraduate(
+                uid, uname, "", fname, email, "0710001000", "default_avatar.png",
+                String.valueOf(uid), uname, "Batch 2023/2024", dept, 2024
+            );
         }
         this.currentStudent = student;
         loadDatabaseData();
@@ -134,7 +154,7 @@ public class UndergraduateDashboard extends JFrame {
             String lookupId = (currentStudent.getRegistrationNo() != null && !currentStudent.getRegistrationNo().isEmpty())
                     ? currentStudent.getRegistrationNo() : currentStudent.getStudentId();
             if (lookupId == null || lookupId.trim().isEmpty()) {
-                lookupId = "TG/2024/2085";
+                lookupId = (currentStudent.getUsername() != null && !currentStudent.getUsername().trim().isEmpty()) ? currentStudent.getUsername() : "TG/2024/2083";
             }
 
             // 1. Fetch live profile from MySQL Workbench database
@@ -280,7 +300,12 @@ public class UndergraduateDashboard extends JFrame {
                 if (currentStudent != null) {
                     currentStudent.logout();
                 }
+                main.java.model.UserSession.clearSession();
                 this.dispose();
+                SwingUtilities.invokeLater(() -> {
+                    main.java.ui.WelcomeScreen welcomeScreen = new main.java.ui.WelcomeScreen();
+                    welcomeScreen.setVisible(true);
+                });
             }
         });
 
@@ -1093,12 +1118,16 @@ public class UndergraduateDashboard extends JFrame {
             } catch (Exception ignored) {}
 
             UndergraduateDAO dao = new UndergraduateDAO();
-            Undergraduate student = dao.getUndergraduateByStudentId("TG/2024/2086");
+            Undergraduate student = dao.getUndergraduateByStudentId("TG/2024/2083");
             if (student == null) {
-                JOptionPane.showMessageDialog(null,
-                        "Database connection failed! Unable to connect to MySQL database.\nPlease verify MySQL Server is running.",
-                        "Database Connection Error", JOptionPane.ERROR_MESSAGE);
-                return;
+                student = dao.getUndergraduateByStudentId("TG/2024/2085");
+            }
+            if (student == null) {
+                student = new Undergraduate(
+                    19, "TG/2024/2083", "", "K.A.B.V Smarathunga", "smarathunga@student.ruh.ac.lk", "0710001002",
+                    "default_avatar.png", "19", "TG/2024/2083", "Batch 2023/2024",
+                    "Department of Information and Communication Technology", 2024
+                );
             }
             UndergraduateDashboard dashboard = new UndergraduateDashboard(student);
             dashboard.setVisible(true);

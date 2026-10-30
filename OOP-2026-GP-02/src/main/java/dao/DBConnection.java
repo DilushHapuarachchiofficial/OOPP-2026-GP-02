@@ -76,6 +76,15 @@ public class DBConnection {
                 return DriverManager.getConnection(ALT_DB_URL, DB_USER, DB_PASSWORD);
             } catch (Exception ignored) {}
 
+            // Try 1234 fallback
+            try {
+                return DriverManager.getConnection(DB_URL, DB_USER, "1234");
+            } catch (Exception ignored) {}
+
+            try {
+                return DriverManager.getConnection(ALT_DB_URL, DB_USER, "1234");
+            } catch (Exception ignored) {}
+
             // 2. Try fallback credentials (root / "" for XAMPP / MariaDB)
             try {
                 return DriverManager.getConnection(DB_URL, DB_USER, FALLBACK_PASSWORD);
