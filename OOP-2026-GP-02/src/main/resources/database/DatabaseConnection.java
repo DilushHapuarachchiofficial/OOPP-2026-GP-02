@@ -7,6 +7,7 @@ import java.sql.SQLException;
 /**
  * Dedicated database connection manager for TecFAMS MySQL Database.
  * Connects to local MySQL Server (tecfams_db) with automatic fallback for credentials and hosts.
+ * Supports team member passwords ("DVBH123@mysql", "1234", "#Hirunika1", and blank/root).
  */
 public class DatabaseConnection {
 
@@ -22,9 +23,13 @@ public class DatabaseConnection {
     private static final String[] PASSWORDS = {
         "DVBH123@mysql",
         "1234",
+        "#Hirunika1",
         "",
         "root"
     };
+
+    private static volatile String activeWorkingUrl = null;
+    private static volatile String activeWorkingPwd = null;
 
     public DatabaseConnection() {
     }
@@ -42,11 +47,27 @@ public class DatabaseConnection {
                 Class.forName("com.mysql.jdbc.Driver");
             }
 
+            // 1. Fast path: try previously validated working credentials first
+            if (activeWorkingUrl != null && activeWorkingPwd != null) {
+                try {
+                    Connection conn = DriverManager.getConnection(activeWorkingUrl, USER, activeWorkingPwd);
+                    if (conn != null && !conn.isClosed()) {
+                        return conn;
+                    }
+                } catch (SQLException ignored) {
+                    activeWorkingUrl = null;
+                    activeWorkingPwd = null;
+                }
+            }
+
+            // 2. Try each configured team password across URLs
             for (String url : URLS) {
                 for (String pwd : PASSWORDS) {
                     try {
                         Connection conn = DriverManager.getConnection(url, USER, pwd);
                         if (conn != null && !conn.isClosed()) {
+                            activeWorkingUrl = url;
+                            activeWorkingPwd = pwd;
                             return conn;
                         }
                     } catch (SQLException ignored) {

@@ -128,7 +128,7 @@ public class WelcomeScreen extends JFrame {
         buttonWrapper.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
         buttonWrapper.add(loginButton);
 
-        JLabel versionLabel = new JLabel("v1.0.0 ");
+        JLabel versionLabel = new JLabel("v0.1.3 ");
         versionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         versionLabel.setForeground(new Color(130, 150, 175));
         versionLabel.setHorizontalAlignment(SwingConstants.RIGHT);

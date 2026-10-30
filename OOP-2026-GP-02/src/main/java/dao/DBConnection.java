@@ -14,18 +14,30 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 public class DBConnection {
 
     // MySQL Database Configuration
-    private static final String DB_NAME = "tecfams_db";
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/" + DB_NAME + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "DVBH123@mysql";
-    private static final String FALLBACK_PASSWORD = "";
 
-    // Secondary URL fallback if database is named tecFams
-    private static final String ALT_DB_URL = "jdbc:mysql://localhost:3306/tecFams?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    private static final String[] DB_URLS = {
+        "jdbc:mysql://127.0.0.1:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "jdbc:mysql://localhost:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "jdbc:mysql://127.0.0.1:3306/tecFams?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "jdbc:mysql://localhost:3306/tecFams?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+    };
+
+    // Candidate passwords for team members
+    private static final String[] PASSWORDS = {
+        "DVBH123@mysql",
+        "1234",
+        "#Hirunika1",
+        "",
+        "root"
+    };
+
+    // Cached active credentials for instant subsequent connections
+    private static volatile String activeWorkingUrl = null;
+    private static volatile String activeWorkingPwd = null;
 
     // Cache for user details loaded from tecfams_db.sql file
     private static Map<String, UserRecord> sqlDumpUsers = null;
@@ -65,9 +77,9 @@ public class DBConnection {
     }
 
     /**
-     * Attempts MySQL connection with user "root" and password "1234" (MySQL 8.0),
-     * with fallback to empty password (XAMPP).
-     * Returns null if MySQL server is offline or JDBC driver is not present.
+     * Attempts MySQL connection with candidate passwords ("DVBH123@mysql", "1234", "#Hirunika1", and fallback empty/root).
+     * Automatically discovers which credentials are valid for the active team member environment.
+     * Returns null if MySQL server is offline or unreachable.
      */
     public static Connection getConnection() {
         try {
@@ -77,32 +89,33 @@ public class DBConnection {
                 Class.forName("com.mysql.jdbc.Driver");
             }
 
-            // 1. Try primary credentials (root / 1234 for MySQL 8.0)
-            try {
-                return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-            } catch (Exception ignored) {}
+            // 1. Fast path: try cached working credentials first
+            if (activeWorkingUrl != null && activeWorkingPwd != null) {
+                try {
+                    Connection conn = DriverManager.getConnection(activeWorkingUrl, DB_USER, activeWorkingPwd);
+                    if (conn != null && !conn.isClosed()) {
+                        return conn;
+                    }
+                } catch (Exception ignored) {
+                    activeWorkingUrl = null;
+                    activeWorkingPwd = null;
+                }
+            }
 
-            try {
-                return DriverManager.getConnection(ALT_DB_URL, DB_USER, DB_PASSWORD);
-            } catch (Exception ignored) {}
-
-            // Try 1234 fallback
-            try {
-                return DriverManager.getConnection(DB_URL, DB_USER, "1234");
-            } catch (Exception ignored) {}
-
-            try {
-                return DriverManager.getConnection(ALT_DB_URL, DB_USER, "1234");
-            } catch (Exception ignored) {}
-
-            // 2. Try fallback credentials (root / "" for XAMPP / MariaDB)
-            try {
-                return DriverManager.getConnection(DB_URL, DB_USER, FALLBACK_PASSWORD);
-            } catch (Exception ignored) {}
-
-            try {
-                return DriverManager.getConnection(ALT_DB_URL, DB_USER, FALLBACK_PASSWORD);
-            } catch (Exception ignored) {}
+            // 2. Iterate through configured team passwords across candidate URLs
+            for (String url : DB_URLS) {
+                for (String pwd : PASSWORDS) {
+                    try {
+                        Connection conn = DriverManager.getConnection(url, DB_USER, pwd);
+                        if (conn != null && !conn.isClosed()) {
+                            activeWorkingUrl = url;
+                            activeWorkingPwd = pwd;
+                            return conn;
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
 
             return null;
         } catch (Exception e) {

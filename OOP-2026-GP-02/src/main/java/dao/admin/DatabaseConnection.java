@@ -8,10 +8,24 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseConnection {
-    // Database credentials and URL
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/tecfams_db";
+    // Database credentials and URLs
+    private static final String[] URLS = {
+        "jdbc:mysql://127.0.0.1:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "jdbc:mysql://localhost:3306/tecfams_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "jdbc:mysql://127.0.0.1:3306/tecFams?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "jdbc:mysql://localhost:3306/tecFams?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+    };
     private static final String USER = "root";
-    private static final String PASSWORD = "DVBH123@mysql";
+    private static final String[] PASSWORDS = {
+        "DVBH123@mysql",
+        "1234",
+        "#Hirunika1",
+        "",
+        "root"
+    };
+
+    private static volatile String activeWorkingUrl = null;
+    private static volatile String activeWorkingPwd = null;
 
     // Singleton instance of Connection
     private static Connection connection = null;
@@ -23,17 +37,51 @@ public class DatabaseConnection {
 
     public static Connection getConnection() {
         try {
-            if (connection == null || connection.isClosed()) {
-                // Ensure the driver class is loaded (optional in newer JDBC, but good practice)
-                Class.forName("com.mysql.cj.jdbc.Driver");
-                
-                // Establish the connection
-                connection = DriverManager.getConnection(URL, USER, PASSWORD);
-                System.out.println("Database connection established successfully.");
-
-                // Automatically verify and ensure schema compatibility if tables were newly re-imported
-                ensureSchemaCompatibility(connection);
+            if (connection != null && !connection.isClosed()) {
+                return connection;
             }
+
+            // Ensure the driver class is loaded
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+            } catch (ClassNotFoundException e) {
+                Class.forName("com.mysql.jdbc.Driver");
+            }
+
+            // 1. Try active working credentials first
+            if (activeWorkingUrl != null && activeWorkingPwd != null) {
+                try {
+                    Connection conn = DriverManager.getConnection(activeWorkingUrl, USER, activeWorkingPwd);
+                    if (conn != null && !conn.isClosed()) {
+                        connection = conn;
+                        ensureSchemaCompatibility(connection);
+                        return connection;
+                    }
+                } catch (SQLException ignored) {
+                    activeWorkingUrl = null;
+                    activeWorkingPwd = null;
+                }
+            }
+
+            // 2. Iterate through all team passwords and URLs
+            for (String url : URLS) {
+                for (String pwd : PASSWORDS) {
+                    try {
+                        Connection conn = DriverManager.getConnection(url, USER, pwd);
+                        if (conn != null && !conn.isClosed()) {
+                            activeWorkingUrl = url;
+                            activeWorkingPwd = pwd;
+                            connection = conn;
+                            System.out.println("Admin Database connection established successfully with url: " + url);
+                            ensureSchemaCompatibility(connection);
+                            return connection;
+                        }
+                    } catch (SQLException ignored) {
+                    }
+                }
+            }
+
+            System.err.println("Failed to connect to the database with any team credentials. Ensure MySQL server is running.");
         } catch (ClassNotFoundException e) {
             System.err.println("MySQL JDBC Driver not found. Please add the mysql-connector-j jar to your build path.");
             e.printStackTrace();
@@ -45,7 +93,7 @@ public class DatabaseConnection {
     }
 
     private static void ensureSchemaCompatibility(Connection conn) {
-        if (schemaChecked) return;
+        if (schemaChecked || conn == null) return;
         schemaChecked = true;
         try (Statement stmt = conn.createStatement()) {
             // Ensure admins has address column
