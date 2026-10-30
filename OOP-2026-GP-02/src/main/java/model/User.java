@@ -1,8 +1,9 @@
 package main.java.model;
 
+
 /**
- * Core User entity supporting both Admin dashboard operations
- * and role-based authentication & session workflows.
+ * Base User class for the TecFAMS system.
+ * Defines common user attributes and behaviors according to the UML class diagram.
  */
 public class User {
 
@@ -192,4 +193,5 @@ public class User {
                 ", profilePicture='" + profilePicture + '\'' +
                 '}';
     }
+
 }
