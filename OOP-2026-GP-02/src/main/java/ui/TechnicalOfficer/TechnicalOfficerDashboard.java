@@ -183,11 +183,15 @@ public class TechnicalOfficerDashboard extends JFrame {
         JPanel textBlock = new JPanel(new GridLayout(2, 1, 0, 2));
         textBlock.setOpaque(false);
 
-        headerWelcomeLabel = new JLabel("Welcome back, " + currentOfficer.getName() + "!");
+        String officerName = (currentOfficer != null && currentOfficer.getName() != null && !currentOfficer.getName().trim().isEmpty())
+                ? currentOfficer.getName().trim() : "Technical Officer";
+        headerWelcomeLabel = new JLabel("Welcome back, " + officerName + "!");
         headerWelcomeLabel.setFont(FONT_MEDIUM);
         headerWelcomeLabel.setForeground(TEXT_MAIN);
 
-        JLabel deptLabel = new JLabel(currentOfficer.getDepartment() + " • Staff");
+        String deptName = (currentOfficer != null && currentOfficer.getDepartment() != null && !currentOfficer.getDepartment().trim().isEmpty())
+                ? currentOfficer.getDepartment().trim() : "Faculty of Technology";
+        JLabel deptLabel = new JLabel(deptName + " • Staff");
         deptLabel.setFont(FONT_SMALL);
         deptLabel.setForeground(TEXT_SECONDARY);
 
@@ -274,11 +278,15 @@ public class TechnicalOfficerDashboard extends JFrame {
         JPanel left = new JPanel(new GridLayout(2, 1, 0, 4));
         left.setOpaque(false);
 
-        JLabel welcomeLabel = new JLabel("Welcome back, " + currentOfficer.getName() + "!");
+        String officerName = (currentOfficer != null && currentOfficer.getName() != null && !currentOfficer.getName().trim().isEmpty())
+                ? currentOfficer.getName().trim() : "Technical Officer";
+        JLabel welcomeLabel = new JLabel("Welcome back, " + officerName + "!");
         welcomeLabel.setFont(FONT_HEADER_LARGE);
         welcomeLabel.setForeground(PRIMARY_NAVY);
 
-        JLabel subLabel = new JLabel("Faculty of Technology • Department of " + currentOfficer.getDepartment());
+        String deptName = (currentOfficer != null && currentOfficer.getDepartment() != null && !currentOfficer.getDepartment().trim().isEmpty())
+                ? currentOfficer.getDepartment().trim() : "Technology";
+        JLabel subLabel = new JLabel("Faculty of Technology • " + (deptName.startsWith("Department") ? deptName : ("Department of " + deptName)));
         subLabel.setFont(FONT_REGULAR);
         subLabel.setForeground(TEXT_SECONDARY);
 

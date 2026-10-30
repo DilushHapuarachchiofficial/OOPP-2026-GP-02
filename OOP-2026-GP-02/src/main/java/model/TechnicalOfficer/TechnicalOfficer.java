@@ -18,16 +18,16 @@ public class TechnicalOfficer extends User {
     private String profilePicture;
 
     /**
-     * Default constructor with sample university data
+     * Default constructor initializing empty technical officer fields.
      */
     public TechnicalOfficer() {
         super();
-        this.officerId = "TO/2026/001";
-        this.username = "to_officer";
-        this.name = "Mr. Nimal Jayawardena";
-        this.email = "nimal.to@tech.ruh.ac.lk";
-        this.phone = "071-2345678";
-        this.department = "Information & Communication Technology";
+        this.officerId = "";
+        this.username = "";
+        this.name = "";
+        this.email = "";
+        this.phone = "";
+        this.department = "";
         this.profilePicture = "default_avatar.png";
     }
 

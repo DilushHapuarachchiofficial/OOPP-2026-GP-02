@@ -169,7 +169,9 @@ public class TechnicalOfficerProfileForm extends JFrame {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         right.setOpaque(false);
 
-        JLabel officerBadge = new JLabel("👤 Officer: " + (currentOfficer != null ? currentOfficer.getName() : ""));
+        String offName = (currentOfficer != null && currentOfficer.getName() != null && !currentOfficer.getName().trim().isEmpty())
+                ? currentOfficer.getName().trim() : "Technical Officer";
+        JLabel officerBadge = new JLabel("Officer: " + offName);
         officerBadge.setFont(FONT_SMALL);
         officerBadge.setForeground(PRIMARY_NAVY);
         officerBadge.setBackground(LIGHT_BLUE);
@@ -462,9 +464,9 @@ public class TechnicalOfficerProfileForm extends JFrame {
         txtEmail.setText(currentOfficer.getEmail() != null ? currentOfficer.getEmail() : "");
         txtPhone.setText(currentOfficer.getPhone() != null ? currentOfficer.getPhone() : "");
 
-        txtOfficerId.setText(currentOfficer.getOfficerId() != null ? currentOfficer.getOfficerId() : "12");
-        txtUsername.setText(currentOfficer.getUsername() != null ? currentOfficer.getUsername() : "to_officer");
-        txtDepartment.setText(currentOfficer.getDepartment() != null ? currentOfficer.getDepartment() : "Faculty of Technology");
+        txtOfficerId.setText(currentOfficer.getOfficerId() != null ? currentOfficer.getOfficerId() : "");
+        txtUsername.setText(currentOfficer.getUsername() != null ? currentOfficer.getUsername() : "");
+        txtDepartment.setText(currentOfficer.getDepartment() != null ? currentOfficer.getDepartment() : "");
         txtRole.setText(currentOfficer.getRole() != null ? currentOfficer.getRole() : "Technical Officer");
 
         lblNameCard.setText(txtName.getText());

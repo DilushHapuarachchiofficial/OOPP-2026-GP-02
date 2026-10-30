@@ -122,7 +122,9 @@ public class MedicalManagementForm extends JFrame {
         JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         rightActions.setOpaque(false);
 
-        JLabel officerBadge = new JLabel("👤 Officer: " + currentOfficer.getName());
+        String offName = (currentOfficer != null && currentOfficer.getName() != null && !currentOfficer.getName().trim().isEmpty())
+                ? currentOfficer.getName().trim() : "Technical Officer";
+        JLabel officerBadge = new JLabel("Officer: " + offName);
         officerBadge.setFont(FONT_SMALL);
         officerBadge.setForeground(PRIMARY_NAVY);
         officerBadge.setBackground(LIGHT_BLUE);
@@ -816,7 +818,11 @@ public class MedicalManagementForm extends JFrame {
                               Date startD, Date endD, Date submittedD, String reason, String sessionDesc,
                               String status, String verifiedBy) {
         if (docPath == null || docPath.trim().isEmpty()) {
-            docPath = "medicals/medical_sample.pdf";
+            JOptionPane.showMessageDialog(this,
+                    "No medical certificate document is attached to Medical Record #" + medicalId + ".",
+                    "Document Not Found",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
         }
 
         File targetFile = resolveDocumentFile(docPath);

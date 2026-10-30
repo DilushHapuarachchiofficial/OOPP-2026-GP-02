@@ -3,6 +3,7 @@ package main.java.ui.TechnicalOfficer;
 import main.java.dao.TechnicalOfficer.TechnicalOfficerDAO;
 import main.java.model.TechnicalOfficer.TechnicalOfficer;
 import main.java.model.Timetable;
+import main.java.model.UserSession;
 import main.resources.database.DatabaseConnection;
 
 import javax.swing.*;
@@ -147,7 +148,9 @@ public class AttendanceManagementForm extends JFrame {
         // Right Actions (Officer badge + Back button)
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         right.setOpaque(false);
-        JLabel officerBadge = new JLabel("Officer: " + currentOfficer.getName());
+        String offName = (currentOfficer != null && currentOfficer.getName() != null && !currentOfficer.getName().trim().isEmpty())
+                ? currentOfficer.getName().trim() : "Technical Officer";
+        JLabel officerBadge = new JLabel("Officer: " + offName);
         officerBadge.setFont(FONT_SMALL);
         officerBadge.setForeground(PRIMARY_NAVY);
         officerBadge.setBackground(LIGHT_BLUE);
@@ -420,9 +423,7 @@ public class AttendanceManagementForm extends JFrame {
         allCourses.clear();
         cmbCourse.removeAllItems();
 
-        Set<String> loadedCodes = new HashSet<>();
         Connection conn = DatabaseConnection.getConnection();
-
         if (conn != null) {
             try (Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT course_id, course_code, course_name, course_type, academic_year FROM courses ORDER BY academic_year ASC, course_code ASC")) {
@@ -435,54 +436,13 @@ public class AttendanceManagementForm extends JFrame {
                             rs.getInt("academic_year")
                     );
                     allCourses.add(item);
-                    loadedCodes.add(item.getCourseCode().toUpperCase());
                 }
             } catch (SQLException e) {
                 System.err.println("Notice: Could not query courses: " + e.getMessage());
             }
         }
 
-        // Add standard syllabus courses for all 4 academic years without modifying database
-        for (CourseItem standard : getStandardCurriculumCourses()) {
-            if (!loadedCodes.contains(standard.getCourseCode().toUpperCase())) {
-                allCourses.add(standard);
-            }
-        }
-
         filterCoursesByYear();
-    }
-
-    private List<CourseItem> getStandardCurriculumCourses() {
-        return Arrays.asList(
-                // Year 1 Courses
-                new CourseItem(101, "ICT1113", "Introduction to Computer Science & Programming", "Theory_and_Practical", 1),
-                new CourseItem(102, "ICT1122", "Computer System Architecture", "Theory_and_Practical", 1),
-                new CourseItem(103, "ICT1133", "Mathematics for Computing", "Theory_Only", 1),
-                new CourseItem(104, "ENG1112", "Communication Skills I", "Theory_Only", 1),
-                new CourseItem(105, "ICT1213", "Object-Oriented Programming", "Theory_and_Practical", 1),
-                new CourseItem(106, "ICT1222", "Web Technologies", "Theory_and_Practical", 1),
-
-                // Year 2 Courses
-                new CourseItem(1, "ICT2132", "Object Oriented Programming Practicum", "Theory_and_Practical", 2),
-                new CourseItem(2, "ICT2113", "Data Structures and Algorithms", "Theory_and_Practical", 2),
-                new CourseItem(3, "ICT2122", "Database Management Systems", "Theory_and_Practical", 2),
-                new CourseItem(4, "ENG2112", "Communication Skills II", "Theory_Only", 2),
-                new CourseItem(205, "ICT2213", "Operating Systems", "Theory_and_Practical", 2),
-                new CourseItem(206, "ICT2223", "Software Engineering", "Theory_Only", 2),
-
-                // Year 3 Courses
-                new CourseItem(301, "ICT3113", "Software Project Management", "Theory_Only", 3),
-                new CourseItem(302, "ICT3122", "Computer Networks", "Theory_and_Practical", 3),
-                new CourseItem(303, "ICT3132", "Information Security", "Theory_and_Practical", 3),
-                new CourseItem(304, "ICT3142", "Mobile Application Development", "Theory_and_Practical", 3),
-                new CourseItem(305, "ICT3213", "Cloud Computing & DevOps", "Theory_and_Practical", 3),
-
-                // Year 4 Courses
-                new CourseItem(401, "ICT4113", "Machine Learning & Artificial Intelligence", "Theory_and_Practical", 4),
-                new CourseItem(402, "ICT4122", "Distributed Systems", "Theory_and_Practical", 4),
-                new CourseItem(403, "ICT4136", "Research Project / Capstone", "Practical", 4),
-                new CourseItem(404, "ICT4216", "Industrial Training", "Practical", 4)
-        );
     }
 
     private void filterCoursesByYear() {
@@ -719,9 +679,12 @@ public class AttendanceManagementForm extends JFrame {
             }
         }
 
-        // 3. Fallback sample data if database is empty, offline, or has no students for the selected year
         if (!loaded) {
-            loadMockStudents(course, existingAttendance);
+            if (conn == null) {
+                lblTableStatus.setText("Database Connection Error. Please verify MySQL service is running.");
+            } else {
+                lblTableStatus.setText("No registered students found in database for this course.");
+            }
         }
 
         updateSummaryLabel(course, sessionNum, sessionType);
@@ -767,33 +730,6 @@ public class AttendanceManagementForm extends JFrame {
         tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, String.valueOf(sid), regNo, name, "Year " + year, status});
     }
 
-    private void loadMockStudents(CourseItem course, Map<Integer, String> existingAttendance) {
-        int year = course != null ? course.getAcademicYear() : 2;
-        String[] names;
-        String[] regNos = null;
-        int[] ids = null;
-
-        if (year == 1) {
-            names = new String[]{"K.P.S Deshan", "H.M.A Kavinda", "N.V.C Sandunika", "T.M.D Jayalath", "S.R.K Madushanka", "W.A.N Dilshan", "M.D.T Fernando", "R.G.S Liyanage"};
-        } else if (year == 3) {
-            names = new String[]{"A.M.K Pathirana", "D.S.L Wickramatunga", "K.G.T Malshan", "P.H.R Wijesinghe", "J.M.B Senadheera", "C.K.N Weerasinghe", "B.L.A Dassanayake", "U.S.M Jayawardena"};
-        } else if (year == 4) {
-            names = new String[]{"M.A.C Perera", "G.H.D Samaranayake", "V.S.N Kulasekara", "E.K.P Ranasinghe", "T.D.A Abeyratne", "N.H.M Jayatissa", "K.D.C Jayasinghe", "L.R.B Gunasekara"};
-        } else {
-            names = new String[]{"K.K.A.H.W Kumarasinghe", "K.A.B.V Smarathunga", "H.M.K.S Bandara", "W.M.P.L Wickramasinghe", "A.M.D.N Gunathilaka", "P.K.S.D Perera", "R.M.K.L Rathnayake", "S.A.N.C Senanayake"};
-            ids = new int[]{18, 19, 20, 21, 22, 23, 24, 25};
-            regNos = new String[]{"TG/2024/2062", "TG/2024/2083", "TG/2024/2084", "TG/2024/2085", "TG/2024/2086", "TG/2024/2087", "TG/2024/2088", "TG/2024/2089"};
-        }
-
-        int batchYear = 2026 - year;
-        for (int i = 0; i < names.length; i++) {
-            int sid = ids != null ? ids[i] : (year * 100 + i + 1);
-            String reg = regNos != null ? regNos[i] : String.format("TG/%d/%d%03d", batchYear, year, i + 1);
-            String status = existingAttendance.getOrDefault(sid, "Present");
-            addStudentRow(sid, reg, names[i], year, status);
-        }
-    }
-
     /**
      * Saves or updates attendance records using PreparedStatement.
      * Compatible with tecfams_db schema and manual key tracking.
@@ -831,100 +767,80 @@ public class AttendanceManagementForm extends JFrame {
         }
 
         Connection conn = DatabaseConnection.getConnection();
+        if (conn == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Database is not connected! Please ensure MySQL server is running.",
+                    "Database Connection Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         int savedCount = 0;
 
-        if (conn != null) {
-            try {
-                conn.setAutoCommit(false);
+        try {
+            conn.setAutoCommit(false);
 
-                // 1. Ensure attendance_session exists in database
-                int sessionId = ensureSessionExists(conn, course.getCourseId(), sessionNum, sessionType, sessionDate, durationHours);
-                if (sessionId <= 0) {
-                    throw new SQLException("Failed to resolve or create attendance session ID.");
-                }
+            // 1. Ensure attendance_session exists in database
+            int sessionId = ensureSessionExists(conn, course.getCourseId(), sessionNum, sessionType, sessionDate, durationHours);
+            if (sessionId <= 0) {
+                throw new SQLException("Failed to resolve or create attendance session ID.");
+            }
 
-                // 2. Resolve recorded_by Technical Officer ID (FK constraint to technical_officers)
-                int officerId = resolveTechnicalOfficerId(conn);
-
-                // 3. Query maximum attendance_id for manual ID sequencing (tecfams_db schema)
-                int nextAttendanceId = getNextId(conn, "attendance_id", "attendances");
-
-                // 4. Insert or Update records adhering to existing schema
-                String findAttSql = "SELECT attendance_id FROM attendances WHERE session_id = ? AND student_id = ?";
-                String updateAttSql = "UPDATE attendances SET attendance_status = ?, recorded_by = ?, recorded_date = NOW() WHERE attendance_id = ?";
-                String insertAttSql = "INSERT INTO attendances (attendance_id, session_id, student_id, attendance_status, recorded_by, recorded_date) " +
-                                      "VALUES (?, ?, ?, ?, ?, NOW())";
-
-                try (PreparedStatement stmtFind = conn.prepareStatement(findAttSql);
-                     PreparedStatement stmtUpdate = conn.prepareStatement(updateAttSql);
-                     PreparedStatement stmtInsert = conn.prepareStatement(insertAttSql)) {
-
-                    for (int i = 0; i < tableModel.getRowCount(); i++) {
-                        int studentId = Integer.parseInt(tableModel.getValueAt(i, 1).toString());
-                        String status = tableModel.getValueAt(i, 5).toString();
-
-                        stmtFind.setInt(1, sessionId);
-                        stmtFind.setInt(2, studentId);
-                        int existingAttId = -1;
-                        try (ResultSet rsFind = stmtFind.executeQuery()) {
-                            if (rsFind.next()) {
-                                existingAttId = rsFind.getInt("attendance_id");
-                            }
-                        }
-
-                        if (existingAttId > 0) {
-                            stmtUpdate.setString(1, status);
-                            stmtUpdate.setInt(2, officerId);
-                            stmtUpdate.setInt(3, existingAttId);
-                            stmtUpdate.executeUpdate();
-                        } else {
-                            stmtInsert.setInt(1, nextAttendanceId++);
-                            stmtInsert.setInt(2, sessionId);
-                            stmtInsert.setInt(3, studentId);
-                            stmtInsert.setString(4, status);
-                            stmtInsert.setInt(5, officerId);
-                            stmtInsert.executeUpdate();
-                        }
-                        savedCount++;
-                    }
-                }
-
-                conn.commit();
+            // 2. Resolve recorded_by Technical Officer ID (FK constraint to technical_officers)
+            int officerId = resolveTechnicalOfficerId(conn);
+            if (officerId <= 0) {
+                JOptionPane.showMessageDialog(this, "Cannot save attendance: No Technical Officer found in database. Please log in first.", "Officer Error", JOptionPane.ERROR_MESSAGE);
+                conn.rollback();
                 conn.setAutoCommit(true);
-                currentSessionId = sessionId;
-                refreshPastSessionsDropdown();
-
-                if (lblSessionModeBadge != null) {
-                    lblSessionModeBadge.setText(String.format("● Mode: Viewing Past Session #%d (%s)", sessionNum, sessionDate));
-                    lblSessionModeBadge.setForeground(Color.decode("#047857"));
-                }
-
-                String actionVerb = isExplicitUpdate ? "updated" : "saved";
-                JOptionPane.showMessageDialog(this,
-                        "Attendance successfully " + actionVerb + " for " + savedCount + " students!\n\n" +
-                        "Course: " + course.getCourseCode() + "\n" +
-                        "Session: " + sessionType + " #" + sessionNum + "\n" +
-                        "Duration: " + durationHours + " hrs\n" +
-                        "Date: " + sessionDate,
-                        "Attendance Saved",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-            } catch (SQLException e) {
-                try {
-                    conn.rollback();
-                    conn.setAutoCommit(true);
-                } catch (SQLException ignored) {}
-
-                JOptionPane.showMessageDialog(this,
-                        "Database Error while saving attendance:\n" + e.getMessage(),
-                        "Database Error",
-                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
-        } else {
-            // Offline demo mode confirmation
-            savedCount = tableModel.getRowCount();
-            currentSessionId = (course.getCourseId() * 100) + sessionNum;
+
+            // 3. Query maximum attendance_id for manual ID sequencing (tecfams_db schema)
+            int nextAttendanceId = getNextId(conn, "attendance_id", "attendances");
+
+            // 4. Insert or Update records adhering to existing schema
+            String findAttSql = "SELECT attendance_id FROM attendances WHERE session_id = ? AND student_id = ?";
+            String updateAttSql = "UPDATE attendances SET attendance_status = ?, recorded_by = ?, recorded_date = NOW() WHERE attendance_id = ?";
+            String insertAttSql = "INSERT INTO attendances (attendance_id, session_id, student_id, attendance_status, recorded_by, recorded_date) " +
+                                  "VALUES (?, ?, ?, ?, ?, NOW())";
+
+            try (PreparedStatement stmtFind = conn.prepareStatement(findAttSql);
+                 PreparedStatement stmtUpdate = conn.prepareStatement(updateAttSql);
+                 PreparedStatement stmtInsert = conn.prepareStatement(insertAttSql)) {
+
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    int studentId = Integer.parseInt(tableModel.getValueAt(i, 1).toString());
+                    String status = tableModel.getValueAt(i, 5).toString();
+
+                    stmtFind.setInt(1, sessionId);
+                    stmtFind.setInt(2, studentId);
+                    int existingAttId = -1;
+                    try (ResultSet rsFind = stmtFind.executeQuery()) {
+                        if (rsFind.next()) {
+                            existingAttId = rsFind.getInt("attendance_id");
+                        }
+                    }
+
+                    if (existingAttId > 0) {
+                        stmtUpdate.setString(1, status);
+                        stmtUpdate.setInt(2, officerId);
+                        stmtUpdate.setInt(3, existingAttId);
+                        stmtUpdate.executeUpdate();
+                    } else {
+                        stmtInsert.setInt(1, nextAttendanceId++);
+                        stmtInsert.setInt(2, sessionId);
+                        stmtInsert.setInt(3, studentId);
+                        stmtInsert.setString(4, status);
+                        stmtInsert.setInt(5, officerId);
+                        stmtInsert.executeUpdate();
+                    }
+                    savedCount++;
+                }
+            }
+
+            conn.commit();
+            conn.setAutoCommit(true);
+            currentSessionId = sessionId;
             refreshPastSessionsDropdown();
 
             if (lblSessionModeBadge != null) {
@@ -932,11 +848,27 @@ public class AttendanceManagementForm extends JFrame {
                 lblSessionModeBadge.setForeground(Color.decode("#047857"));
             }
 
+            String actionVerb = isExplicitUpdate ? "updated" : "saved";
             JOptionPane.showMessageDialog(this,
-                    "Attendance successfully saved in local offline mode for " + savedCount + " students.\n" +
-                    "(Note: Connect MySQL Server on port 3306 to persist directly into 'tecfams_db').",
-                    "Saved (Offline Mode)",
+                    "Attendance successfully " + actionVerb + " for " + savedCount + " students!\n\n" +
+                    "Course: " + course.getCourseCode() + "\n" +
+                    "Session: " + sessionType + " #" + sessionNum + "\n" +
+                    "Duration: " + durationHours + " hrs\n" +
+                    "Date: " + sessionDate,
+                    "Attendance Saved",
                     JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (SQLException e) {
+            try {
+                conn.rollback();
+                conn.setAutoCommit(true);
+            } catch (SQLException ignored) {}
+
+            JOptionPane.showMessageDialog(this,
+                    "Database Error while saving attendance:\n" + e.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
         }
 
         updateSummaryLabel(course, sessionNum, sessionType);
@@ -993,17 +925,22 @@ public class AttendanceManagementForm extends JFrame {
      * Resolves valid officer_id referencing technical_officers table.
      */
     private int resolveTechnicalOfficerId(Connection conn) {
-        try {
-            String rawId = currentOfficer.getOfficerId();
-            if (rawId != null && rawId.matches("\\d+")) {
+        if (UserSession.isLoggedIn()) {
+            return UserSession.getCurrentSession().getUserId();
+        }
+        if (currentOfficer != null && currentOfficer.getOfficerId() != null) {
+            String rawId = currentOfficer.getOfficerId().trim();
+            if (rawId.matches("\\d+")) {
                 return Integer.parseInt(rawId);
             }
+        }
+        if (conn != null) {
             try (Statement s = conn.createStatement();
-                 ResultSet rs = s.executeQuery("SELECT officer_id FROM technical_officers LIMIT 1")) {
+                 ResultSet rs = s.executeQuery("SELECT officer_id FROM technical_officers ORDER BY officer_id ASC LIMIT 1")) {
                 if (rs.next()) return rs.getInt("officer_id");
-            }
-        } catch (Exception ignored) {}
-        return 12; // Sample technical officer ID from tecfams_db schema
+            } catch (SQLException ignored) {}
+        }
+        return -1;
     }
 
     private void setAllStatus(String status) {
@@ -1149,10 +1086,6 @@ public class AttendanceManagementForm extends JFrame {
                     "All Days".equalsIgnoreCase(selDay) ? null : selDay,
                     "All Types".equalsIgnoreCase(selTyp) ? null : selTyp,
                     q.isEmpty() ? null : q);
-
-            if (entries.isEmpty() && q.isEmpty() && (yr == null || yr == 0)) {
-                entries = getStandardTimetableSlots();
-            }
 
             int idx = 1;
             for (Timetable t : entries) {
@@ -1443,27 +1376,6 @@ public class AttendanceManagementForm extends JFrame {
                     System.err.println("Notice: Could not query past sessions: " + e.getMessage());
                 }
             }
-
-            // Fallback sample sessions if offline or DB empty
-            if (sessionRecords.isEmpty() && q.isEmpty()) {
-                for (PastSessionRecord r : getFallbackPastSessions()) {
-                    if (yr > 0 && r.academicYear != yr) continue;
-                    if (selTyp != null && !"All Types".equalsIgnoreCase(selTyp) && !selTyp.equalsIgnoreCase(r.sessionType)) continue;
-                    sessionRecords.add(r);
-                    tm.addRow(new Object[]{
-                            r.sessionId,
-                            r.sessionDate.toString(),
-                            r.courseCode,
-                            r.courseName,
-                            r.sessionType,
-                            "#" + r.sessionNumber,
-                            String.format("%.1f hrs", r.durationHours),
-                            r.presentCount,
-                            r.absentCount,
-                            r.totalMarked
-                    });
-                }
-            }
         };
 
         cmbYearFilter.addItemListener(e -> { if (e.getStateChange() == ItemEvent.SELECTED) loadSessions.run(); });
@@ -1581,21 +1493,6 @@ public class AttendanceManagementForm extends JFrame {
         }
     }
 
-    private List<Timetable> getStandardTimetableSlots() {
-        List<Timetable> slots = new ArrayList<>();
-        slots.add(new Timetable(1, "TT1", "Monday", "08:30 - 10:30", "ICT1113", "Introduction to Computer Science & Programming", "LH 01", "Theory", 1, 1, "Department of Information and Communication Technology"));
-        slots.add(new Timetable(2, "TT2", "Monday", "10:30 - 12:30", "ICT2132", "Object Oriented Programming Practicum", "Software Lab 1", "Practical", 2, 1, "Department of Information and Communication Technology"));
-        slots.add(new Timetable(3, "TT3", "Tuesday", "08:30 - 11:30", "ICT2113", "Data Structures and Algorithms", "LH 02", "Theory", 2, 1, "Department of Information and Communication Technology"));
-        slots.add(new Timetable(4, "TT4", "Tuesday", "13:00 - 16:00", "ICT2122", "Database Management Systems", "Database Lab", "Practical", 2, 1, "Department of Information and Communication Technology"));
-        slots.add(new Timetable(5, "TT5", "Wednesday", "08:30 - 10:30", "ICT1213", "Object-Oriented Programming", "LH 01", "Theory", 1, 2, "Department of Information and Communication Technology"));
-        slots.add(new Timetable(6, "TT6", "Wednesday", "10:30 - 12:30", "ICT3122", "Computer Networks", "Network Lab", "Practical", 3, 1, "Department of Information and Communication Technology"));
-        slots.add(new Timetable(7, "TT7", "Thursday", "08:30 - 11:30", "ICT3142", "Mobile Application Development", "Mobile Lab", "Practical", 3, 1, "Department of Information and Communication Technology"));
-        slots.add(new Timetable(8, "TT8", "Thursday", "13:00 - 15:00", "ICT1122", "Computer System Architecture", "Hardware Lab 1", "Practical", 1, 1, "Department of Information and Communication Technology"));
-        slots.add(new Timetable(9, "TT9", "Friday", "08:30 - 11:30", "ICT4113", "Machine Learning & Artificial Intelligence", "LH 03", "Theory", 4, 1, "Department of Information and Communication Technology"));
-        slots.add(new Timetable(10, "TT10", "Friday", "13:00 - 16:00", "ICT4122", "Distributed Systems", "Cloud Computing Lab", "Practical", 4, 1, "Department of Information and Communication Technology"));
-        return slots;
-    }
-
     private double parseDurationFromTimeSlot(String timeSlot) {
         if (timeSlot == null || !timeSlot.contains("-")) return 2.0;
         try {
@@ -1609,56 +1506,6 @@ public class AttendanceManagementForm extends JFrame {
         } catch (Exception e) {
             return 2.0;
         }
-    }
-
-    private List<PastSessionRecord> getFallbackPastSessions() {
-        List<PastSessionRecord> list = new ArrayList<>();
-        PastSessionRecord s1 = new PastSessionRecord();
-        s1.sessionId = 1;
-        s1.courseId = 101;
-        s1.courseCode = "ICT1113";
-        s1.courseName = "Introduction to Computer Science & Programming";
-        s1.academicYear = 1;
-        s1.sessionNumber = 1;
-        s1.sessionDate = LocalDate.now().minusDays(14);
-        s1.sessionType = "Theory";
-        s1.durationHours = 2.0;
-        s1.totalMarked = 8;
-        s1.presentCount = 7;
-        s1.absentCount = 1;
-        list.add(s1);
-
-        PastSessionRecord s2 = new PastSessionRecord();
-        s2.sessionId = 2;
-        s2.courseId = 1;
-        s2.courseCode = "ICT2132";
-        s2.courseName = "Object Oriented Programming Practicum";
-        s2.academicYear = 2;
-        s2.sessionNumber = 1;
-        s2.sessionDate = LocalDate.now().minusDays(7);
-        s2.sessionType = "Practical";
-        s2.durationHours = 2.0;
-        s2.totalMarked = 8;
-        s2.presentCount = 8;
-        s2.absentCount = 0;
-        list.add(s2);
-
-        PastSessionRecord s3 = new PastSessionRecord();
-        s3.sessionId = 3;
-        s3.courseId = 2;
-        s3.courseCode = "ICT2113";
-        s3.courseName = "Data Structures and Algorithms";
-        s3.academicYear = 2;
-        s3.sessionNumber = 1;
-        s3.sessionDate = LocalDate.now().minusDays(3);
-        s3.sessionType = "Theory";
-        s3.durationHours = 3.0;
-        s3.totalMarked = 8;
-        s3.presentCount = 6;
-        s3.absentCount = 2;
-        list.add(s3);
-
-        return list;
     }
 
     private int parseYearNumber(String text) {

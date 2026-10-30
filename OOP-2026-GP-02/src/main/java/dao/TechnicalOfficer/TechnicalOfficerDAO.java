@@ -30,15 +30,7 @@ public class TechnicalOfficerDAO {
     }
 
     public TechnicalOfficerDAO(int officerId) {
-        // Initialize default fallback matching actual tecfams_db technical officer
-        this.currentOfficer = new TechnicalOfficer(
-                "12",
-                "to_kamal",
-                "Mr. Kamal Wickrama",
-                "to.kamal@fot.ruh.ac.lk",
-                "0751234561",
-                "Department of Information and Communication Technology"
-        );
+        this.currentOfficer = new TechnicalOfficer();
 
         // Load actual record from database if available
         if (officerId > 0) {
@@ -60,7 +52,7 @@ public class TechnicalOfficerDAO {
             }
         }
 
-        // Otherwise attempt to query the first technical officer from the database
+        // Attempt to query the first technical officer from the database
         Connection conn = DatabaseConnection.getConnection();
         if (conn != null) {
             try (Statement stmt = conn.createStatement();
@@ -192,9 +184,7 @@ public class TechnicalOfficerDAO {
     public boolean updateProfile(int officerId, String name, String email, String phone, String profilePicture) {
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) {
-            // Update in-memory fallback
-            updateInMemory(name, email, phone, profilePicture);
-            return true;
+            return false;
         }
 
         try {
@@ -282,8 +272,7 @@ public class TechnicalOfficerDAO {
         if (currentPassword == null || currentPassword.trim().isEmpty()) return false;
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) {
-            // Offline fallback for default officer
-            return "to123".equals(currentPassword.trim());
+            return false;
         }
 
         String sql = "SELECT password_hash FROM users WHERE user_id = ?";
@@ -317,7 +306,7 @@ public class TechnicalOfficerDAO {
 
         Connection conn = DatabaseConnection.getConnection();
         if (conn == null) {
-            return true;
+            return false;
         }
 
         String sql = "UPDATE users SET password_hash = ? WHERE user_id = ?";
@@ -332,24 +321,35 @@ public class TechnicalOfficerDAO {
     }
 
     /**
-     * Helper to safely parse numeric officer ID from model.
+     * Helper to safely parse numeric officer ID from session or model.
      */
     public static int parseOfficerId(TechnicalOfficer officer) {
-        if (officer == null || officer.getOfficerId() == null) return 12;
-        String raw = officer.getOfficerId().trim();
-        if (raw.matches("\\d+")) {
-            return Integer.parseInt(raw);
+        if (UserSession.isLoggedIn()) {
+            return UserSession.getCurrentSession().getUserId();
         }
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+$").matcher(raw);
-        if (m.find()) {
-            try {
-                return Integer.parseInt(m.group());
-            } catch (NumberFormatException ignored) {}
+        if (officer != null && officer.getOfficerId() != null) {
+            String raw = officer.getOfficerId().trim();
+            if (raw.matches("\\d+")) {
+                return Integer.parseInt(raw);
+            }
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+$").matcher(raw);
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group());
+                } catch (NumberFormatException ignored) {}
+            }
         }
-        return 12;
+        Connection conn = DatabaseConnection.getConnection();
+        if (conn != null) {
+            try (Statement s = conn.createStatement();
+                 ResultSet rs = s.executeQuery("SELECT officer_id FROM technical_officers ORDER BY officer_id ASC LIMIT 1")) {
+                if (rs.next()) return rs.getInt("officer_id");
+            } catch (SQLException ignored) {}
+        }
+        return -1;
     }
 
-    // Dashboard Statistics (queries database with fallbacks)
+    // Dashboard Statistics (strictly queries database, returns 0 if disconnected or empty)
     public int getTotalAttendanceCount() {
         Connection conn = DatabaseConnection.getConnection();
         if (conn != null) {
@@ -358,7 +358,7 @@ public class TechnicalOfficerDAO {
                 if (rs.next()) return rs.getInt(1);
             } catch (SQLException ignored) {}
         }
-        return 124;
+        return 0;
     }
 
     public int getPendingMedicalCount() {
@@ -369,7 +369,7 @@ public class TechnicalOfficerDAO {
                 if (rs.next()) return rs.getInt(1);
             } catch (SQLException ignored) {}
         }
-        return 4;
+        return 0;
     }
 
     public int getTodaySessionsCount() {
@@ -380,7 +380,7 @@ public class TechnicalOfficerDAO {
                 if (rs.next()) return rs.getInt(1);
             } catch (SQLException ignored) {}
         }
-        return 3;
+        return 0;
     }
 
     public int getActiveNoticesCount() {
@@ -391,7 +391,7 @@ public class TechnicalOfficerDAO {
                 if (rs.next()) return rs.getInt(1);
             } catch (SQLException ignored) {}
         }
-        return 6;
+        return 0;
     }
 
     /**
@@ -409,12 +409,6 @@ public class TechnicalOfficerDAO {
             } catch (SQLException e) {
                 System.err.println("TechnicalOfficerDAO: Error fetching departments: " + e.getMessage());
             }
-        }
-        if (list.isEmpty()) {
-            list.add("Department of Information and Communication Technology");
-            list.add("Department of Engineering Technology");
-            list.add("Department of Biosystems Technology");
-            list.add("Department of Multidisciplinary Studies");
         }
         return list;
     }

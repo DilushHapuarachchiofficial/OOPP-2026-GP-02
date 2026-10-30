@@ -159,7 +159,9 @@ public class FacultyNoticesForm extends JFrame {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         right.setOpaque(false);
 
-        JLabel officerBadge = new JLabel("Officer: " + currentOfficer.getName());
+        String offName = (currentOfficer != null && currentOfficer.getName() != null && !currentOfficer.getName().trim().isEmpty())
+                ? currentOfficer.getName().trim() : "Technical Officer";
+        JLabel officerBadge = new JLabel("Officer: " + offName);
         officerBadge.setFont(FONT_SMALL);
         officerBadge.setForeground(PRIMARY_NAVY);
         officerBadge.setBackground(LIGHT_BLUE);
