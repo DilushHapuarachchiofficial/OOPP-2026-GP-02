@@ -325,6 +325,12 @@ public class AssessmentDAO {
             throw new IllegalArgumentException("Weight percentage must be between 0.1% and 100%.");
         }
 
+        WeightValidationReport report = getCourseWeightReport(comp.getCourseId());
+        if (MarksCalculationService.round2(report.getTotalWeight() + comp.getWeightPercentage()) > 100.00) {
+            throw new IllegalArgumentException(String.format("Assessment weight cannot exceed 100%%. Current total is %.1f%% (Maximum available: %.1f%%).",
+                    report.getTotalWeight(), Math.max(0.0, 100.00 - report.getTotalWeight())));
+        }
+
         String sql = "INSERT INTO evaluation_components (course_id, component_name, component_type, " +
                      "       assessment_type, maximum_marks, weight_percentage, assessment_date, status) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
