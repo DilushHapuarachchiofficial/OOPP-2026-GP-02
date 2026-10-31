@@ -18,6 +18,7 @@ public class CourseManagementPanel extends JPanel {
     private CardLayout cardLayout;
     private JLabel showingLabel;
     private JTable table;
+    private JScrollPane courseTableScroll;
     
     private JPanel listPanel;
     private JPanel formPanel;
@@ -34,6 +35,7 @@ public class CourseManagementPanel extends JPanel {
     private JComboBox<CourseComboItem> assignCourseCombo;
     private JComboBox<CourseDAO.LecturerOption> assignLecturerCombo;
     private JTable assignmentTable;
+    private JScrollPane aScroll;
     private JLabel showingAssignmentsLabel;
 
     public static class CourseComboItem {
@@ -203,12 +205,18 @@ public class CourseManagementPanel extends JPanel {
         table.getColumnModel().getColumn(5).setPreferredWidth(80);
         table.getColumnModel().getColumn(6).setPreferredWidth(65);
         
-        JScrollPane courseTableScroll = new JScrollPane(table);
+        int tableHeight = 240;
+        courseTableScroll = new JScrollPane(table);
         courseTableScroll.setBorder(BorderFactory.createEmptyBorder());
         courseTableScroll.getViewport().setBackground(Color.WHITE);
-        courseTableScroll.setPreferredSize(new Dimension(100, 240));
+        courseTableScroll.setPreferredSize(new Dimension(100, tableHeight));
+        courseTableScroll.setMinimumSize(new Dimension(100, tableHeight));
+        courseTableScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, tableHeight));
         courseTableScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         courseTableScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        
+        tableWrapper.setPreferredSize(new Dimension(100, tableHeight));
+        tableWrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, tableHeight));
         tableWrapper.add(courseTableScroll, BorderLayout.CENTER);
         
         // Table Footer
@@ -221,8 +229,11 @@ public class CourseManagementPanel extends JPanel {
         showingLabel.setForeground(new Color(120, 130, 140));
         footerPanel.add(showingLabel, BorderLayout.WEST);
 
+        int totalCardHeight = tableHeight + 45;
         JPanel tableCardContainer = new JPanel(new BorderLayout());
         tableCardContainer.setOpaque(false);
+        tableCardContainer.setPreferredSize(new Dimension(100, totalCardHeight));
+        tableCardContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, totalCardHeight));
         tableCardContainer.add(tableWrapper, BorderLayout.CENTER);
         tableCardContainer.add(footerPanel, BorderLayout.SOUTH);
         tableCardContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -234,6 +245,7 @@ public class CourseManagementPanel extends JPanel {
         JPanel assignCard = buildAssignLecturerCard();
         assignCard.setAlignmentX(Component.LEFT_ALIGNMENT);
         scrollContent.add(assignCard);
+        scrollContent.add(Box.createVerticalGlue());
 
         JScrollPane mainScrollPane = new JScrollPane(scrollContent);
         mainScrollPane.setBorder(null);
@@ -243,10 +255,51 @@ public class CourseManagementPanel extends JPanel {
         mainScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         mainScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
+        setupSmoothWheelScrolling(courseTableScroll, mainScrollPane);
+        setupSmoothWheelScrolling(aScroll, mainScrollPane);
+
         listPanel.add(headerPanel, BorderLayout.NORTH);
         listPanel.add(mainScrollPane, BorderLayout.CENTER);
         
         refreshTableData();
+    }
+
+    /**
+     * Forwards mouse wheel events from an inner scroll pane to the parent scroll pane
+     * when the inner scroll pane reaches its top/bottom boundaries or does not need scrolling.
+     */
+    private void setupSmoothWheelScrolling(JScrollPane innerScroll, JScrollPane parentScroll) {
+        if (innerScroll == null || parentScroll == null) return;
+        innerScroll.getVerticalScrollBar().setUnitIncrement(16);
+        innerScroll.getVerticalScrollBar().setBlockIncrement(48);
+        innerScroll.addMouseWheelListener(new java.awt.event.MouseWheelListener() {
+            @Override
+            public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) {
+                JScrollBar bar = innerScroll.getVerticalScrollBar();
+                if (bar == null || !bar.isVisible() || !bar.isEnabled()) {
+                    Point pt = SwingUtilities.convertPoint(innerScroll, e.getPoint(), parentScroll);
+                    java.awt.event.MouseWheelEvent parentEvent = new java.awt.event.MouseWheelEvent(
+                        parentScroll, e.getID(), e.getWhen(), e.getModifiersEx(),
+                        pt.x, pt.y, e.getClickCount(), e.isPopupTrigger(),
+                        e.getScrollType(), e.getScrollAmount(), e.getWheelRotation()
+                    );
+                    parentScroll.dispatchEvent(parentEvent);
+                    return;
+                }
+                int rotation = e.getWheelRotation();
+                boolean atTop = bar.getValue() <= bar.getMinimum();
+                boolean atBottom = bar.getValue() + bar.getModel().getExtent() >= bar.getMaximum();
+                if ((rotation < 0 && atTop) || (rotation > 0 && atBottom)) {
+                    Point pt = SwingUtilities.convertPoint(innerScroll, e.getPoint(), parentScroll);
+                    java.awt.event.MouseWheelEvent parentEvent = new java.awt.event.MouseWheelEvent(
+                        parentScroll, e.getID(), e.getWhen(), e.getModifiersEx(),
+                        pt.x, pt.y, e.getClickCount(), e.isPopupTrigger(),
+                        e.getScrollType(), e.getScrollAmount(), e.getWheelRotation()
+                    );
+                    parentScroll.dispatchEvent(parentEvent);
+                }
+            }
+        });
     }
 
     /**
@@ -421,10 +474,13 @@ public class CourseManagementPanel extends JPanel {
         assignmentTable.getColumnModel().getColumn(6).setCellRenderer(new AssignmentActionsCellRenderer());
         assignmentTable.getColumnModel().getColumn(6).setCellEditor(new AssignmentActionsCellEditor(assignmentTable));
 
-        JScrollPane aScroll = new JScrollPane(assignmentTable);
+        int assignTableHeight = 200;
+        aScroll = new JScrollPane(assignmentTable);
         aScroll.setBorder(BorderFactory.createLineBorder(new Color(235, 238, 242), 1, true));
         aScroll.getViewport().setBackground(Color.WHITE);
-        aScroll.setPreferredSize(new Dimension(100, 210));
+        aScroll.setPreferredSize(new Dimension(100, assignTableHeight));
+        aScroll.setMinimumSize(new Dimension(100, assignTableHeight));
+        aScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, assignTableHeight));
         aScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         aScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
