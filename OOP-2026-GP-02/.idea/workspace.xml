@@ -6,14 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/admin/SettingsDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/admin/SettingsDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/AssessmentDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/AssessmentDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/Lecturer/ResultsDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/Lecturer/ResultsDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/model/LoginLogic.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/LoginLogic.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerMarksManagement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/LecturerMarksManagement.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/Lecturer/StudentDetailsEligibility.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/Lecturer/StudentDetailsEligibility.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/MedicalManagementForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/TechnicalOfficer/MedicalManagementForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/admin/SettingsPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/admin/SettingsPanel.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
