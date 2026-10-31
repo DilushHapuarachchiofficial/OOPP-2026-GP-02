@@ -494,7 +494,7 @@ public class StudentDetailsEligibility extends JPanel {
         row2.setOpaque(false);
 
         searchField = new ModernSearchField();
-        searchField.setPreferredSize(new Dimension(190, 34));
+        searchField.setPreferredSize(new Dimension(170, 34));
         searchField.setPlaceholder("Search student or reg no...");
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { applyFilters(); }
@@ -503,17 +503,17 @@ public class StudentDetailsEligibility extends JPanel {
         });
 
         scenarioSelector = new ModernComboBox<>(Scenario.values());
-        scenarioSelector.setPreferredSize(new Dimension(230, 34));
+        scenarioSelector.setPreferredSize(new Dimension(200, 34));
         scenarioSelector.setToolTipText("Filter by attendance threshold and medical records");
         scenarioSelector.addActionListener(e -> applyFilters());
 
         eligibilityFilterCombo = new ModernComboBox<>(EligibilityFilter.values());
-        eligibilityFilterCombo.setPreferredSize(new Dimension(180, 34));
+        eligibilityFilterCombo.setPreferredSize(new Dimension(150, 34));
         eligibilityFilterCombo.setToolTipText("Filter by examination eligibility threshold (80%)");
         eligibilityFilterCombo.addActionListener(e -> applyFilters());
 
         medicalFilterCombo = new ModernComboBox<>(MedicalFilter.values());
-        medicalFilterCombo.setPreferredSize(new Dimension(170, 34));
+        medicalFilterCombo.setPreferredSize(new Dimension(150, 34));
         medicalFilterCombo.setToolTipText("Filter by submitted medical certificate status");
         medicalFilterCombo.addActionListener(e -> applyFilters());
 
@@ -526,13 +526,29 @@ public class StudentDetailsEligibility extends JPanel {
         resetFiltersBtn.setToolTipText("Clear search and reset all filters to default");
         resetFiltersBtn.addActionListener(e -> resetAllFilters());
 
-        row2.add(new JLabel("Search:"));
+        JLabel searchLbl = new JLabel("Search:");
+        searchLbl.setFont(FONT_CARD_LABEL);
+        searchLbl.setForeground(COLOR_DEEP_NAVY);
+
+        JLabel attLbl = new JLabel("Attendance:");
+        attLbl.setFont(FONT_CARD_LABEL);
+        attLbl.setForeground(COLOR_DEEP_NAVY);
+
+        JLabel statusLbl = new JLabel("Status:");
+        statusLbl.setFont(FONT_CARD_LABEL);
+        statusLbl.setForeground(COLOR_DEEP_NAVY);
+
+        JLabel medLbl = new JLabel("Medical:");
+        medLbl.setFont(FONT_CARD_LABEL);
+        medLbl.setForeground(COLOR_DEEP_NAVY);
+
+        row2.add(searchLbl);
         row2.add(searchField);
-        row2.add(new JLabel("Attendance:"));
+        row2.add(attLbl);
         row2.add(scenarioSelector);
-        row2.add(new JLabel("Status:"));
+        row2.add(statusLbl);
         row2.add(eligibilityFilterCombo);
-        row2.add(new JLabel("Medical:"));
+        row2.add(medLbl);
         row2.add(medicalFilterCombo);
         row2.add(resetFiltersBtn);
 
@@ -2139,6 +2155,7 @@ public class StudentDetailsEligibility extends JPanel {
             setFont(FONT_INPUT);
             setOpaque(false);
             setBackground(COLOR_WHITE);
+            setForeground(COLOR_TEXT_PRIMARY);
             setUI(new ModernComboBoxUI(COLOR_BORDER, COLOR_TECH_BLUE, COLOR_PRO_BLUE));
             setRenderer(new ModernComboBoxRenderer());
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -2187,10 +2204,11 @@ public class StudentDetailsEligibility extends JPanel {
                     g2.dispose();
                 }
             };
-            btn.setBorder(BorderFactory.createEmptyBorder());
+            btn.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 8));
             btn.setContentAreaFilled(false);
             btn.setFocusPainted(false);
             btn.setOpaque(false);
+            btn.setPreferredSize(new Dimension(28, 28));
             btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             return btn;
         }
@@ -2250,6 +2268,27 @@ public class StudentDetailsEligibility extends JPanel {
         }
 
         @Override
+        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+            // Background is seamlessly rendered by container paint()
+        }
+
+        @Override
+        public void paintCurrentValue(Graphics g, Rectangle bounds, boolean hasFocus) {
+            ListCellRenderer<Object> renderer = comboBox.getRenderer();
+            Component c = renderer.getListCellRendererComponent(listBox, comboBox.getSelectedItem(), -1, false, false);
+            c.setFont(comboBox.getFont());
+            if (c instanceof JComponent) {
+                ((JComponent) c).setOpaque(false);
+            }
+            c.setForeground(comboBox.isEnabled() ? COLOR_TEXT_PRIMARY : COLOR_TEXT_MUTED);
+            int x = bounds.x + 8;
+            int y = bounds.y;
+            int w = Math.max(0, bounds.width - 12);
+            int h = bounds.height;
+            currentValuePane.paintComponent(g, c, comboBox, x, y, w, h, false);
+        }
+
+        @Override
         protected ComboPopup createPopup() {
             BasicComboPopup popup = new BasicComboPopup(comboBox) {
                 @Override
@@ -2282,16 +2321,21 @@ public class StudentDetailsEligibility extends JPanel {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             JLabel lbl = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            lbl.setOpaque(true);
             lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             lbl.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
             lbl.setIconTextGap(8);
 
-            if (isSelected) {
+            if (index == -1) {
+                lbl.setOpaque(false);
+                lbl.setBackground(new Color(0, 0, 0, 0));
+                lbl.setForeground(COLOR_TEXT_PRIMARY);
+            } else if (isSelected) {
+                lbl.setOpaque(true);
                 lbl.setBackground(COLOR_ROW_SELECTED);
                 lbl.setForeground(COLOR_DEEP_NAVY);
                 lbl.setFont(new Font("Segoe UI Semibold", Font.BOLD, 12));
             } else {
+                lbl.setOpaque(true);
                 lbl.setBackground(COLOR_WHITE);
                 lbl.setForeground(COLOR_TEXT_PRIMARY);
             }

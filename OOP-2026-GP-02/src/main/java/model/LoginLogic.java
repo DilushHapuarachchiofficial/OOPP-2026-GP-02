@@ -90,6 +90,11 @@ public class LoginLogic {
                             if (cleanPassword.equals(dbPassword)) {
                                 String mappedRole = DBConnection.normalizeRole(dbRole);
 
+                                // If Maintenance Mode is enabled, only administrators can log in
+                                if (isMaintenanceModeActive() && !"Admin".equalsIgnoreCase(mappedRole)) {
+                                    return new AuthResult(false, "The system is currently in Maintenance Mode. Access is restricted to Administrators only.", null);
+                                }
+
                                 // Initialize authenticated UserSession
                                 if ("Lecturer".equalsIgnoreCase(mappedRole)) {
                                     String lecSql = "SELECT l.lecturer_name, l.designation, l.email, d.department_name " +
@@ -221,6 +226,12 @@ public class LoginLogic {
         if (sqlUser != null) {
             if (cleanPassword.equals(sqlUser.getPasswordHash())) {
                 String mappedRole = DBConnection.normalizeRole(sqlUser.getRole());
+
+                // If Maintenance Mode is enabled, only administrators can log in
+                if (isMaintenanceModeActive() && !"Admin".equalsIgnoreCase(mappedRole)) {
+                    return new AuthResult(false, "The system is currently in Maintenance Mode. Access is restricted to Administrators only.", null);
+                }
+
                 int inferredId = sqlUser.getUserId() > 0 ? sqlUser.getUserId() : 1;
                 String displayName = cleanUsername;
                 String deptName = "Faculty of Technology";
@@ -262,6 +273,9 @@ public class LoginLogic {
         }
 
         if (LECTURER_USERNAME.equals(cleanUsername) && LECTURER_PASSWORD.equals(cleanPassword)) {
+            if (isMaintenanceModeActive()) {
+                return new AuthResult(false, "The system is currently in Maintenance Mode. Access is restricted to Administrators only.", null);
+            }
             UserSession.setCurrentSession(new UserSession(
                     4, cleanUsername, "Lecturer",
                     "Dr. Chinthaka Premachandra", "Senior Lecturer Gr. I",
@@ -271,6 +285,9 @@ public class LoginLogic {
         }
 
         if (cleanUsername.startsWith("to_") && ("to123".equals(cleanPassword) || OFFICER_PASSWORD.equals(cleanPassword))) {
+            if (isMaintenanceModeActive()) {
+                return new AuthResult(false, "The system is currently in Maintenance Mode. Access is restricted to Administrators only.", null);
+            }
             main.java.model.TechnicalOfficer.TechnicalOfficer toInfo =
                     main.java.dao.TechnicalOfficer.TechnicalOfficerDAO.getStaticFallbackOfficer(cleanUsername, 0);
             int id = 12;
@@ -291,6 +308,9 @@ public class LoginLogic {
         }
 
         if (OFFICER_USERNAME.equals(cleanUsername) && OFFICER_PASSWORD.equals(cleanPassword)) {
+            if (isMaintenanceModeActive()) {
+                return new AuthResult(false, "The system is currently in Maintenance Mode. Access is restricted to Administrators only.", null);
+            }
             UserSession.setCurrentSession(new UserSession(
                     12, cleanUsername, "Technical Officer",
                     "Mr. Kamal Wickrama", "Technical Officer", "Department of Information and Communication Technology", "to.kamal@fot.ruh.ac.lk"
@@ -299,6 +319,9 @@ public class LoginLogic {
         }
 
         if (STUDENT_USERNAME.equals(cleanUsername) && STUDENT_PASSWORD.equals(cleanPassword)) {
+            if (isMaintenanceModeActive()) {
+                return new AuthResult(false, "The system is currently in Maintenance Mode. Access is restricted to Administrators only.", null);
+            }
             UserSession.setCurrentSession(new UserSession(
                     18, cleanUsername, "Undergraduate",
                     "Kavishka Perera", "Undergraduate",
@@ -309,6 +332,17 @@ public class LoginLogic {
 
         // Credentials did not match any registered user in database
         return new AuthResult(false, "Invalid username or password.", null);
+    }
+
+    /**
+     * Checks if maintenance mode is enabled in system settings.
+     */
+    public static boolean isMaintenanceModeActive() {
+        try {
+            return main.java.dao.admin.SettingsDAO.isMaintenanceMode();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

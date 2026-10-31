@@ -1138,7 +1138,7 @@ public class LecturerMarksManagement extends JPanel {
 
         JLabel statusLbl = new JLabel("Result Status:");
         statusLbl.setFont(FONT_CARD_LABEL);
-        resultsStatusFilter = new JComboBox<>(new String[]{"All Statuses", "Pass", "Pass (D/C-)", "EE", "EC", "E", "Incomplete"});
+        resultsStatusFilter = new JComboBox<>(new String[]{"All Statuses", "Complete", "Incomplete"});
         resultsStatusFilter.setFont(FONT_INPUT);
         resultsStatusFilter.setPreferredSize(new Dimension(130, 32));
         resultsStatusFilter.addActionListener(e -> filterFinalResultsTable());
@@ -1174,7 +1174,7 @@ public class LecturerMarksManagement extends JPanel {
         // Results JTable
         String[] resultCols = {
                 "Reg. Number", "Student Name", "CA Mark (100%)", "CA Eligibility",
-                "End Exam %", "CA Contrib.", "Final Contrib.", "Total Mark", "Grade", "GPV", "Handbook Status"
+                "End Exam %", "CA Contrib.", "Final Contrib.", "Total Mark", "Grade", "GPV", "Status"
         };
         resultsTableModel = new DefaultTableModel(resultCols, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
@@ -1300,6 +1300,11 @@ public class LecturerMarksManagement extends JPanel {
                 schemeProgressBadge.setToolTipText(report.getMessage());
                 schemeProgressBadge.setBackground(COLOR_SUCCESS_BG);
                 schemeProgressBadge.setForeground(COLOR_SUCCESS);
+            } else if (report.getTotalWeight() > 100.0) {
+                schemeProgressBadge.setText(String.format("Scheme: %.0f%% (Excessive > 100%%)", report.getTotalWeight()));
+                schemeProgressBadge.setToolTipText(report.getMessage());
+                schemeProgressBadge.setBackground(COLOR_WARNING_BG);
+                schemeProgressBadge.setForeground(COLOR_WARNING);
             } else {
                 schemeProgressBadge.setText(String.format("Scheme: %.0f%% (Incomplete)", report.getTotalWeight()));
                 schemeProgressBadge.setToolTipText(report.getMessage());
@@ -1730,8 +1735,9 @@ public class LecturerMarksManagement extends JPanel {
             boolean matchesElig = eligFilter == null || "All Eligibility".equals(eligFilter) ||
                     item.getCaEligibility().equalsIgnoreCase(eligFilter);
 
+            String completionStatus = item.isMarksComplete() ? "Complete" : "Incomplete";
             boolean matchesStatus = statusFilter == null || "All Statuses".equals(statusFilter) ||
-                    item.getResultStatus().equalsIgnoreCase(statusFilter);
+                    completionStatus.equalsIgnoreCase(statusFilter);
 
             if (matchesSearch && matchesElig && matchesStatus) {
                 filteredFinalResults.add(item);
@@ -1754,7 +1760,7 @@ public class LecturerMarksManagement extends JPanel {
                         totalMarkStr,
                         item.getLetterGrade(),
                         gpStr,
-                        item.getResultStatus()
+                        completionStatus
                 });
             }
         }
@@ -2282,13 +2288,16 @@ public class LecturerMarksManagement extends JPanel {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             setHorizontalAlignment(SwingConstants.CENTER);
+            setFont(new Font("Segoe UI Semibold", Font.BOLD, 12));
             String s = value != null ? value.toString().trim() : "";
-            if (s.startsWith("Pass")) {
+            if ("Complete".equalsIgnoreCase(s)) {
                 setForeground(COLOR_SUCCESS);
-            } else if (s.contains("EE") || s.contains("EC")) {
-                setForeground(COLOR_WARNING);
-            } else {
+                setText("Complete");
+            } else if ("Incomplete".equalsIgnoreCase(s)) {
                 setForeground(COLOR_DANGER);
+                setText("Incomplete");
+            } else {
+                setForeground(COLOR_TEXT_PRIMARY);
             }
             return this;
         }
