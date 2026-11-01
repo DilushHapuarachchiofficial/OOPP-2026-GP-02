@@ -57,6 +57,123 @@ public class UserDAO {
             boolean autoCommit = conn.getAutoCommit();
             conn.setAutoCommit(false);
             try {
+                // 1. Reassign notices published by this user to another admin, or delete them if no other admin exists
+                int fallbackAdminId = -1;
+                try (PreparedStatement adminStmt = conn.prepareStatement(
+                        "SELECT user_id FROM users WHERE role = 'Admin' AND user_id != ? ORDER BY user_id ASC LIMIT 1")) {
+                    adminStmt.setInt(1, userId);
+                    try (ResultSet rs = adminStmt.executeQuery()) {
+                        if (rs.next()) {
+                            fallbackAdminId = rs.getInt(1);
+                        }
+                    }
+                }
+                if (fallbackAdminId > 0) {
+                    try (PreparedStatement stmt = conn.prepareStatement("UPDATE notices SET published_by = ? WHERE published_by = ?")) {
+                        stmt.setInt(1, fallbackAdminId);
+                        stmt.setInt(2, userId);
+                        stmt.executeUpdate();
+                    }
+                } else {
+                    try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM notices WHERE published_by = ?")) {
+                        stmt.setInt(1, userId);
+                        stmt.executeUpdate();
+                    }
+                }
+
+                // 2. Clear course_result_status published_by
+                try (PreparedStatement stmt = conn.prepareStatement("UPDATE course_result_status SET published_by = NULL WHERE published_by = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+
+                // 3. Clear medicals verified_by
+                try (PreparedStatement stmt = conn.prepareStatement("UPDATE medicals SET verified_by = NULL WHERE verified_by = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+
+                // 4. Reassign or delete attendances recorded_by
+                int fallbackOfficerId = -1;
+                try (PreparedStatement officerStmt = conn.prepareStatement(
+                        "SELECT officer_id FROM technical_officers WHERE officer_id != ? ORDER BY officer_id ASC LIMIT 1")) {
+                    officerStmt.setInt(1, userId);
+                    try (ResultSet rs = officerStmt.executeQuery()) {
+                        if (rs.next()) {
+                            fallbackOfficerId = rs.getInt(1);
+                        }
+                    }
+                }
+                if (fallbackOfficerId > 0) {
+                    try (PreparedStatement stmt = conn.prepareStatement("UPDATE attendances SET recorded_by = ? WHERE recorded_by = ?")) {
+                        stmt.setInt(1, fallbackOfficerId);
+                        stmt.setInt(2, userId);
+                        stmt.executeUpdate();
+                    }
+                } else {
+                    try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM attendances WHERE recorded_by = ?")) {
+                        stmt.setInt(1, userId);
+                        stmt.executeUpdate();
+                    }
+                }
+
+                // 5. Reassign or delete marks uploaded_by and course_materials
+                int fallbackLecturerId = -1;
+                try (PreparedStatement lecStmt = conn.prepareStatement(
+                        "SELECT lecturer_id FROM lecturers WHERE lecturer_id != ? ORDER BY lecturer_id ASC LIMIT 1")) {
+                    lecStmt.setInt(1, userId);
+                    try (ResultSet rs = lecStmt.executeQuery()) {
+                        if (rs.next()) {
+                            fallbackLecturerId = rs.getInt(1);
+                        }
+                    }
+                }
+                if (fallbackLecturerId > 0) {
+                    try (PreparedStatement stmt = conn.prepareStatement("UPDATE marks SET uploaded_by = ? WHERE uploaded_by = ?")) {
+                        stmt.setInt(1, fallbackLecturerId);
+                        stmt.setInt(2, userId);
+                        stmt.executeUpdate();
+                    }
+                    try (PreparedStatement stmt = conn.prepareStatement("UPDATE course_materials SET lecturer_id = ? WHERE lecturer_id = ?")) {
+                        stmt.setInt(1, fallbackLecturerId);
+                        stmt.setInt(2, userId);
+                        stmt.executeUpdate();
+                    }
+                } else {
+                    try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM marks WHERE uploaded_by = ?")) {
+                        stmt.setInt(1, userId);
+                        stmt.executeUpdate();
+                    }
+                    try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM course_materials WHERE lecturer_id = ?")) {
+                        stmt.setInt(1, userId);
+                        stmt.executeUpdate();
+                    }
+                }
+
+                // 6. Delete student child records
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM course_registrations WHERE student_id = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM marks WHERE student_id = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM attendances WHERE student_id = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM medicals WHERE student_id = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+
+                // 7. Delete lecturer course assignments
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM course_lecturers WHERE lecturer_id = ?")) {
+                    stmt.setInt(1, userId);
+                    stmt.executeUpdate();
+                }
+
                 try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM students WHERE student_id = ?")) {
                     stmt.setInt(1, userId);
                     stmt.executeUpdate();

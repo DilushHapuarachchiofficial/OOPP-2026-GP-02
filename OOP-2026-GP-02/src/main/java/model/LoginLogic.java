@@ -77,16 +77,27 @@ public class LoginLogic {
         String cleanPassword = password.trim();
 
         // 3. Database Authentication (Attempt 1: Live MySQL Database via JDBC)
+        boolean liveDbConnected = false;
         try (Connection conn = DBConnection.getConnection()) {
             if (conn != null) {
-                String sql = "SELECT user_id, password_hash, role FROM users WHERE username = ?";
+                liveDbConnected = true;
+                String sql = "SELECT u.user_id, u.username, u.password_hash, u.role, u.status FROM users u LEFT JOIN students s ON u.user_id = s.student_id WHERE u.username = ? OR s.student_reg_no = ?";
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                     pstmt.setString(1, cleanUsername);
+                    pstmt.setString(2, cleanUsername);
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
                             int userId = rs.getInt("user_id");
                             String dbPassword = rs.getString("password_hash");
                             String dbRole = rs.getString("role");
+                            String dbStatus = null;
+                            try {
+                                dbStatus = rs.getString("status");
+                            } catch (Exception ignored) {}
+
+                            if (dbStatus != null && "Inactive".equalsIgnoreCase(dbStatus.trim())) {
+                                return new AuthResult(false, "Your account has been deactivated. Please contact the administrator.", null);
+                            }
                             if (cleanPassword.equals(dbPassword)) {
                                 String mappedRole = DBConnection.normalizeRole(dbRole);
 
@@ -219,6 +230,11 @@ public class LoginLogic {
             }
         } catch (Exception e) {
             System.err.println("Database JDBC authentication check error: " + e.getMessage());
+        }
+
+        // If the live database was reachable, do not fall back to static dump or mock credentials
+        if (liveDbConnected) {
+            return new AuthResult(false, "Invalid username or password.", null);
         }
 
         // 4. Database Authentication (Attempt 2: Check user details in tecfams_db.sql database file)

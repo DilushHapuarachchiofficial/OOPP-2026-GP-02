@@ -731,6 +731,12 @@ public class UserManagementPanel extends JPanel {
                     String displayId = (String) tableModel.getValueAt(modelRow, 0);
                     int userId = Integer.parseInt(displayId.substring(1));
                     
+                    main.java.model.UserSession currentSession = main.java.model.UserSession.getCurrentSession();
+                    if (currentSession != null && currentSession.getUserId() == userId) {
+                        ModernDialog.showMessageDialog(panel, "You cannot delete your own currently logged-in account.", "Action Prohibited", ModernDialog.WARNING_MESSAGE);
+                        return;
+                    }
+                    
                     int confirm = ModernDialog.showConfirmDialog(panel, "Delete user " + displayId + "?", "Confirm Delete", ModernDialog.YES_NO_OPTION);
                     if (confirm == ModernDialog.YES_OPTION) {
                         if (UserDAO.deleteUser(userId)) {

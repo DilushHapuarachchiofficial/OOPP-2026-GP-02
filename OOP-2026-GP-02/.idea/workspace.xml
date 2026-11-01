@@ -6,14 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="e8a3067f-fb47-404d-ae12-22e9c066fbef" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/admin/CourseDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/admin/CourseDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/admin/DatabaseConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/admin/DatabaseConnection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/admin/ReportsDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/admin/ReportsDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/admin/TimetableDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/admin/TimetableDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/admin/AdminDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/admin/AdminDashboard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/admin/CourseManagementPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/admin/CourseManagementPanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/admin/ReportsPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/admin/ReportsPanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ui/admin/TimetableManagementPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/admin/TimetableManagementPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sources.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/admin/UserDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/admin/UserDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/model/LoginLogic.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/model/LoginLogic.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ui/admin/UserManagementPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ui/admin/UserManagementPanel.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
