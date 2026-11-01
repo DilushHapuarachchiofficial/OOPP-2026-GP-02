@@ -74,6 +74,10 @@ public class ReportsDAO {
                     int absent = rs.getInt("absent_count");
                     int meds = rs.getInt("approved_medicals");
 
+                    if (absent == 0 && totalSessions > (present + meds)) {
+                        absent = totalSessions - (present + meds);
+                    }
+
                     int effectivePresent = Math.min(totalSessions, present + meds);
                     double pct = totalSessions > 0 ? ((double) effectivePresent / totalSessions) * 100.0 : 0.0;
 

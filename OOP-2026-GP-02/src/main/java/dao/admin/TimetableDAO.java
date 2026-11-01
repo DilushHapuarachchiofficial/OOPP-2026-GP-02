@@ -252,77 +252,110 @@ public class TimetableDAO {
         String effectiveType = (sessionType != null && !sessionType.trim().isEmpty()) ? sessionType.trim() : "Theory";
         String query = "INSERT INTO timetable_entries (timetable_id, course_id, day_of_week, start_time, end_time, hall, session_type) " +
                        "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, timetableId);
-            stmt.setInt(2, courseId);
-            stmt.setString(3, dayOfWeek);
-            stmt.setString(4, startTime);
-            stmt.setString(5, endTime);
-            stmt.setString(6, hall);
-            stmt.setString(7, effectiveType);
-            
-            return stmt.executeUpdate() > 0;
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            if (conn == null) return false;
+            boolean prevAuto = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setInt(1, timetableId);
+                stmt.setInt(2, courseId);
+                stmt.setString(3, dayOfWeek);
+                stmt.setString(4, startTime);
+                stmt.setString(5, endTime);
+                stmt.setString(6, hall);
+                stmt.setString(7, effectiveType);
+                
+                int rows = stmt.executeUpdate();
+                conn.commit();
+                conn.setAutoCommit(prevAuto);
+                return rows > 0;
+            } catch (SQLException e) {
+                conn.rollback();
+                // Fallback retry with normalized sessionType (in case DB schema has strict enum('Theory','Practical'))
+                String normalized = normalizeSessionType(effectiveType);
+                if (!normalized.equalsIgnoreCase(effectiveType)) {
+                    try (PreparedStatement stmt2 = conn.prepareStatement(query)) {
+                        stmt2.setInt(1, timetableId);
+                        stmt2.setInt(2, courseId);
+                        stmt2.setString(3, dayOfWeek);
+                        stmt2.setString(4, startTime);
+                        stmt2.setString(5, endTime);
+                        stmt2.setString(6, hall);
+                        stmt2.setString(7, normalized);
+                        int r = stmt2.executeUpdate();
+                        conn.commit();
+                        conn.setAutoCommit(prevAuto);
+                        return r > 0;
+                    } catch (SQLException ex2) {
+                        conn.rollback();
+                        conn.setAutoCommit(prevAuto);
+                        ex2.printStackTrace();
+                    }
+                } else {
+                    conn.setAutoCommit(prevAuto);
+                    e.printStackTrace();
+                }
+                return false;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-            // Fallback retry with normalized sessionType (in case DB schema has strict enum('Theory','Practical'))
-            String normalized = normalizeSessionType(effectiveType);
-            if (!normalized.equalsIgnoreCase(effectiveType)) {
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement stmt = conn.prepareStatement(query)) {
-                    stmt.setInt(1, timetableId);
-                    stmt.setInt(2, courseId);
-                    stmt.setString(3, dayOfWeek);
-                    stmt.setString(4, startTime);
-                    stmt.setString(5, endTime);
-                    stmt.setString(6, hall);
-                    stmt.setString(7, normalized);
-                    return stmt.executeUpdate() > 0;
-                } catch (SQLException ex2) {
-                    ex2.printStackTrace();
-                }
-            }
             return false;
         }
     }
 
     public static boolean updateEntry(int entryId, int courseId, String dayOfWeek, 
                                       String startTime, String endTime, String hall, String sessionType) {
+        if (entryId <= 0) return false;
         String effectiveType = (sessionType != null && !sessionType.trim().isEmpty()) ? sessionType.trim() : "Theory";
         String query = "UPDATE timetable_entries SET course_id = ?, day_of_week = ?, start_time = ?, end_time = ?, hall = ?, session_type = ? " +
                        "WHERE entry_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, courseId);
-            stmt.setString(2, dayOfWeek);
-            stmt.setString(3, startTime);
-            stmt.setString(4, endTime);
-            stmt.setString(5, hall);
-            stmt.setString(6, effectiveType);
-            stmt.setInt(7, entryId);
-            
-            return stmt.executeUpdate() > 0;
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            if (conn == null) return false;
+            boolean prevAuto = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setInt(1, courseId);
+                stmt.setString(2, dayOfWeek);
+                stmt.setString(3, startTime);
+                stmt.setString(4, endTime);
+                stmt.setString(5, hall);
+                stmt.setString(6, effectiveType);
+                stmt.setInt(7, entryId);
+                
+                int rows = stmt.executeUpdate();
+                conn.commit();
+                conn.setAutoCommit(prevAuto);
+                return rows > 0;
+            } catch (SQLException e) {
+                conn.rollback();
+                // Fallback retry with normalized sessionType
+                String normalized = normalizeSessionType(effectiveType);
+                if (!normalized.equalsIgnoreCase(effectiveType)) {
+                    try (PreparedStatement stmt2 = conn.prepareStatement(query)) {
+                        stmt2.setInt(1, courseId);
+                        stmt2.setString(2, dayOfWeek);
+                        stmt2.setString(3, startTime);
+                        stmt2.setString(4, endTime);
+                        stmt2.setString(5, hall);
+                        stmt2.setString(6, normalized);
+                        stmt2.setInt(7, entryId);
+                        int r = stmt2.executeUpdate();
+                        conn.commit();
+                        conn.setAutoCommit(prevAuto);
+                        return r > 0;
+                    } catch (SQLException ex2) {
+                        conn.rollback();
+                        conn.setAutoCommit(prevAuto);
+                        ex2.printStackTrace();
+                    }
+                } else {
+                    conn.setAutoCommit(prevAuto);
+                    e.printStackTrace();
+                }
+                return false;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-            // Fallback retry with normalized sessionType
-            String normalized = normalizeSessionType(effectiveType);
-            if (!normalized.equalsIgnoreCase(effectiveType)) {
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement stmt = conn.prepareStatement(query)) {
-                    stmt.setInt(1, courseId);
-                    stmt.setString(2, dayOfWeek);
-                    stmt.setString(3, startTime);
-                    stmt.setString(4, endTime);
-                    stmt.setString(5, hall);
-                    stmt.setString(6, normalized);
-                    stmt.setInt(7, entryId);
-                    return stmt.executeUpdate() > 0;
-                } catch (SQLException ex2) {
-                    ex2.printStackTrace();
-                }
-            }
             return false;
         }
     }
@@ -337,13 +370,33 @@ public class TimetableDAO {
     }
 
     public static boolean deleteEntry(int entryId) {
+        if (entryId <= 0) {
+            System.err.println("TimetableDAO.deleteEntry called with invalid entryId: " + entryId);
+            return false;
+        }
         String query = "DELETE FROM timetable_entries WHERE entry_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, entryId);
-            return stmt.executeUpdate() > 0;
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            if (conn == null) {
+                System.err.println("TimetableDAO.deleteEntry: DatabaseConnection.getConnection() returned null");
+                return false;
+            }
+            boolean prevAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setInt(1, entryId);
+                int rows = stmt.executeUpdate();
+                conn.commit();
+                conn.setAutoCommit(prevAutoCommit);
+                return rows > 0;
+            } catch (SQLException ex) {
+                conn.rollback();
+                conn.setAutoCommit(prevAutoCommit);
+                System.err.println("TimetableDAO.deleteEntry failed for entryId " + entryId + ": " + ex.getMessage());
+                ex.printStackTrace();
+                return false;
+            }
         } catch (SQLException e) {
+            System.err.println("TimetableDAO.deleteEntry connection exception: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

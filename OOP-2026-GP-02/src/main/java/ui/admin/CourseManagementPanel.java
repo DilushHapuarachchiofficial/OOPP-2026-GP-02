@@ -832,6 +832,7 @@ public class CourseManagementPanel extends JPanel {
                         int confirm = ModernDialog.showConfirmDialog(panel, "Delete course " + idStr + "?", "Confirm Delete", ModernDialog.YES_NO_OPTION);
                         if (confirm == ModernDialog.YES_OPTION) {
                             if (CourseDAO.deleteCourse(id)) {
+                                ModernDialog.showMessageDialog(panel, "Course " + idStr + " deleted successfully!", "Success", ModernDialog.INFORMATION_MESSAGE);
                                 refreshTableData();
                             } else {
                                 ModernDialog.showMessageDialog(panel, "Failed to delete course.", "Error", ModernDialog.ERROR_MESSAGE);

@@ -127,8 +127,8 @@ public class ReportsPanel extends JPanel {
         JButton refreshBtn = createStyledButton(" Refresh Data", new Color(240, 243, 248), new Color(40, 50, 70), true);
         refreshBtn.setPreferredSize(new Dimension(135, 36));
         refreshBtn.addActionListener(e -> {
-            loadReferenceData();
             refreshAllReports();
+            ModernDialog.showMessageDialog(this, "Reports data refreshed successfully from database!", "Data Refreshed", ModernDialog.INFORMATION_MESSAGE);
         });
 
         JButton exportBtn = createStyledButton(" Export CSV", new Color(21, 101, 192), Color.WHITE, false);
@@ -1092,6 +1092,7 @@ public class ReportsPanel extends JPanel {
     }
 
     private void populateDepartmentCombo(JComboBox<String> combo) {
+        if (combo == null) return;
         combo.removeAllItems();
         combo.addItem("All Departments");
         for (String name : departmentMap.values()) {
@@ -1100,10 +1101,49 @@ public class ReportsPanel extends JPanel {
     }
 
     private void populateCourseCombo(JComboBox<String> combo) {
+        if (combo == null) return;
         combo.removeAllItems();
         combo.addItem("All Courses");
         for (String cStr : courseMap.values()) {
             combo.addItem(cStr);
+        }
+    }
+
+    private void repopulateCombo(JComboBox<String> combo, List<String> newItems, String defaultItem) {
+        if (combo == null) return;
+        java.awt.event.ActionListener[] listeners = combo.getActionListeners();
+        for (java.awt.event.ActionListener al : listeners) combo.removeActionListener(al);
+
+        String prevSelected = (String) combo.getSelectedItem();
+        combo.removeAllItems();
+        combo.addItem(defaultItem);
+        boolean restored = false;
+        for (String item : newItems) {
+            combo.addItem(item);
+            if (item != null && item.equals(prevSelected)) {
+                combo.setSelectedItem(item);
+                restored = true;
+            }
+        }
+        if (!restored) {
+            combo.setSelectedIndex(0);
+        }
+
+        for (java.awt.event.ActionListener al : listeners) combo.addActionListener(al);
+    }
+
+    public void updateFilterDropdowns() {
+        if (eligibilityDeptCombo != null) {
+            repopulateCombo(eligibilityDeptCombo, new ArrayList<>(departmentMap.values()), "All Departments");
+        }
+        if (eligibilityCourseCombo != null) {
+            repopulateCombo(eligibilityCourseCombo, new ArrayList<>(courseMap.values()), "All Courses");
+        }
+        if (enrollmentDeptCombo != null) {
+            repopulateCombo(enrollmentDeptCombo, new ArrayList<>(departmentMap.values()), "All Departments");
+        }
+        if (staffDeptCombo != null) {
+            repopulateCombo(staffDeptCombo, new ArrayList<>(departmentMap.values()), "All Departments");
         }
     }
 
@@ -1132,6 +1172,8 @@ public class ReportsPanel extends JPanel {
     }
 
     public void refreshAllReports() {
+        loadReferenceData();
+        updateFilterDropdowns();
         loadEligibilityReportData();
         loadEnrollmentReportData();
         loadStaffReportData();

@@ -170,16 +170,49 @@ public class CourseDAO {
     }
 
     public static boolean deleteCourse(int courseId) {
-        String query = "DELETE FROM courses WHERE course_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setInt(1, courseId);
-            return stmt.executeUpdate() > 0;
-            
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                // Delete cascading child records in proper FK dependency order
+                deleteFromTable(conn, "DELETE FROM attendances WHERE session_id IN (SELECT session_id FROM attendance_sessions WHERE course_id = ?)", courseId);
+                deleteFromTable(conn, "DELETE FROM medicals WHERE session_id IN (SELECT session_id FROM attendance_sessions WHERE course_id = ?)", courseId);
+                deleteFromTable(conn, "DELETE FROM attendance_sessions WHERE course_id = ?", courseId);
+
+                deleteFromTable(conn, "DELETE FROM marks WHERE component_id IN (SELECT component_id FROM evaluation_components WHERE course_id = ?)", courseId);
+                deleteFromTable(conn, "DELETE FROM evaluation_components WHERE course_id = ?", courseId);
+
+                deleteFromTable(conn, "DELETE FROM course_lecturers WHERE course_id = ?", courseId);
+                deleteFromTable(conn, "DELETE FROM course_registrations WHERE course_id = ?", courseId);
+                deleteFromTable(conn, "DELETE FROM course_materials WHERE course_id = ?", courseId);
+                deleteFromTable(conn, "DELETE FROM timetable_entries WHERE course_id = ?", courseId);
+
+                // Finally delete from courses
+                int rowsAffected = 0;
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM courses WHERE course_id = ?")) {
+                    stmt.setInt(1, courseId);
+                    rowsAffected = stmt.executeUpdate();
+                }
+
+                conn.commit();
+                conn.setAutoCommit(autoCommit);
+                return rowsAffected > 0;
+            } catch (SQLException ex) {
+                conn.rollback();
+                conn.setAutoCommit(autoCommit);
+                ex.printStackTrace();
+                return false;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private static void deleteFromTable(Connection conn, String sql, int courseId) throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, courseId);
+            stmt.executeUpdate();
         }
     }
 

@@ -14,6 +14,7 @@ public class AdminDashboard extends JFrame {
     private String currentProfilePicture;
     private int loggedInAdminId = -1;
     private DashboardHomePanel dashboardHomePanel;
+    private ReportsPanel reportsPanel;
 
     public AdminDashboard() {
         this(-1);
@@ -94,12 +95,13 @@ public class AdminDashboard extends JFrame {
                         : "admin");
 
         dashboardHomePanel = new DashboardHomePanel(loggedUsername);
+        reportsPanel = new ReportsPanel();
         addSidebarButton(sidebar, "Dashboard", "src/main/resources/images/admin-icons/dashboard.png", dashboardHomePanel, true);
         addSidebarButton(sidebar, "User Management", "src/main/resources/images/admin-icons/users.png", new UserManagementPanel(), false);
         addSidebarButton(sidebar, "Course Management", "src/main/resources/images/admin-icons/courses.png", new CourseManagementPanel(), false);
         addSidebarButton(sidebar, "Notices", "src/main/resources/images/admin-icons/notices.png", new NoticeManagementPanel(), false);
         addSidebarButton(sidebar, "Timetables", "src/main/resources/images/admin-icons/timetables.png", new TimetableManagementPanel(), false);
-        addSidebarButton(sidebar, "Reports", "src/main/resources/images/admin-icons/reports.png", new ReportsPanel(), false);
+        addSidebarButton(sidebar, "Reports", "src/main/resources/images/admin-icons/reports.png", reportsPanel, false);
         addSidebarButton(sidebar, "Profile", "src/main/resources/images/admin-icons/profile.png", profilePanel, false);
         addSidebarButton(sidebar, "Settings", "src/main/resources/images/admin-icons/settings.png", new SettingsPanel(), false);
 
@@ -277,6 +279,8 @@ public class AdminDashboard extends JFrame {
             activeButton = btn;
             if ("Dashboard".equals(title) && dashboardHomePanel != null) {
                 dashboardHomePanel.refreshData();
+            } else if ("Reports".equals(title) && reportsPanel != null) {
+                reportsPanel.refreshAllReports();
             }
             cardLayout.show(cardPanel, title);
         });

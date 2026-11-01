@@ -27,8 +27,6 @@ public class DatabaseConnection {
     private static volatile String activeWorkingUrl = null;
     private static volatile String activeWorkingPwd = null;
 
-    // Singleton instance of Connection
-    private static Connection connection = null;
     private static boolean schemaChecked = false;
 
     private DatabaseConnection() {
@@ -37,10 +35,6 @@ public class DatabaseConnection {
 
     public static Connection getConnection() {
         try {
-            if (connection != null && !connection.isClosed()) {
-                return connection;
-            }
-
             // Ensure the driver class is loaded
             try {
                 Class.forName("com.mysql.cj.jdbc.Driver");
@@ -53,9 +47,8 @@ public class DatabaseConnection {
                 try {
                     Connection conn = DriverManager.getConnection(activeWorkingUrl, USER, activeWorkingPwd);
                     if (conn != null && !conn.isClosed()) {
-                        connection = conn;
-                        ensureSchemaCompatibility(connection);
-                        return connection;
+                        ensureSchemaCompatibility(conn);
+                        return conn;
                     }
                 } catch (SQLException ignored) {
                     activeWorkingUrl = null;
@@ -71,10 +64,9 @@ public class DatabaseConnection {
                         if (conn != null && !conn.isClosed()) {
                             activeWorkingUrl = url;
                             activeWorkingPwd = pwd;
-                            connection = conn;
                             System.out.println("Admin Database connection established successfully with url: " + url);
-                            ensureSchemaCompatibility(connection);
-                            return connection;
+                            ensureSchemaCompatibility(conn);
+                            return conn;
                         }
                     } catch (SQLException ignored) {
                     }
@@ -85,11 +77,11 @@ public class DatabaseConnection {
         } catch (ClassNotFoundException e) {
             System.err.println("MySQL JDBC Driver not found. Please add the mysql-connector-j jar to your build path.");
             e.printStackTrace();
-        } catch (SQLException e) {
-            System.err.println("Failed to connect to the database. Ensure MySQL server is running and the 'tecfams_db' exists.");
+        } catch (Exception e) {
+            System.err.println("Database connection error: " + e.getMessage());
             e.printStackTrace();
         }
-        return connection;
+        return null;
     }
 
     private static void ensureSchemaCompatibility(Connection conn) {

@@ -1128,6 +1128,10 @@ public class TimetableManagementPanel extends JPanel {
      * Open form in "Edit" mode in-place (no popups)
      */
     private void openEditForm(TimetableEntry entry) {
+        if (entry == null || entry.getEntryId() <= 0) {
+            ModernDialog.showMessageDialog(this, "Unable to load slot details. Invalid timetable entry.", "Error", ModernDialog.ERROR_MESSAGE);
+            return;
+        }
         editingEntryId = entry.getEntryId();
         formTitleLabel.setText("Edit Timetable Class Slot");
         formSubtitleLabel.setText("Modify schedule for " + (entry.getCourseCode() != null ? entry.getCourseCode() : "Class") + " on " + entry.getDayOfWeek());
@@ -1200,6 +1204,7 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     private void returnToTimetableGrid() {
+        editingEntryId = null;
         cardLayout.show(this, VIEW_TIMETABLE);
     }
 
@@ -1277,7 +1282,10 @@ public class TimetableManagementPanel extends JPanel {
     }
 
     private void handleDeleteAction() {
-        if (editingEntryId == null) return;
+        if (editingEntryId == null || editingEntryId <= 0) {
+            ModernDialog.showMessageDialog(this, "No valid timetable class slot selected for deletion.", "Warning", ModernDialog.WARNING_MESSAGE);
+            return;
+        }
 
         int confirm = ModernDialog.showConfirmDialog(
             this,
@@ -1288,12 +1296,14 @@ public class TimetableManagementPanel extends JPanel {
         );
 
         if (confirm == ModernDialog.YES_OPTION) {
-            if (TimetableDAO.deleteEntry(editingEntryId)) {
+            int toDeleteId = editingEntryId;
+            boolean deleted = TimetableDAO.deleteEntry(toDeleteId);
+            if (deleted) {
                 ModernDialog.showMessageDialog(this, "Class slot deleted successfully!", "Deleted", ModernDialog.INFORMATION_MESSAGE);
-                loadTimetableForSelectedFilters();
                 returnToTimetableGrid();
+                loadTimetableForSelectedFilters();
             } else {
-                ModernDialog.showMessageDialog(this, "Failed to delete slot.", "Error", ModernDialog.ERROR_MESSAGE);
+                ModernDialog.showMessageDialog(this, "Failed to delete slot. Please check database connection.", "Error", ModernDialog.ERROR_MESSAGE);
             }
         }
     }
