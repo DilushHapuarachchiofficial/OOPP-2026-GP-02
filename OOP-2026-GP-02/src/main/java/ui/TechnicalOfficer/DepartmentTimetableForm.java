@@ -96,6 +96,43 @@ public class DepartmentTimetableForm extends JFrame {
         });
     }
 
+    private static class ResponsiveScrollContainer extends JPanel implements Scrollable {
+        public ResponsiveScrollContainer(LayoutManager layout) {
+            super(layout);
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 18;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 72;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            if (getParent() instanceof JViewport) {
+                return getParent().getWidth() > getPreferredSize().width;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            if (getParent() instanceof JViewport) {
+                return getParent().getHeight() > getPreferredSize().height;
+            }
+            return false;
+        }
+    }
+
     private void buildUI() {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().setBackground(BG_COLOR);
@@ -104,7 +141,7 @@ public class DepartmentTimetableForm extends JFrame {
         add(createHeaderPanel(), BorderLayout.NORTH);
 
         // 2. Center Content
-        JPanel centerContainer = new JPanel(new BorderLayout(0, 14));
+        JPanel centerContainer = new ResponsiveScrollContainer(new BorderLayout(0, 14));
         centerContainer.setBackground(BG_COLOR);
         centerContainer.setBorder(new EmptyBorder(16, 24, 16, 24));
 
@@ -120,7 +157,16 @@ public class DepartmentTimetableForm extends JFrame {
         centerContainer.add(createMainScheduleSection(), BorderLayout.CENTER);
         centerContainer.add(createBottomBar(), BorderLayout.SOUTH);
 
-        add(centerContainer, BorderLayout.CENTER);
+        JScrollPane pageScrollPane = new JScrollPane(centerContainer);
+        pageScrollPane.setBorder(null);
+        pageScrollPane.setBackground(BG_COLOR);
+        pageScrollPane.getViewport().setBackground(BG_COLOR);
+        pageScrollPane.getVerticalScrollBar().setUnitIncrement(18);
+        pageScrollPane.getHorizontalScrollBar().setUnitIncrement(18);
+        pageScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        pageScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        add(pageScrollPane, BorderLayout.CENTER);
     }
 
     private JPanel createHeaderPanel() {
@@ -398,6 +444,8 @@ public class DepartmentTimetableForm extends JFrame {
         JScrollPane scroll = new JScrollPane(tblTimetable);
         scroll.setBorder(new LineBorder(BORDER_COLOR, 1));
         scroll.getViewport().setBackground(WHITE);
+        scroll.setPreferredSize(new Dimension(0, 420));
+        scroll.setMinimumSize(new Dimension(0, 260));
         tableCard.add(scroll, BorderLayout.CENTER);
 
         // Detail strip at bottom of table
