@@ -106,20 +106,66 @@ public class AttendanceManagementForm extends JFrame {
         setLocationRelativeTo(parentDashboard);
     }
 
+    private static class ResponsiveScrollContainer extends JPanel implements Scrollable {
+        public ResponsiveScrollContainer(LayoutManager layout) {
+            super(layout);
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 18;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 72;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            if (getParent() instanceof JViewport) {
+                return getParent().getWidth() > getPreferredSize().width;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            if (getParent() instanceof JViewport) {
+                return getParent().getHeight() > getPreferredSize().height;
+            }
+            return false;
+        }
+    }
+
     private void buildUI() {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().setBackground(BG_COLOR);
 
         add(createHeaderPanel(), BorderLayout.NORTH);
 
-        JPanel centerPanel = new JPanel(new BorderLayout(0, 16));
+        JPanel centerPanel = new ResponsiveScrollContainer(new BorderLayout(0, 16));
         centerPanel.setBackground(BG_COLOR);
         centerPanel.setBorder(new EmptyBorder(18, 24, 18, 24));
         centerPanel.add(createFilterCard(), BorderLayout.NORTH);
         centerPanel.add(createTableCard(), BorderLayout.CENTER);
         centerPanel.add(createBottomActionBar(), BorderLayout.SOUTH);
 
-        add(centerPanel, BorderLayout.CENTER);
+        JScrollPane pageScrollPane = new JScrollPane(centerPanel);
+        pageScrollPane.setBorder(null);
+        pageScrollPane.setBackground(BG_COLOR);
+        pageScrollPane.getViewport().setBackground(BG_COLOR);
+        pageScrollPane.getVerticalScrollBar().setUnitIncrement(18);
+        pageScrollPane.getHorizontalScrollBar().setUnitIncrement(18);
+        pageScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        pageScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        add(pageScrollPane, BorderLayout.CENTER);
     }
 
     /**
@@ -341,6 +387,8 @@ public class AttendanceManagementForm extends JFrame {
         JScrollPane scroll = new JScrollPane(tblStudents);
         scroll.setBorder(new LineBorder(BORDER_COLOR, 1));
         scroll.getViewport().setBackground(WHITE);
+        scroll.setPreferredSize(new Dimension(0, 420));
+        scroll.setMinimumSize(new Dimension(0, 260));
         card.add(scroll, BorderLayout.CENTER);
         return card;
     }
