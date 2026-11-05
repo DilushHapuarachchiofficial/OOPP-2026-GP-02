@@ -1037,7 +1037,7 @@ public class LecturerDashboard extends JPanel {
     }
 
     private String escapeHtml(String text) {
-        if (text == null) return "";
+        if (text == null) return ""; text = text.replaceAll("(?s)<head.*?>.*?</head>", "").replaceAll("(?s)<style.*?>.*?</style>", "").replaceAll("<[^>]*>", "").replaceAll("&nbsp;", " ").trim();
         return text.replace("&", "&amp;")
                    .replace("<", "&lt;")
                    .replace(">", "&gt;")

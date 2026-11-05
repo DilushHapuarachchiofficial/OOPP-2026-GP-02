@@ -166,7 +166,7 @@ public class LecturerDashboardDAO {
         List<LecturerDashboardModel.NoticeItem> list = new ArrayList<>();
         String sql = "SELECT notice_id, title, description, published_date, target_audience " +
                      "FROM notices " +
-                     "WHERE target_audience IN ('All', 'Lecturers') " +
+                     "WHERE target_audience IN ('All', 'Lecturers') AND (from_date IS NULL OR from_date <= NOW()) AND (to_date IS NULL OR to_date >= NOW()) " +
                      "ORDER BY published_date DESC, notice_id DESC " +
                      "LIMIT 5";
 

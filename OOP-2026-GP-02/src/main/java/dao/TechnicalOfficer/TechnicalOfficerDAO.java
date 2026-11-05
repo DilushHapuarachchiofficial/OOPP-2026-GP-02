@@ -512,7 +512,7 @@ public class TechnicalOfficerDAO {
             "JOIN timetables t ON te.timetable_id = t.timetable_id " +
             "LEFT JOIN courses c ON te.course_id = c.course_id " +
             "LEFT JOIN departments d ON t.department_id = d.department_id " +
-            "WHERE 1=1 "
+            "WHERE 1=1 AND (n.from_date IS NULL OR n.from_date <= NOW()) AND (n.to_date IS NULL OR n.to_date >= NOW()) "
         );
 
         List<Object> params = new ArrayList<>();
@@ -599,7 +599,7 @@ public class TechnicalOfficerDAO {
             "       COALESCE(u.role, 'Admin') AS publisher_role " +
             "FROM notices n " +
             "LEFT JOIN users u ON n.published_by = u.user_id " +
-            "WHERE 1=1 "
+            "WHERE 1=1 AND (n.from_date IS NULL OR n.from_date <= NOW()) AND (n.to_date IS NULL OR n.to_date >= NOW()) "
         );
 
         List<Object> params = new ArrayList<>();
@@ -669,7 +669,7 @@ public class TechnicalOfficerDAO {
             "       COALESCE(u.role, 'Admin') AS publisher_role " +
             "FROM notices n " +
             "LEFT JOIN users u ON n.published_by = u.user_id " +
-            "WHERE 1=1 "
+            "WHERE 1=1 AND (n.from_date IS NULL OR n.from_date <= NOW()) AND (n.to_date IS NULL OR n.to_date >= NOW()) "
         );
 
         List<Object> params = new ArrayList<>();

@@ -96,9 +96,16 @@ public class DatabaseConnection {
             if (!columnExists(conn, "users", "status")) {
                 stmt.executeUpdate("ALTER TABLE users ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'Active'");
             }
-            // Ensure notices has attachment_path column
+            // Ensure notices has attachment_path, from_date, and to_date columns
             if (!columnExists(conn, "notices", "attachment_path")) {
                 stmt.executeUpdate("ALTER TABLE notices ADD COLUMN attachment_path VARCHAR(255) DEFAULT NULL");
+            }
+            if (!columnExists(conn, "notices", "from_date")) {
+                stmt.executeUpdate("ALTER TABLE notices ADD COLUMN from_date DATETIME DEFAULT NULL");
+                stmt.executeUpdate("UPDATE notices SET from_date = published_date WHERE from_date IS NULL");
+            }
+            if (!columnExists(conn, "notices", "to_date")) {
+                stmt.executeUpdate("ALTER TABLE notices ADD COLUMN to_date DATETIME DEFAULT NULL");
             }
             // Ensure course_materials has file_path column and nullable binary fields
             if (!columnExists(conn, "course_materials", "file_path")) {

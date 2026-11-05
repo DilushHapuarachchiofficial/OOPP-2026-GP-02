@@ -302,7 +302,8 @@ public class UndergraduateNoticesUI extends JPanel {
         centerBox.add(Box.createVerticalStrut(4));
 
         // Description text area (Clean, word-wrapped, strictly left aligned)
-        JTextArea descArea = new JTextArea(notice.getDescription());
+        String rawNoticeD = (notice.getDescription() != null) ? notice.getDescription().replaceAll("(?s)<head.*?>.*?</head>", "").replaceAll("(?s)<style.*?>.*?</style>", "").replaceAll("<[^>]*>", "").replaceAll("&nbsp;", " ").trim() : "";
+        JTextArea descArea = new JTextArea(rawNoticeD);
         descArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         descArea.setForeground(COLOR_TEXT_PRIMARY);
         descArea.setLineWrap(true);

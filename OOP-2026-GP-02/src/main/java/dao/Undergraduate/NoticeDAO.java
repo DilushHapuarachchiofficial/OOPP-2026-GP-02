@@ -32,7 +32,9 @@ public class NoticeDAO {
                 "FROM notices n " +
                 "LEFT JOIN admins a ON n.published_by = a.admin_id " +
                 "LEFT JOIN users u ON n.published_by = u.user_id " +
-                "WHERE n.target_audience IN ('All', 'Students') " +
+                "WHERE n.target_audience IN ('All', 'Students') " + 
+                "AND (n.from_date IS NULL OR n.from_date <= NOW()) " + 
+                "AND (n.to_date IS NULL OR n.to_date >= NOW()) " + 
                 "ORDER BY n.published_date DESC, n.notice_id DESC";
 
         Connection conn = null;

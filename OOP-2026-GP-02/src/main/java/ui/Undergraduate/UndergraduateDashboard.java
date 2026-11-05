@@ -659,7 +659,8 @@ public class UndergraduateDashboard extends JFrame {
         top.add(t, BorderLayout.WEST);
         top.add(tag, BorderLayout.EAST);
 
-        JLabel desc = new JLabel("<html><body style='width: 500px;'>" + n.getDescription() + "</body></html>");
+        String cleanNoticeDesc = (n.getDescription() != null) ? n.getDescription().replaceAll("(?s)<head.*?>.*?</head>", "").replaceAll("(?s)<style.*?>.*?</style>", "").replaceAll("<[^>]*>", "").replaceAll("&nbsp;", " ").trim() : "";
+        JLabel desc = new JLabel("<html><body style='width: 500px;'>" + cleanNoticeDesc + "</body></html>");
         desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         desc.setForeground(COLOR_TEXT_MUTED);
 
