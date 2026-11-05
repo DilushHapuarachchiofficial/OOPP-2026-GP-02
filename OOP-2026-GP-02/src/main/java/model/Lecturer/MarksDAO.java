@@ -68,14 +68,7 @@ public class MarksDAO {
             recalculateMetrics();
         }
 
-        /**
-         * Real-time automated calculation of:
-         * 1. Normalized Percentage for current assessment
-         * 2. Weighted Score contribution for current assessment
-         * 3. Overall CA Weighted Score for the student in this subject
-         * 4. Overall CA Percentage out of 100%
-         * 5. CA Eligibility determination (Handbook >= 40.00%)
-         */
+
         public void recalculateMetrics() {
             if (this.rawMark != null && this.maximumMarks > 0) {
                 this.normalizedPercentage = MarksCalculationService.calculatePercentage(this.rawMark, this.maximumMarks);
@@ -303,18 +296,7 @@ public class MarksDAO {
         return list;
     }
 
-    /**
-     * Saves or updates a list of student marks in a single atomic database transaction.
-     * If any record fails or validation is violated, the transaction is automatically rolled back.
-     *
-     * @param courseId The course being evaluated.
-     * @param componentId The assessment component.
-     * @param lecturerId The authenticated lecturer performing the save.
-     * @param marksList List of StudentMarkItem records from the UI.
-     * @return Number of records successfully inserted/updated.
-     * @throws SQLException If database error occurs or transaction fails.
-     * @throws SecurityException If authenticated lecturer is not assigned to course.
-     */
+
     public static int saveMarksBatch(int courseId, int componentId, int lecturerId, List<StudentMarkItem> marksList) throws SQLException {
         if (!AssessmentDAO.isLecturerAssignedToCourse(lecturerId, courseId)) {
             throw new SecurityException("Security Violation: You are not authorized to record marks for this course.");
