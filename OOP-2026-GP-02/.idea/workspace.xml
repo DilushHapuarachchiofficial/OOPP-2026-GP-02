@@ -90,6 +90,20 @@
           <line>590</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/model/Undergraduate/CourseGradeItem.java</url>
+          <line>212</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-method">
+          <url>file://$PROJECT_DIR$/src/main/java/model/Undergraduate/CourseGradeItem.java</url>
+          <line>207</line>
+          <properties class="main.java.model.Undergraduate.CourseGradeItem" method="getMidExamMark">
+            <option name="EMULATED" value="true" />
+            <option name="WATCH_EXIT" value="false" />
+          </properties>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
