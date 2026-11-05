@@ -366,7 +366,7 @@ public class UndergraduateMedicalUI extends JPanel {
         startDateField = new JTextField("", 10);
         startDateField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         startDateField.setPreferredSize(new Dimension(110, 34));
-        startDateField.setToolTipText("e.g. 2026-10-13");
+        startDateField.setToolTipText("e.g. 2026-10-26 (within last 14 days)");
         startDateField.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(4, 8, 4, 8)));
         datesRow.add(startDateField);
 
@@ -378,7 +378,7 @@ public class UndergraduateMedicalUI extends JPanel {
         endDateField = new JTextField("", 10);
         endDateField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         endDateField.setPreferredSize(new Dimension(110, 34));
-        endDateField.setToolTipText("e.g. 2026-10-15");
+        endDateField.setToolTipText("e.g. 2026-10-28");
         endDateField.setBorder(new CompoundBorder(new LineBorder(COLOR_BORDER, 1), new EmptyBorder(4, 8, 4, 8)));
         datesRow.add(endDateField);
 
@@ -387,7 +387,7 @@ public class UndergraduateMedicalUI extends JPanel {
         checkSessionsBtn.addActionListener(e -> findMissedLecturesForRange());
         datesRow.add(checkSessionsBtn);
 
-        JLabel hintDatesLbl = new JLabel("(Format: YYYY-MM-DD)");
+        JLabel hintDatesLbl = new JLabel("(Format: YYYY-MM-DD | Within last 14 days)");
         hintDatesLbl.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         hintDatesLbl.setForeground(COLOR_TEXT_MUTED);
         datesRow.add(hintDatesLbl);
@@ -650,12 +650,80 @@ public class UndergraduateMedicalUI extends JPanel {
     /**
      * Finds all lectures/sessions where the student was marked absent between the chosen dates.
      */
+    /**
+     * Validates that the entered medical date range conforms to format, logic,
+     * faculty 14-day submission policy, and does not extend into future dates.
+     */
+    private boolean validateMedicalDateRange(String startDateStr, String endDateStr) {
+        if (startDateStr == null || startDateStr.trim().isEmpty() || endDateStr == null || endDateStr.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Please enter both From Date and To Date (Format: YYYY-MM-DD).",
+                    "Date Validation",
+                    JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        LocalDate startDate;
+        LocalDate endDate;
+        LocalDate today = LocalDate.now();
+        LocalDate twoWeeksAgo = today.minusDays(14);
+
+        try {
+            startDate = LocalDate.parse(startDateStr.trim());
+            endDate = LocalDate.parse(endDateStr.trim());
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid date format! Please enter dates in YYYY-MM-DD format (e.g. " + today + ").",
+                    "Invalid Date Format",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        if (startDate.isAfter(endDate)) {
+            JOptionPane.showMessageDialog(this,
+                    "From Date cannot be after To Date.",
+                    "Invalid Date Range",
+                    JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        if (startDate.isAfter(today) || endDate.isAfter(today)) {
+            JOptionPane.showMessageDialog(this,
+                    "Medical leave dates cannot be in the future.\nPlease select dates on or before today (" + today + ").",
+                    "Future Date Not Allowed",
+                    JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        if (startDate.isBefore(twoWeeksAgo)) {
+            JOptionPane.showMessageDialog(this,
+                    "<html><body style='width: 380px; font-family: Segoe UI, sans-serif;'>" +
+                    "<h3 style='color: #DC2626; margin: 0 0 8px 0;'>14-Day Submission Window Exceeded</h3>" +
+                    "<p>Under faculty regulations, medical certificates must be submitted within <b>14 days (2 weeks)</b> of the absence.</p>" +
+                    "<p>Medical certificates <b>cannot be added</b> for dates older than 14 days from current date (" + today + ").</p>" +
+                    "<hr style='border: none; border-top: 1px solid #E5E7EB; margin: 8px 0;'>" +
+                    "<div>• <b>Selected From Date:</b> <span style='color: #DC2626;'>" + startDate + "</span> (older than 14 days)</div>" +
+                    "<div>• <b>Earliest Allowable Date:</b> <span style='color: #059669; font-weight: bold;'>" + twoWeeksAgo + "</span></div>" +
+                    "</body></html>",
+                    "Submission Window Expired (14-Day Limit)",
+                    JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        return true;
+    }
+
     private void findMissedLecturesForRange() {
         String startDate = startDateField.getText().trim();
         String endDate = endDateField.getText().trim();
 
-        if (startDate.isEmpty() || endDate.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter both Start Date and End Date.", "Validation", JOptionPane.WARNING_MESSAGE);
+        if (!validateMedicalDateRange(startDate, endDate)) {
+            sessionsChecklistContainer.removeAll();
+            sessionCheckBoxes.clear();
+            currentRangeSessions.clear();
+            sessionsFoundCountLabel.setText("Missed Lectures in Period (Enter dates above and search):");
+            sessionsChecklistContainer.revalidate();
+            sessionsChecklistContainer.repaint();
             return;
         }
 
@@ -681,8 +749,8 @@ public class UndergraduateMedicalUI extends JPanel {
             emptyCard.add(iconLbl, BorderLayout.WEST);
 
             JLabel msgLbl = new JLabel("<html><b>No absent lectures recorded between " + startDate + " and " + endDate + ".</b><br>" +
-                    "<span style='color: #4B5563;'>Recorded absent dates for TG/2024/2085 are: <b>2026-10-13, 2026-10-14, 2026-10-15</b>.<br>" +
-                    "Enter these dates above to link your medical to absent sessions, or submit as a general medical certificate.</span></html>");
+                    "<span style='color: #4B5563;'>Please enter dates when you were marked absent (within the last 14 days).<br>" +
+                    "Recorded absent dates for this semester are: <b>2026-10-26, 2026-10-28, 2026-10-30, 2026-11-02</b>.</span></html>");
             msgLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             msgLbl.setForeground(COLOR_TEXT_PRIMARY);
             emptyCard.add(msgLbl, BorderLayout.CENTER);
@@ -748,8 +816,7 @@ public class UndergraduateMedicalUI extends JPanel {
         String endDate = endDateField.getText().trim();
         String reason = reasonField.getText().trim();
 
-        if (startDate.isEmpty() || endDate.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter the medical period (Start Date and End Date).", "Validation Error", JOptionPane.WARNING_MESSAGE);
+        if (!validateMedicalDateRange(startDate, endDate)) {
             return;
         }
 
