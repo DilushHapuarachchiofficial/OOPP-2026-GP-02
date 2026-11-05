@@ -8,9 +8,8 @@ import main.resources.database.DatabaseConnection;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-
-
 import javax.swing.border.LineBorder;
+import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -78,6 +77,7 @@ public class AttendanceManagementForm extends JFrame {
     // Current session tracker
     private int currentSessionId = -1;
     private boolean isUpdatingDropdown = false;
+    private boolean isBatchUpdating = false;
     private final List<CourseItem> allCourses = new ArrayList<>();
 
     public AttendanceManagementForm() {
@@ -330,13 +330,68 @@ public class AttendanceManagementForm extends JFrame {
         headerPanel.add(lblTableStatus, BorderLayout.EAST);
         card.add(headerPanel, BorderLayout.NORTH);
 
-        String[] columnNames = {"#", "Database ID", "Registration No", "Student Full Name", "Level", "Attendance Status"};
+        String[] columnNames = {"#", "Database ID", "Registration No", "Student Full Name", "Level", "Attendance Status", "Reason"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
-            public boolean isCellEditable(int r, int c) { return c == 5; }
+            public boolean isCellEditable(int r, int c) {
+                if (c == 5) return true;
+                if (c == 6) {
+                    Object status = getValueAt(r, 5);
+                    return "Absent".equalsIgnoreCase(status != null ? status.toString() : "");
+                }
+                return false;
+            }
             @Override
             public Class<?> getColumnClass(int c) { return String.class; }
         };
+
+        // Prompt for reason when an attendance status is changed to Absent
+        tableModel.addTableModelListener(e -> {
+            if (isBatchUpdating) return;
+            if (e.getType() == TableModelEvent.UPDATE && e.getColumn() == 5) {
+                int row = e.getFirstRow();
+                if (row >= 0 && row < tableModel.getRowCount()) {
+                    String newStatus = String.valueOf(tableModel.getValueAt(row, 5));
+                    if ("Absent".equalsIgnoreCase(newStatus)) {
+                        String currentReason = String.valueOf(tableModel.getValueAt(row, 6));
+                        if (currentReason == null || "-".equals(currentReason.trim()) || currentReason.trim().isEmpty()) {
+                            SwingUtilities.invokeLater(() -> {
+                                if (row < tableModel.getRowCount() && "Absent".equalsIgnoreCase(String.valueOf(tableModel.getValueAt(row, 5)))) {
+                                    String regNo = String.valueOf(tableModel.getValueAt(row, 2));
+                                    String name = String.valueOf(tableModel.getValueAt(row, 3));
+                                    String reason = JOptionPane.showInputDialog(
+                                            AttendanceManagementForm.this,
+                                            "Enter reason for marking student " + regNo + " (" + name + ") as Absent:",
+                                            "Reason for Absence",
+                                            JOptionPane.QUESTION_MESSAGE
+                                    );
+                                    if (reason != null && !reason.trim().isEmpty()) {
+                                        tableModel.setValueAt(reason.trim(), row, 6);
+                                    } else {
+                                        tableModel.setValueAt("Absent (No reason provided)", row, 6);
+                                    }
+                                }
+                            });
+                        }
+                    } else if ("Present".equalsIgnoreCase(newStatus)) {
+                        SwingUtilities.invokeLater(() -> {
+                            if (row < tableModel.getRowCount() && "Present".equalsIgnoreCase(String.valueOf(tableModel.getValueAt(row, 5)))) {
+                                tableModel.setValueAt("-", row, 6);
+                            }
+                        });
+                    }
+
+                    SwingUtilities.invokeLater(() -> {
+                        CourseItem c = (CourseItem) cmbCourse.getSelectedItem();
+                        Integer sNum = (Integer) cmbSessionNumber.getSelectedItem();
+                        String sType = (String) cmbSessionType.getSelectedItem();
+                        if (c != null && sNum != null && sType != null) {
+                            updateSummaryLabel(c, sNum, sType);
+                        }
+                    });
+                }
+            }
+        });
 
         tblStudents = new JTable(tableModel);
         tblStudents.setFont(FONT_REGULAR);
@@ -352,7 +407,7 @@ public class AttendanceManagementForm extends JFrame {
         tblStudents.getColumnModel().getColumn(1).setMaxWidth(0);
         tblStudents.getColumnModel().getColumn(1).setPreferredWidth(0);
 
-        int[] widths = {45, 0, 140, 320, 90, 160};
+        int[] widths = {45, 0, 130, 240, 80, 140, 190};
         for (int i = 0; i < widths.length; i++) {
             if (i != 1) tblStudents.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
@@ -375,6 +430,25 @@ public class AttendanceManagementForm extends JFrame {
                 boolean present = "Present".equalsIgnoreCase(val != null ? val.toString() : "");
                 l.setForeground(present ? Color.decode("#047857") : Color.decode("#B91C1C"));
                 l.setText(present ? "●  Present" : "○  Absent");
+                return l;
+            }
+        });
+
+        tblStudents.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object val, boolean sel, boolean focus, int row, int col) {
+                JLabel l = (JLabel) super.getTableCellRendererComponent(table, val, sel, focus, row, col);
+                String text = (val != null) ? val.toString().trim() : "";
+                if (text.isEmpty() || "-".equals(text)) {
+                    l.setText("-");
+                    l.setForeground(TEXT_SECONDARY);
+                    l.setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    l.setText(text);
+                    l.setForeground(Color.decode("#B91C1C"));
+                    l.setHorizontalAlignment(SwingConstants.LEFT);
+                }
+                l.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
                 return l;
             }
         });
@@ -775,7 +849,8 @@ public class AttendanceManagementForm extends JFrame {
     }
 
     private void addStudentRow(int sid, String regNo, String name, int year, String status) {
-        tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, String.valueOf(sid), regNo, name, "Year " + year, status});
+        String reason = "Absent".equalsIgnoreCase(status) ? "Absent" : "-";
+        tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, String.valueOf(sid), regNo, name, "Year " + year, status, reason});
     }
 
     /**
@@ -826,7 +901,7 @@ public class AttendanceManagementForm extends JFrame {
         int savedCount = 0;
 
         try {
-            conn.setAutoCommit(false);
+               
 
             // 1. Ensure attendance_session exists in database
             int sessionId = ensureSessionExists(conn, course.getCourseId(), sessionNum, sessionType, sessionDate, durationHours);
@@ -992,10 +1067,44 @@ public class AttendanceManagementForm extends JFrame {
     }
 
     private void setAllStatus(String status) {
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            tableModel.setValueAt(status, i, 5);
+        if ("Absent".equalsIgnoreCase(status)) {
+            String defaultReason = JOptionPane.showInputDialog(
+                    this,
+                    "Enter reason for marking all students Absent:",
+                    "Batch Absence Reason",
+                    JOptionPane.QUESTION_MESSAGE
+            );
+            if (defaultReason == null) return;
+            if (defaultReason.trim().isEmpty()) {
+                defaultReason = "Batch marked Absent";
+            }
+            isBatchUpdating = true;
+            try {
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    tableModel.setValueAt("Absent", i, 5);
+                    tableModel.setValueAt(defaultReason, i, 6);
+                }
+            } finally {
+                isBatchUpdating = false;
+            }
+        } else {
+            isBatchUpdating = true;
+            try {
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    tableModel.setValueAt("Present", i, 5);
+                    tableModel.setValueAt("-", i, 6);
+                }
+            } finally {
+                isBatchUpdating = false;
+            }
         }
         tblStudents.repaint();
+        CourseItem c = (CourseItem) cmbCourse.getSelectedItem();
+        Integer sNum = (Integer) cmbSessionNumber.getSelectedItem();
+        String sType = (String) cmbSessionType.getSelectedItem();
+        if (c != null && sNum != null && sType != null) {
+            updateSummaryLabel(c, sNum, sType);
+        }
     }
 
     private void clearForm() {
