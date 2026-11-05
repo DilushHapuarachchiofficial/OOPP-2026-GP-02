@@ -26,7 +26,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class CourseMaterials extends JPanel {
 
     // =========================================================================
@@ -121,27 +120,18 @@ public class CourseMaterials extends JPanel {
     // CONSTRUCTORS
     // =========================================================================
 
-    /**
-     * Default constructor: Resolves lecturer ID from UserSession.
-     */
     public CourseMaterials() {
         resolveLecturerSession();
         initializeUI();
         refreshMaterials();
     }
 
-    /**
-     * Constructor for explicit lecturer ID.
-     */
     public CourseMaterials(int lecturerId) {
         this.lecturerId = lecturerId;
         initializeUI();
         refreshMaterials();
     }
 
-    /**
-     * Constructor for embedded navigation within a parent container.
-     */
     public CourseMaterials(Navbar navbar, CardLayout layout, JPanel container) {
         this.parentNavbar = navbar;
         this.parentCardLayout = layout;
@@ -156,7 +146,6 @@ public class CourseMaterials extends JPanel {
         if (session != null && "Lecturer".equalsIgnoreCase(session.getRole())) {
             this.lecturerId = session.getUserId();
         } else if (this.lecturerId <= 0 && session == null) {
-            // Default fallback for standalone execution / direct IDE testing
             this.lecturerId = 4;
         }
     }
@@ -191,9 +180,6 @@ public class CourseMaterials extends JPanel {
     // VIEW BUILDERS
     // =========================================================================
 
-    /**
-     * Builds the main success view containing header, summary cards, filter bar, and materials table.
-     */
     private JPanel createSuccessView() {
         JPanel container = new JPanel(new BorderLayout());
         container.setOpaque(false);
@@ -230,14 +216,10 @@ public class CourseMaterials extends JPanel {
         return container;
     }
 
-    /**
-     * Top Page Header with Title, Subtitle, and Primary "+ Upload Material" button.
-     */
     private JPanel createHeaderPanel() {
         JPanel panel = new JPanel(new BorderLayout(16, 0));
         panel.setOpaque(false);
 
-        // Left Titles
         JPanel titles = new JPanel();
         titles.setLayout(new BoxLayout(titles, BoxLayout.Y_AXIS));
         titles.setOpaque(false);
@@ -254,7 +236,6 @@ public class CourseMaterials extends JPanel {
         titles.add(Box.createVerticalStrut(4));
         titles.add(subtitleLabel);
 
-        // Right Upload Button
         JButton uploadBtn = createStyledButton("+ Upload Material", COLOR_PRO_BLUE, COLOR_WHITE);
         uploadBtn.setPreferredSize(new Dimension(160, 40));
         uploadBtn.addActionListener(e -> showUploadDialog());
@@ -265,9 +246,6 @@ public class CourseMaterials extends JPanel {
         return panel;
     }
 
-    /**
-     * 4 Summary Cards: Total Materials, PDF Documents, Word Documents, PowerPoint Presentations.
-     */
     private JPanel createSummaryCardsPanel() {
         JPanel panel = new JPanel(new GridLayout(1, 4, 18, 0));
         panel.setOpaque(false);
@@ -295,15 +273,12 @@ public class CourseMaterials extends JPanel {
                 int w = getWidth();
                 int h = getHeight();
 
-                // White card background
                 g2.setColor(COLOR_CARD_BG);
                 g2.fill(new RoundRectangle2D.Float(0, 0, w, h, 12, 12));
 
-                // 1px subtle border
                 g2.setColor(COLOR_BORDER);
                 g2.draw(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 12, 12));
 
-                // Top Accent Stripe
                 g2.setColor(accentColor);
                 g2.fill(new RoundRectangle2D.Float(0, 0, w, 4, 12, 12));
 
@@ -334,38 +309,30 @@ public class CourseMaterials extends JPanel {
         return card;
     }
 
-    /**
-     * Search and Filter Bar.
-     */
     private JPanel createFilterPanel() {
         JPanel card = createWhiteCardPanel();
         card.setLayout(new BorderLayout(16, 0));
         card.setBorder(new EmptyBorder(12, 16, 12, 16));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 65));
 
-        // Left Controls: Search Field, Course Filter, Type Filter
         JPanel leftControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         leftControls.setOpaque(false);
 
-        // Search Input
         searchField = new JTextField(18);
         searchField.setFont(FONT_INPUT);
         searchField.setPreferredSize(new Dimension(240, 36));
-        searchField.putClientProperty("JTextField.placeholderText", "Search title or file name...");
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { applyFilters(); }
             @Override public void removeUpdate(DocumentEvent e) { applyFilters(); }
             @Override public void changedUpdate(DocumentEvent e) { applyFilters(); }
         });
 
-        // Course Dropdown
         courseFilterCombo = new JComboBox<>();
         courseFilterCombo.setFont(FONT_INPUT);
         courseFilterCombo.setPreferredSize(new Dimension(220, 36));
         courseFilterCombo.addItem("All Assigned Courses");
         courseFilterCombo.addActionListener(e -> applyFilters());
 
-        // File Type Dropdown
         typeFilterCombo = new JComboBox<>(new String[]{"All Types", "PDF", "Word", "PowerPoint"});
         typeFilterCombo.setFont(FONT_INPUT);
         typeFilterCombo.setPreferredSize(new Dimension(140, 36));
@@ -378,7 +345,6 @@ public class CourseMaterials extends JPanel {
         leftControls.add(new JLabel("Format:"));
         leftControls.add(typeFilterCombo);
 
-        // Right Controls: Reset & Refresh
         JPanel rightControls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rightControls.setOpaque(false);
 
@@ -399,15 +365,11 @@ public class CourseMaterials extends JPanel {
         return card;
     }
 
-    /**
-     * Materials Table Card with custom table, action toolbar, and empty state.
-     */
     private JPanel createTableCard() {
         JPanel card = createWhiteCardPanel();
         card.setLayout(new BorderLayout(0, 12));
         card.setBorder(new EmptyBorder(16, 18, 16, 18));
 
-        // Top bar of card: Table Status
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setOpaque(false);
 
@@ -422,12 +384,12 @@ public class CourseMaterials extends JPanel {
         topBar.add(heading, BorderLayout.WEST);
         topBar.add(tableStatusLabel, BorderLayout.EAST);
 
-        // Table Model Setup
-        String[] columnNames = {"#", "Material Title", "Course", "File Name", "Format", "Upload Date"};
+        // Table Model with From Date, Due Date, and Status columns
+        String[] columnNames = {"#", "Material Title", "Course", "File Name", "Format", "From Date", "Due Date", "Status"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Non-editable directly in cells
+                return false;
             }
         };
 
@@ -443,13 +405,14 @@ public class CourseMaterials extends JPanel {
 
         // Column widths
         materialsTable.getColumnModel().getColumn(0).setPreferredWidth(45);  // #
-        materialsTable.getColumnModel().getColumn(1).setPreferredWidth(260); // Title
-        materialsTable.getColumnModel().getColumn(2).setPreferredWidth(200); // Course
-        materialsTable.getColumnModel().getColumn(3).setPreferredWidth(170); // File Name
-        materialsTable.getColumnModel().getColumn(4).setPreferredWidth(90);  // Format
-        materialsTable.getColumnModel().getColumn(5).setPreferredWidth(130); // Date
+        materialsTable.getColumnModel().getColumn(1).setPreferredWidth(220); // Title
+        materialsTable.getColumnModel().getColumn(2).setPreferredWidth(170); // Course
+        materialsTable.getColumnModel().getColumn(3).setPreferredWidth(150); // File Name
+        materialsTable.getColumnModel().getColumn(4).setPreferredWidth(75);  // Format
+        materialsTable.getColumnModel().getColumn(5).setPreferredWidth(95);  // From Date
+        materialsTable.getColumnModel().getColumn(6).setPreferredWidth(95);  // Due Date
+        materialsTable.getColumnModel().getColumn(7).setPreferredWidth(110); // Status
 
-        // Table Header Styling
         JTableHeader header = materialsTable.getTableHeader();
         header.setFont(FONT_TABLE_HEADER);
         header.setBackground(new Color(248, 250, 252));
@@ -457,7 +420,7 @@ public class CourseMaterials extends JPanel {
         header.setPreferredSize(new Dimension(0, 36));
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, COLOR_BORDER));
 
-        // Format Badge Renderer
+        // Format Badge Renderer (Column 4)
         materialsTable.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -480,11 +443,14 @@ public class CourseMaterials extends JPanel {
                     lbl.setForeground(COLOR_TEXT_SECONDARY);
                     lbl.setText("  " + format + "  ");
                 }
+                if (!isSelected) {
+                    lbl.setBackground(row % 2 == 0 ? COLOR_WHITE : COLOR_ROW_ALT);
+                }
                 return lbl;
             }
         });
 
-        // Alternating row colors for regular cells
+        // Alternating row colors for regular text cells (Columns 1, 2, 3)
         DefaultTableCellRenderer defaultRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -497,16 +463,65 @@ public class CourseMaterials extends JPanel {
                 return c;
             }
         };
+
         for (int i = 0; i < materialsTable.getColumnCount(); i++) {
-            if (i != 4) {
+            if (i != 4 && i != 7 && i != 0 && i != 5 && i != 6) {
                 materialsTable.getColumnModel().getColumn(i).setCellRenderer(defaultRenderer);
             }
         }
 
-        // Selection Listener to enable/disable row actions
+        // Status Badge Renderer (Column 7)
+        materialsTable.getColumnModel().getColumn(7).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus, int row, int col) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                lbl.setFont(FONT_BADGE);
+
+                String status = value != null ? value.toString() : "";
+                if ("Always Visible".equalsIgnoreCase(status)) {
+                    lbl.setForeground(COLOR_SUCCESS);
+                    lbl.setText("  Always Visible  ");
+                } else if ("Active".equalsIgnoreCase(status)) {
+                    lbl.setForeground(COLOR_PRO_BLUE);
+                    lbl.setText("  Active  ");
+                } else if ("Scheduled".equalsIgnoreCase(status)) {
+                    lbl.setForeground(new Color(139, 92, 246));
+                    lbl.setText("  Scheduled  ");
+                } else if ("Expired".equalsIgnoreCase(status)) {
+                    lbl.setForeground(COLOR_DANGER);
+                    lbl.setText("  Expired  ");
+                } else {
+                    lbl.setForeground(COLOR_TEXT_SECONDARY);
+                    lbl.setText("  " + status + "  ");
+                }
+                if (!isSelected) {
+                    lbl.setBackground(row % 2 == 0 ? COLOR_WHITE : COLOR_ROW_ALT);
+                }
+                return lbl;
+            }
+        });
+
+        // Center-aligned renderer for # (0), From Date (5), Due Date (6)
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus, int row, int col) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+                setHorizontalAlignment(SwingConstants.CENTER);
+                if (!isSelected) {
+                    c.setBackground(row % 2 == 0 ? COLOR_WHITE : COLOR_ROW_ALT);
+                }
+                return c;
+            }
+        };
+        materialsTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        materialsTable.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
+        materialsTable.getColumnModel().getColumn(6).setCellRenderer(centerRenderer);
+
         materialsTable.getSelectionModel().addListSelectionListener(e -> updateActionButtonsState());
 
-        // Double-click row opens Details Dialog
         materialsTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -520,17 +535,14 @@ public class CourseMaterials extends JPanel {
         tableScrollPane.setBorder(BorderFactory.createLineBorder(COLOR_BORDER, 1));
         tableScrollPane.setPreferredSize(new Dimension(800, 320));
 
-        // Empty state panel (shown when 0 records match)
         emptyStatePanel = createEmptyStatePanel();
         emptyStatePanel.setVisible(false);
 
-        // Center Stack containing Table and Empty State
         JPanel tableStack = new JPanel(new CardLayout());
         tableStack.setOpaque(false);
         tableStack.add(tableScrollPane, "TABLE");
         tableStack.add(emptyStatePanel, "EMPTY");
 
-        // Action Buttons Toolbar below table
         JPanel actionToolbar = createActionToolbar();
 
         card.add(topBar, BorderLayout.NORTH);
@@ -540,9 +552,6 @@ public class CourseMaterials extends JPanel {
         return card;
     }
 
-    /**
-     * Context Action Toolbar for table rows: View Details, Open, Save Copy, Edit, Delete.
-     */
     private JPanel createActionToolbar() {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
         bar.setOpaque(false);
@@ -582,9 +591,6 @@ public class CourseMaterials extends JPanel {
         if (deleteMaterialBtn != null) deleteMaterialBtn.setEnabled(hasSelection);
     }
 
-    /**
-     * Empty state panel when no materials match or zero uploaded.
-     */
     private JPanel createEmptyStatePanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setOpaque(false);
@@ -731,9 +737,6 @@ public class CourseMaterials extends JPanel {
     // ASYNCHRONOUS DATA LOADING (SwingWorker)
     // =========================================================================
 
-    /**
-     * Refreshes all materials and summary cards from the MySQL database using a non-blocking SwingWorker.
-     */
     public void refreshMaterials() {
         resolveLecturerSession();
 
@@ -753,7 +756,6 @@ public class CourseMaterials extends JPanel {
             @Override
             protected Void doInBackground() {
                 try {
-                    // Fetch genuine database data
                     summary = CourseMaterialsLogic.getSummary(lecturerId);
                     courses = CourseMaterialsLogic.getAssignedCourses(lecturerId);
                     materials = CourseMaterialsLogic.getMaterials(lecturerId, null, null, null);
@@ -772,7 +774,6 @@ public class CourseMaterials extends JPanel {
                     return;
                 }
 
-                // Update summary cards
                 if (summary != null) {
                     totalCountLabel.setText(String.valueOf(summary.getTotalCount()));
                     pdfCountLabel.setText(String.valueOf(summary.getPdfCount()));
@@ -780,13 +781,11 @@ public class CourseMaterials extends JPanel {
                     pptCountLabel.setText(String.valueOf(summary.getPptCount()));
                 }
 
-                // Populate courses filter
                 if (courses != null) {
                     assignedCourses = courses;
                     populateCourseFilter(courses);
                 }
 
-                // Update materials table
                 if (materials != null) {
                     currentMaterials = materials;
                     populateTable(materials);
@@ -818,7 +817,9 @@ public class CourseMaterials extends JPanel {
                     item.getCourseCode() + " - " + item.getCourseName(),
                     item.getFileName(),
                     item.getFileType(),
-                    formatDisplayDate(item.getUploadedDate())
+                    (item.getFromDate() != null && !item.getFromDate().isEmpty()) ? item.getFromDate() : "-",
+                    (item.getDueDate() != null && !item.getDueDate().isEmpty()) ? item.getDueDate() : "-",
+                    item.getVisibilityStatus()
             });
         }
 
@@ -836,9 +837,6 @@ public class CourseMaterials extends JPanel {
         updateActionButtonsState();
     }
 
-    /**
-     * Filters cached materials based on the search query, course selection, and file type.
-     */
     private void applyFilters() {
         if (currentMaterials == null) return;
 
@@ -853,19 +851,16 @@ public class CourseMaterials extends JPanel {
 
         List<CourseMaterialItem> filtered = new ArrayList<>();
         for (CourseMaterialItem item : currentMaterials) {
-            // Course match
             if (filterCourseId != null && item.getCourseId() != filterCourseId) {
                 continue;
             }
 
-            // Type match
             if (selectedType != null && !selectedType.equals("All Types")) {
                 if (!selectedType.equalsIgnoreCase(item.getFileType())) {
                     continue;
                 }
             }
 
-            // Text search match
             if (!query.isEmpty()) {
                 boolean matchTitle = item.getTitle().toLowerCase().contains(query);
                 boolean matchFile = item.getFileName().toLowerCase().contains(query);
@@ -902,7 +897,7 @@ public class CourseMaterials extends JPanel {
     // =========================================================================
 
     /**
-     * Displays the Upload Material Dialog.
+     * Displays the Upload Material Dialog with optional From Date & Due Date.
      */
     private void showUploadDialog() {
         if (lecturerId <= 0) {
@@ -921,14 +916,14 @@ public class CourseMaterials extends JPanel {
         }
 
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Upload Course Material", Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(520, 500);
+        dialog.setSize(540, 600);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
         JPanel form = new JPanel();
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
         form.setBackground(COLOR_WHITE);
-        form.setBorder(new EmptyBorder(24, 28, 24, 28));
+        form.setBorder(new EmptyBorder(22, 28, 22, 28));
 
         // 1. Course Selection
         JLabel courseLbl = new JLabel("Assigned Course * (Only your assigned courses)");
@@ -943,7 +938,6 @@ public class CourseMaterials extends JPanel {
         if (assignedCourses.size() == 1) {
             courseCombo.setSelectedIndex(0);
         }
-
 
         // 2. Material Title
         JLabel titleLbl = new JLabel("Material Title *");
@@ -964,7 +958,41 @@ public class CourseMaterials extends JPanel {
         descArea.setWrapStyleWord(true);
         JScrollPane descScroll = new JScrollPane(descArea);
 
-        // 4. File Selection
+        // 4. Availability Dates (From Date & Due Date - Optional)
+        JPanel datesRow = new JPanel(new GridLayout(1, 2, 16, 0));
+        datesRow.setOpaque(false);
+
+        JPanel fromCol = new JPanel();
+        fromCol.setLayout(new BoxLayout(fromCol, BoxLayout.Y_AXIS));
+        fromCol.setOpaque(false);
+        JLabel fromLbl = new JLabel("From Date (Optional)");
+        fromLbl.setFont(FONT_CARD_LABEL);
+        fromLbl.setForeground(COLOR_DEEP_NAVY);
+        JTextField fromDateField = new JTextField();
+        fromDateField.setFont(FONT_INPUT);
+        fromCol.add(fromLbl);
+        fromCol.add(Box.createVerticalStrut(4));
+        fromCol.add(fromDateField);
+
+        JPanel dueCol = new JPanel();
+        dueCol.setLayout(new BoxLayout(dueCol, BoxLayout.Y_AXIS));
+        dueCol.setOpaque(false);
+        JLabel dueLbl = new JLabel("Due Date (Optional)");
+        dueLbl.setFont(FONT_CARD_LABEL);
+        dueLbl.setForeground(COLOR_DEEP_NAVY);
+        JTextField dueDateField = new JTextField();
+        dueDateField.setFont(FONT_INPUT);
+        dueCol.add(dueLbl);
+        dueCol.add(Box.createVerticalStrut(4));
+        dueCol.add(dueDateField);
+
+        datesRow.add(fromCol);
+        datesRow.add(dueCol);
+
+        JLabel dateHintLbl = new JLabel("<html><span style='color:#64748B;'>Format: <b>YYYY-MM-DD</b> (e.g. 2026-08-01). Leave empty for permanent access.<br>If only Due Date is set, From Date automatically defaults to upload date.</span></html>");
+        dateHintLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+
+        // 5. File Selection
         JLabel fileLbl = new JLabel("Document File * (PDF, Word, or PowerPoint up to 50 MB)");
         fileLbl.setFont(FONT_CARD_LABEL);
         fileLbl.setForeground(COLOR_DEEP_NAVY);
@@ -991,7 +1019,6 @@ public class CourseMaterials extends JPanel {
                     fileStatusLabel.setText(sel.getName() + " (" + CourseMaterialsLogic.formatFileSize(sel.length()) + ")");
                     fileStatusLabel.setForeground(COLOR_SUCCESS);
 
-                    // Pre-fill title if empty
                     if (titleField.getText().trim().isEmpty()) {
                         titleField.setText(CourseMaterialsLogic.getBaseName(sel.getName()).replace('_', ' '));
                     }
@@ -1012,17 +1039,22 @@ public class CourseMaterials extends JPanel {
         form.add(courseLbl);
         form.add(Box.createVerticalStrut(4));
         form.add(courseCombo);
-        form.add(Box.createVerticalStrut(14));
+        form.add(Box.createVerticalStrut(12));
 
         form.add(titleLbl);
         form.add(Box.createVerticalStrut(4));
         form.add(titleField);
-        form.add(Box.createVerticalStrut(14));
+        form.add(Box.createVerticalStrut(12));
 
         form.add(descLbl);
         form.add(Box.createVerticalStrut(4));
         form.add(descScroll);
-        form.add(Box.createVerticalStrut(14));
+        form.add(Box.createVerticalStrut(12));
+
+        form.add(datesRow);
+        form.add(Box.createVerticalStrut(4));
+        form.add(dateHintLbl);
+        form.add(Box.createVerticalStrut(12));
 
         form.add(fileLbl);
         form.add(Box.createVerticalStrut(6));
@@ -1055,7 +1087,9 @@ public class CourseMaterials extends JPanel {
                 return;
             }
 
-            // Disable button during background upload
+            String fromDateInput = fromDateField.getText().trim();
+            String dueDateInput = dueDateField.getText().trim();
+
             submitBtn.setEnabled(false);
             submitBtn.setText("Uploading...");
 
@@ -1067,7 +1101,9 @@ public class CourseMaterials extends JPanel {
                             selectedCourse.getCourseId(),
                             title,
                             descArea.getText().trim(),
-                            chosenFile[0]
+                            chosenFile[0],
+                            fromDateInput,
+                            dueDateInput
                     );
                 }
 
@@ -1107,7 +1143,7 @@ public class CourseMaterials extends JPanel {
         if (item == null) return;
 
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Course Material Details", Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(500, 420);
+        dialog.setSize(520, 480);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
@@ -1121,8 +1157,10 @@ public class CourseMaterials extends JPanel {
         addDetailRow(content, "File Name", item.getFileName(), FONT_INPUT);
         addDetailRow(content, "Format & Size", item.getFileType() + " • " + item.getFileSizeFormatted(), FONT_INPUT);
         addDetailRow(content, "Upload Date", formatDisplayDate(item.getUploadedDate()), FONT_INPUT);
+        addDetailRow(content, "From Date", (item.getFromDate() != null && !item.getFromDate().isEmpty()) ? item.getFromDate() : "Not specified (Immediate access)", FONT_INPUT);
+        addDetailRow(content, "Due Date", (item.getDueDate() != null && !item.getDueDate().isEmpty()) ? item.getDueDate() : "Not specified (Permanent access)", FONT_INPUT);
+        addDetailRow(content, "Student Visibility", item.getVisibilityStatus() + " — " + item.getAvailabilityDescription(), FONT_INPUT);
 
-        // Description
         JLabel descHeader = new JLabel("Description:");
         descHeader.setFont(FONT_CARD_LABEL);
         descHeader.setForeground(COLOR_TEXT_SECONDARY);
@@ -1141,7 +1179,6 @@ public class CourseMaterials extends JPanel {
         ));
         content.add(descArea);
 
-        // Actions
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
         actions.setBackground(new Color(248, 250, 252));
         actions.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, COLOR_BORDER));
@@ -1182,7 +1219,7 @@ public class CourseMaterials extends JPanel {
         container.add(lbl);
         container.add(Box.createVerticalStrut(2));
         container.add(val);
-        container.add(Box.createVerticalStrut(10));
+        container.add(Box.createVerticalStrut(8));
     }
 
     /**
@@ -1193,7 +1230,7 @@ public class CourseMaterials extends JPanel {
         if (item == null) return;
 
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Edit Course Material", Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(480, 380);
+        dialog.setSize(520, 480);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
@@ -1234,6 +1271,37 @@ public class CourseMaterials extends JPanel {
         descArea.setWrapStyleWord(true);
         JScrollPane descScroll = new JScrollPane(descArea);
 
+        // Date fields row
+        JPanel datesRow = new JPanel(new GridLayout(1, 2, 16, 0));
+        datesRow.setOpaque(false);
+
+        JPanel fromCol = new JPanel();
+        fromCol.setLayout(new BoxLayout(fromCol, BoxLayout.Y_AXIS));
+        fromCol.setOpaque(false);
+        JLabel fromLbl = new JLabel("From Date (Optional)");
+        fromLbl.setFont(FONT_CARD_LABEL);
+        fromLbl.setForeground(COLOR_DEEP_NAVY);
+        JTextField fromDateField = new JTextField(item.getFromDate() != null ? item.getFromDate() : "");
+        fromDateField.setFont(FONT_INPUT);
+        fromCol.add(fromLbl);
+        fromCol.add(Box.createVerticalStrut(4));
+        fromCol.add(fromDateField);
+
+        JPanel dueCol = new JPanel();
+        dueCol.setLayout(new BoxLayout(dueCol, BoxLayout.Y_AXIS));
+        dueCol.setOpaque(false);
+        JLabel dueLbl = new JLabel("Due Date (Optional)");
+        dueLbl.setFont(FONT_CARD_LABEL);
+        dueLbl.setForeground(COLOR_DEEP_NAVY);
+        JTextField dueDateField = new JTextField(item.getDueDate() != null ? item.getDueDate() : "");
+        dueDateField.setFont(FONT_INPUT);
+        dueCol.add(dueLbl);
+        dueCol.add(Box.createVerticalStrut(4));
+        dueCol.add(dueDateField);
+
+        datesRow.add(fromCol);
+        datesRow.add(dueCol);
+
         form.add(courseLbl);
         form.add(Box.createVerticalStrut(4));
         form.add(courseCombo);
@@ -1247,6 +1315,9 @@ public class CourseMaterials extends JPanel {
         form.add(descLbl);
         form.add(Box.createVerticalStrut(4));
         form.add(descScroll);
+        form.add(Box.createVerticalStrut(12));
+
+        form.add(datesRow);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
         actions.setBackground(new Color(248, 250, 252));
@@ -1262,6 +1333,7 @@ public class CourseMaterials extends JPanel {
                 JOptionPane.showMessageDialog(dialog, "Title cannot be empty.", "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
+
             CourseItem destCourse = (CourseItem) courseCombo.getSelectedItem();
             if (destCourse == null) {
                 JOptionPane.showMessageDialog(dialog, "Please select a valid course.", "Validation", JOptionPane.WARNING_MESSAGE);
@@ -1274,7 +1346,9 @@ public class CourseMaterials extends JPanel {
                         item.getMaterialId(),
                         destCourse.getCourseId(),
                         newTitle,
-                        descArea.getText().trim()
+                        descArea.getText().trim(),
+                        fromDateField.getText().trim(),
+                        dueDateField.getText().trim()
                 );
                 dialog.dispose();
                 JOptionPane.showMessageDialog(CourseMaterials.this, "Material updated successfully!", "Updated", JOptionPane.INFORMATION_MESSAGE);
@@ -1292,9 +1366,6 @@ public class CourseMaterials extends JPanel {
         dialog.setVisible(true);
     }
 
-    /**
-     * Opens the selected document using system default application.
-     */
     private void openSelectedFile() {
         CourseMaterialItem item = getSelectedMaterial();
         if (item == null) return;
@@ -1313,9 +1384,6 @@ public class CourseMaterials extends JPanel {
         }
     }
 
-    /**
-     * Downloads/saves a copy of the selected material file.
-     */
     private void downloadSelectedFile() {
         CourseMaterialItem item = getSelectedMaterial();
         if (item == null) return;
@@ -1349,10 +1417,6 @@ public class CourseMaterials extends JPanel {
         }
     }
 
-
-    /**
-     * Confirms and deletes the selected material from database and disk.
-     */
     private void deleteSelectedMaterial() {
         CourseMaterialItem item = getSelectedMaterial();
         if (item == null) return;
@@ -1425,7 +1489,6 @@ public class CourseMaterials extends JPanel {
                 g2.setColor(paintBg);
                 g2.fill(new RoundRectangle2D.Float(0, 0, w, h, 8, 8));
 
-                // 1px Border if light background
                 if (bg.getRed() > 220 && bg.getGreen() > 220 && bg.getBlue() > 220) {
                     g2.setColor(COLOR_BORDER);
                     g2.draw(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 8, 8));
@@ -1450,12 +1513,9 @@ public class CourseMaterials extends JPanel {
 
     private static String formatDisplayDate(String rawDate) {
         if (rawDate == null || rawDate.isEmpty()) return "N/A";
-        // Format ISO timestamp into clean readable string
         if (rawDate.length() >= 10) {
             return rawDate.substring(0, 10);
         }
         return rawDate;
     }
-
 }
-

@@ -19,3 +19,7 @@ ALTER TABLE `notices` ADD COLUMN IF NOT EXISTS `attachment_path` VARCHAR(255) DE
 ALTER TABLE `course_materials` ADD COLUMN IF NOT EXISTS `file_path` VARCHAR(255) DEFAULT NULL;
 ALTER TABLE `course_materials` MODIFY COLUMN `file_name` VARCHAR(255) NULL;
 ALTER TABLE `course_materials` MODIFY COLUMN `file_data` LONGBLOB NULL;
+
+-- 5. Add from_date and due_date to course_materials table for date-based student visibility
+ALTER TABLE `course_materials` ADD COLUMN IF NOT EXISTS `from_date` DATE DEFAULT NULL;
+ALTER TABLE `course_materials` ADD COLUMN IF NOT EXISTS `due_date` DATE DEFAULT NULL;

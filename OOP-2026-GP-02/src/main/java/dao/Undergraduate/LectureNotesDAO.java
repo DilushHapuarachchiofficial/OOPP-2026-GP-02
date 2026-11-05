@@ -16,7 +16,8 @@ import java.util.List;
  * Handles database queries strictly for retrieving enrolled courses
  * and the lecture notes uploaded for those enrolled courses.
  * Reflects the new TecFAMS database schema where course_materials
- * stores file_name and file_data (LONGBLOB) directly in MySQL.
+ * stores file_name and file_data (LONGBLOB) directly in MySQL,
+ * and respects availability dates (from_date to due_date).
  */
 public class LectureNotesDAO {
 
@@ -85,9 +86,11 @@ public class LectureNotesDAO {
     /**
      * Retrieves only the lecture notes belonging to the courses
      * in which the logged-in student is currently enrolled.
-     *
-     * Logical path enforced in SQL:
-     * Logged-in Student -> Enrolled Courses (course_registrations) -> Lecture Notes (course_materials)
+     * Enforces date-based visibility rules:
+     * - If neither from_date nor due_date is set: always visible.
+     * - If both are set: visible only between from_date and due_date.
+     * - If only due_date is set: visible from upload date up to due_date.
+     * - If only from_date is set: visible from from_date onwards.
      *
      * @param studentIdOrRegNo The student ID or registration number.
      * @return List of LectureNoteItem objects for the student's enrolled courses.
@@ -99,8 +102,31 @@ public class LectureNotesDAO {
             return lectureNotes;
         }
 
-        // Query course_materials matching the enrolled courses of the student
-        String sql = "SELECT m.material_id, " +
+        String sqlWithDates = "SELECT m.material_id, " +
+                "c.course_id, " +
+                "c.course_code, " +
+                "c.course_name, " +
+                "COALESCE(l.lecturer_name, 'Assigned Lecturer') AS lecturer_name, " +
+                "m.material_title, " +
+                "m.material_description, " +
+                "m.file_name, " +
+                "COALESCE(m.file_size, 0) AS file_size, " +
+                "DATE_FORMAT(m.uploaded_date, '%Y-%m-%d') AS uploaded_date " +
+                "FROM course_materials m " +
+                "INNER JOIN courses c ON m.course_id = c.course_id " +
+                "INNER JOIN course_registrations cr ON c.course_id = cr.course_id " +
+                "INNER JOIN students s ON cr.student_id = s.student_id " +
+                "LEFT JOIN lecturers l ON m.lecturer_id = l.lecturer_id " +
+                "WHERE (s.student_reg_no = ? OR CAST(s.student_id AS CHAR) = ?) " +
+                "AND (" +
+                "   (m.from_date IS NULL AND m.due_date IS NULL) OR " +
+                "   (m.from_date IS NOT NULL AND m.due_date IS NOT NULL AND CURDATE() BETWEEN m.from_date AND m.due_date) OR " +
+                "   (m.from_date IS NULL AND m.due_date IS NOT NULL AND CURDATE() <= m.due_date) OR " +
+                "   (m.from_date IS NOT NULL AND m.due_date IS NULL AND CURDATE() >= m.from_date)" +
+                ") " +
+                "ORDER BY c.course_code ASC, m.uploaded_date DESC";
+
+        String fallbackSql = "SELECT m.material_id, " +
                 "c.course_id, " +
                 "c.course_code, " +
                 "c.course_name, " +
@@ -129,10 +155,19 @@ public class LectureNotesDAO {
                 return lectureNotes;
             }
 
-            stmt = conn.prepareStatement(sql);
-            stmt.setString(1, studentIdOrRegNo.trim());
-            stmt.setString(2, studentIdOrRegNo.trim());
-            rs = stmt.executeQuery();
+            try {
+                stmt = conn.prepareStatement(sqlWithDates);
+                stmt.setString(1, studentIdOrRegNo.trim());
+                stmt.setString(2, studentIdOrRegNo.trim());
+                rs = stmt.executeQuery();
+            } catch (SQLException ex) {
+                // In case from_date column is not present on an unmigrated database instance
+                closeQuietly(rs, stmt, null);
+                stmt = conn.prepareStatement(fallbackSql);
+                stmt.setString(1, studentIdOrRegNo.trim());
+                stmt.setString(2, studentIdOrRegNo.trim());
+                rs = stmt.executeQuery();
+            }
 
             while (rs.next()) {
                 LectureNoteItem note = new LectureNoteItem(

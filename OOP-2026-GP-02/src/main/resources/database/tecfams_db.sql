@@ -526,7 +526,10 @@ CREATE TABLE `course_materials` (
   `file_name` varchar(255) NOT NULL,
   `file_data` longblob NOT NULL,
   `file_size` bigint(20) DEFAULT 0,
-  `uploaded_date` datetime DEFAULT current_timestamp()
+  `uploaded_date` datetime DEFAULT current_timestamp(),
+
+  `from_date` date DEFAULT NULL,
+  `due_date` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -730,6 +733,8 @@ CREATE TABLE `marks` (
   `student_id` int(11) NOT NULL,
   `marks_obtained` decimal(5,2) NOT NULL CHECK (`marks_obtained` between 0 and 100),
   `uploaded_date` datetime DEFAULT current_timestamp(),
+
+
   `uploaded_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

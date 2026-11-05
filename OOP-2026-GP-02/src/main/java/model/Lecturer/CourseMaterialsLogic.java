@@ -47,10 +47,13 @@ public class CourseMaterialsLogic {
         private final String uploadedDate;
         private final long fileSize;
         private final String fileSizeFormatted;
+        private final String fromDate;
+        private final String dueDate;
 
         public CourseMaterialItem(int materialId, int courseId, String courseCode, String courseName,
                                   int lecturerId, String title, String description,
-                                  String fileName, long fileSize, String uploadedDate) {
+                                  String fileName, long fileSize, String uploadedDate,
+                                  String fromDate, String dueDate) {
             this.materialId = materialId;
             this.courseId = courseId;
             this.courseCode = courseCode != null ? courseCode : "N/A";
@@ -64,13 +67,22 @@ public class CourseMaterialsLogic {
             this.fileSize = fileSize > 0 ? fileSize : 0;
             this.fileSizeFormatted = formatFileSize(this.fileSize);
             this.fileType = detectFileType(this.fileName);
+            this.fromDate = (fromDate != null && !fromDate.trim().isEmpty()) ? fromDate.trim() : null;
+            this.dueDate = (dueDate != null && !dueDate.trim().isEmpty()) ? dueDate.trim() : null;
         }
 
         public CourseMaterialItem(int materialId, int courseId, String courseCode, String courseName,
                                   int lecturerId, String title, String description,
                                   String filePath, String uploadedDate) {
             this(materialId, courseId, courseCode, courseName, lecturerId, title, description,
-                 filePath != null ? new File(filePath).getName() : "material", 0, uploadedDate);
+                 filePath != null ? new File(filePath).getName() : "material", 0, uploadedDate, null, null);
+        }
+
+        public CourseMaterialItem(int materialId, int courseId, String courseCode, String courseName,
+                                  int lecturerId, String title, String description,
+                                  String fileName, long fileSize, String uploadedDate) {
+            this(materialId, courseId, courseCode, courseName, lecturerId, title, description,
+                 fileName, fileSize, uploadedDate, null, null);
         }
 
         public int getMaterialId() { return materialId; }
@@ -86,6 +98,85 @@ public class CourseMaterialsLogic {
         public String getUploadedDate() { return uploadedDate; }
         public long getFileSize() { return fileSize; }
         public String getFileSizeFormatted() { return fileSizeFormatted; }
+        public String getFromDate() { return fromDate; }
+        public String getDueDate() { return dueDate; }
+
+        /**
+         * Checks whether this material is currently visible to students based on from_date and due_date.
+         * If neither date is set, it is always visible.
+         */
+        public boolean isCurrentlyVisibleToStudents() {
+            java.time.LocalDate today = java.time.LocalDate.now();
+            java.time.LocalDate from = parseLocalDate(fromDate);
+            java.time.LocalDate due = parseLocalDate(dueDate);
+
+            if (from == null && due == null) {
+                return true;
+            }
+            if (from != null && due != null) {
+                return !today.isBefore(from) && !today.isAfter(due);
+            }
+            if (from == null && due != null) {
+                return !today.isAfter(due);
+            }
+            if (from != null && due == null) {
+                return !today.isBefore(from);
+            }
+            return true;
+        }
+
+        /**
+         * Returns a status descriptor for the material's availability window.
+         * ("Always Visible", "Active", "Scheduled", "Expired")
+         */
+        public String getVisibilityStatus() {
+            java.time.LocalDate today = java.time.LocalDate.now();
+            java.time.LocalDate from = parseLocalDate(fromDate);
+            java.time.LocalDate due = parseLocalDate(dueDate);
+
+            if (from == null && due == null) {
+                return "Always Visible";
+            }
+            if (due != null && today.isAfter(due)) {
+                return "Expired";
+            }
+            if (from != null && today.isBefore(from)) {
+                return "Scheduled";
+            }
+            return "Active";
+        }
+
+        /**
+         * Returns a readable summary of the date range restriction.
+         */
+        public String getAvailabilityDescription() {
+            if (fromDate == null && dueDate == null) {
+                return "Always Visible";
+            }
+            if (fromDate != null && dueDate != null) {
+                return fromDate + " to " + dueDate;
+            }
+            if (dueDate != null) {
+                return "Until " + dueDate;
+            }
+            return "From " + fromDate + " onwards";
+        }
+
+        private static java.time.LocalDate parseLocalDate(String str) {
+            if (str == null || str.trim().isEmpty()) return null;
+            try {
+                String clean = str.trim().replace('/', '-').replace('.', '-');
+                String[] p = clean.split("-");
+                if (p.length == 3) {
+                    return java.time.LocalDate.of(
+                            Integer.parseInt(p[0].trim()),
+                            Integer.parseInt(p[1].trim()),
+                            Integer.parseInt(p[2].trim())
+                    );
+                }
+            } catch (Exception ignored) {}
+            return null;
+        }
     }
 
     /**
@@ -218,6 +309,12 @@ public class CourseMaterialsLogic {
             try {
                 stmt.executeUpdate("ALTER TABLE course_materials ADD COLUMN file_path VARCHAR(255) NULL DEFAULT NULL AFTER file_name");
             } catch (SQLException ignored) {}
+            try {
+                stmt.executeUpdate("ALTER TABLE course_materials ADD COLUMN from_date DATE NULL DEFAULT NULL");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.executeUpdate("ALTER TABLE course_materials ADD COLUMN due_date DATE NULL DEFAULT NULL");
+            } catch (SQLException ignored) {}
         } catch (Exception ignored) {
             // Non-critical if user does not have DDL privileges
         }
@@ -341,7 +438,7 @@ public class CourseMaterialsLogic {
            .append("       cm.material_title, cm.material_description, ")
            .append("       COALESCE(cm.file_name, cm.file_path, 'material') AS file_name, ")
            .append("       COALESCE(cm.file_size, LENGTH(cm.file_data), 0) AS file_size, ")
-           .append("       cm.uploaded_date ")
+           .append("       cm.uploaded_date, cm.from_date, cm.due_date ")
            .append("FROM course_materials cm ")
            .append("JOIN courses c ON cm.course_id = c.course_id ")
            .append("WHERE cm.lecturer_id = ? ");
@@ -398,7 +495,9 @@ public class CourseMaterialsLogic {
                                 rs.getString("material_description"),
                                 rs.getString("file_name"),
                                 rs.getLong("file_size"),
-                                rs.getString("uploaded_date")
+                                rs.getString("uploaded_date"),
+                                rs.getString("from_date"),
+                                rs.getString("due_date")
                         ));
                     }
                 }
@@ -497,7 +596,8 @@ public class CourseMaterialsLogic {
      * 3. No local filesystem storage directory used.
      */
     public static int uploadMaterial(int lecturerId, int courseId, String title,
-                                     String description, File sourceFile) throws Exception {
+                                     String description, File sourceFile,
+                                     String fromDateStr, String dueDateStr) throws Exception {
         if (lecturerId <= 0) {
             throw new IllegalArgumentException("Invalid lecturer ID.");
         }
@@ -523,12 +623,26 @@ public class CourseMaterialsLogic {
             throw new IllegalAccessException("Unauthorized: You are not assigned to course ID " + courseId + ".");
         }
 
+        // Date Parsing & Validation
+        java.sql.Date sqlFromDate = parseSqlDate(fromDateStr);
+        java.sql.Date sqlDueDate = parseSqlDate(dueDateStr);
+
+        // Rule: If lecturer only fills due date and not from date, default from date to today (upload date)
+        if (sqlDueDate != null && sqlFromDate == null) {
+            sqlFromDate = java.sql.Date.valueOf(java.time.LocalDate.now());
+        }
+
+        // Validation: due date must not be before from date
+        if (sqlFromDate != null && sqlDueDate != null && sqlDueDate.before(sqlFromDate)) {
+            throw new IllegalArgumentException("Due Date (" + sqlDueDate + ") cannot be earlier than From Date (" + sqlFromDate + ").");
+        }
+
         String fileName = sourceFile.getName();
         long fileSize = sourceFile.length();
 
         // Perform Database Insert directly into course_materials table
-        String sql = "INSERT INTO course_materials (course_id, lecturer_id, material_title, material_description, file_name, file_data, file_size, uploaded_date) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+        String sql = "INSERT INTO course_materials (course_id, lecturer_id, material_title, material_description, file_name, file_data, file_size, uploaded_date, from_date, due_date) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)";
 
         try (Connection conn = DBConnection.getConnection()) {
             if (conn == null) {
@@ -545,6 +659,16 @@ public class CourseMaterialsLogic {
                 pstmt.setString(5, fileName);
                 pstmt.setBinaryStream(6, fis, (int) fileSize);
                 pstmt.setLong(7, fileSize);
+                if (sqlFromDate != null) {
+                    pstmt.setDate(8, sqlFromDate);
+                } else {
+                    pstmt.setNull(8, java.sql.Types.DATE);
+                }
+                if (sqlDueDate != null) {
+                    pstmt.setDate(9, sqlDueDate);
+                } else {
+                    pstmt.setNull(9, java.sql.Types.DATE);
+                }
 
                 int affected = pstmt.executeUpdate();
                 if (affected > 0) {
@@ -563,11 +687,20 @@ public class CourseMaterialsLogic {
     }
 
     /**
+     * Backwards compatible uploadMaterial overload.
+     */
+    public static int uploadMaterial(int lecturerId, int courseId, String title,
+                                     String description, File sourceFile) throws Exception {
+        return uploadMaterial(lecturerId, courseId, title, description, sourceFile, null, null);
+    }
+
+    /**
      * Updates metadata (title, description, course) of an existing material.
      * Enforces that destination course is assigned to the lecturer and ownership.
      */
     public static void updateMaterial(int lecturerId, int materialId, int courseId,
-                                      String title, String description) throws Exception {
+                                      String title, String description,
+                                      String fromDateStr, String dueDateStr) throws Exception {
         if (lecturerId <= 0 || materialId <= 0) {
             throw new IllegalArgumentException("Invalid lecturer ID or material ID.");
         }
@@ -587,8 +720,20 @@ public class CourseMaterialsLogic {
             throw new IllegalAccessException("Unauthorized: Course ID " + courseId + " is not assigned to you.");
         }
 
+        // Date Parsing & Validation
+        java.sql.Date sqlFromDate = parseSqlDate(fromDateStr);
+        java.sql.Date sqlDueDate = parseSqlDate(dueDateStr);
+
+        if (sqlDueDate != null && sqlFromDate == null) {
+            sqlFromDate = java.sql.Date.valueOf(java.time.LocalDate.now());
+        }
+
+        if (sqlFromDate != null && sqlDueDate != null && sqlDueDate.before(sqlFromDate)) {
+            throw new IllegalArgumentException("Due Date (" + sqlDueDate + ") cannot be earlier than From Date (" + sqlFromDate + ").");
+        }
+
         String sql = "UPDATE course_materials " +
-                     "SET course_id = ?, material_title = ?, material_description = ? " +
+                     "SET course_id = ?, material_title = ?, material_description = ?, from_date = ?, due_date = ? " +
                      "WHERE material_id = ? AND lecturer_id = ?";
 
         try (Connection conn = DBConnection.getConnection()) {
@@ -600,8 +745,18 @@ public class CourseMaterialsLogic {
                 pstmt.setInt(1, courseId);
                 pstmt.setString(2, cleanTitle);
                 pstmt.setString(3, description != null ? description.trim() : null);
-                pstmt.setInt(4, materialId);
-                pstmt.setInt(5, lecturerId);
+                if (sqlFromDate != null) {
+                    pstmt.setDate(4, sqlFromDate);
+                } else {
+                    pstmt.setNull(4, java.sql.Types.DATE);
+                }
+                if (sqlDueDate != null) {
+                    pstmt.setDate(5, sqlDueDate);
+                } else {
+                    pstmt.setNull(5, java.sql.Types.DATE);
+                }
+                pstmt.setInt(6, materialId);
+                pstmt.setInt(7, lecturerId);
 
                 int rows = pstmt.executeUpdate();
                 if (rows == 0) {
@@ -609,6 +764,14 @@ public class CourseMaterialsLogic {
                 }
             }
         }
+    }
+
+    /**
+     * Backwards compatible updateMaterial overload.
+     */
+    public static void updateMaterial(int lecturerId, int materialId, int courseId,
+                                      String title, String description) throws Exception {
+        updateMaterial(lecturerId, materialId, courseId, title, description, null, null);
     }
 
     /**
@@ -850,5 +1013,30 @@ public class CourseMaterialsLogic {
         int digitGroups = (int) (Math.log10(bytes) / Math.log10(1024));
         if (digitGroups >= units.length) digitGroups = units.length - 1;
         return new DecimalFormat("#,##0.#").format(bytes / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+    }
+
+    /**
+     * Parses a user-entered date string in formats like YYYY-MM-DD, YYYY/MM/DD, YYYY/M/D.
+     * Returns null if input is empty or null.
+     * Throws IllegalArgumentException on invalid format or date values.
+     */
+    public static java.sql.Date parseSqlDate(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        String clean = text.trim().replace('/', '-').replace('.', '-');
+        String[] parts = clean.split("-");
+        if (parts.length == 3) {
+            try {
+                int y = Integer.parseInt(parts[0].trim());
+                int m = Integer.parseInt(parts[1].trim());
+                int d = Integer.parseInt(parts[2].trim());
+                java.time.LocalDate ld = java.time.LocalDate.of(y, m, d);
+                return java.sql.Date.valueOf(ld);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid date: '" + text.trim() + "'. Please enter date in YYYY-MM-DD or YYYY/MM/DD format (e.g. 2026-08-01).");
+            }
+        }
+        throw new IllegalArgumentException("Invalid date format: '" + text.trim() + "'. Please enter date in YYYY-MM-DD or YYYY/MM/DD format (e.g. 2026-08-01).");
     }
 }
